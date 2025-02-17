@@ -1,18 +1,25 @@
 #include <Arduino.h>
+#include "_env/EspWifiClient.h"
+#include "_env/OtaManager.h"
+#include <string>
 
-// put function declarations here:
-int myFunction(int, int);
+EspWifiClient espWifiClient;
+OtaManager otaManager;
 
-void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+String deviceName = "GardenIC";
+
+
+void setup() 
+{
+  // EspWifiClient setup
+  espWifiClient.setup(deviceName);
+
+  // Setup OTA
+  otaManager.setup();
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+void loop() 
+{
+  // Handle OTA
+  otaManager.handle();
 }
