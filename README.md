@@ -32,16 +32,14 @@ The system should:
 
 ### ESP-32 Dev Kit C V4
 
-![alt text](_assets/_images/esp32DevKitCV4.png)
+<img src="_assets/_images/esp32DevKitCV4.png" width="500" alt="ESP32 Dev Kit C V4">
 
-Details and datasheets: <https://www.az-delivery.de/products/esp-32-dev-kit-c-v4>
-
-Pinout:
-
-![alt text](_assets/_images/pinoutESP.png)
+Product name: ESP32 Dev Kit C V4
+Seller: AZ-Delivery
 
 ### Relais module
 
-![alt text](_assets/_images/8chSSRModule.png)
+<img src="_assets/_images/8chSSRModule.png" width="500" alt="8 Channel SSR Module">
 
-Details and datasheets: <https://www.az-delivery.de/products/8-kanal-solid-state-relais?_pos=3&_sid=0b0fae013&_ss=r>
+Product name: 8 Kanal Solid State Relais 5V DC Low Level
+Seller: AZ-Delivery
