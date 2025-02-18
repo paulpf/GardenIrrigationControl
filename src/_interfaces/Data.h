@@ -6,13 +6,14 @@
 
 class Data
 {
-private:
-    unsigned long currentTime;
 public:
   Data();
   ~Data();
   void setCurrentTime(unsigned long currentTime);
   unsigned long getCurrentTime();
+
+private:
+  unsigned long currentTime;
 };
 
 #endif // DATA_H

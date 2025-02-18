@@ -7,13 +7,14 @@
 
 class PublishManager
 {
-    private:
-      std::vector<IPublisher*> publishers;
-    public:
-      PublishManager(/* args */);
-      ~PublishManager();
-      void registerPublishers(IPublisher *publisher);
-      void publish(Data &data);
+public:
+  PublishManager(/* args */);
+  ~PublishManager();
+  void registerPublishers(IPublisher *publisher);
+  void publish(Data &data);
+
+  private:
+  std::vector<IPublisher*> publishers;
 };
 
 #endif // PUBLISH_MANAGER_H

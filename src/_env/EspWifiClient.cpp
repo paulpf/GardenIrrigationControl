@@ -6,7 +6,7 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include "EspWifiClient.h"
+#include "_interfaces/EspWifiClient.h"
 
 
 EspWifiClient::EspWifiClient()

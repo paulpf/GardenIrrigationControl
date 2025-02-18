@@ -6,9 +6,9 @@
 
 class IPublisher
 {
-    public:
-        virtual void publish(Data &data);
-        ~IPublisher() = default;
+public:
+    virtual void publish(Data &data);
+    ~IPublisher() = default;
 };
 
 #endif // I_PUBLISHER_H

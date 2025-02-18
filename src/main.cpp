@@ -1,14 +1,17 @@
 #include <Arduino.h>
 #include <WString.h>
-#include "_env/EspWifiClient.h"
-#include "_env/OtaManager.h"
+#include "_interfaces/EspWifiClient.h"
+#include "_interfaces/OtaManager.h"
 #include "_interfaces/WebserverPublisher.h"
 #include "_interfaces/PublishManager.h"
+#include "_interfaces/MqttPublisher.h"
+#include "_interfaces/Data.h"
 
 EspWifiClient espWifiClient;
 OtaManager otaManager;
 WebserverPublisher wsPublisher;
 PublishManager publishManager;
+MqttPublisher mqttPublisher;
 Data data;
 
 String deviceName = "GardenIC";
@@ -20,6 +23,9 @@ void setup()
   // EspWifiClient setup
   espWifiClient.setup(deviceName);
 
+  // MqttPublisher setup
+  mqttPublisher.setup(espWifiClient.getWifiClient());
+
   // Setup OTA
   otaManager.setup();
 
@@ -28,6 +34,9 @@ void setup()
   
   // Register WebserverPublisher with PublishManager
   publishManager.registerPublishers(&wsPublisher);
+
+  // Register MqttPublisher with PublishManager
+  publishManager.registerPublishers(&mqttPublisher);
 }
 
 void loop() 
