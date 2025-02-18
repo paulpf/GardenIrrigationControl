@@ -14,7 +14,8 @@ PublishManager publishManager;
 MqttPublisher mqttPublisher;
 Data data;
 
-String deviceName = "GardenIC";
+String deviceName = "GardenIC-" + WiFi.macAddress() ;
+
 unsigned long previousMillis = 0;
 const long interval = 1000; // Update interval in milliseconds (1 second)
 
@@ -24,7 +25,7 @@ void setup()
   espWifiClient.setup(deviceName);
 
   // MqttPublisher setup
-  mqttPublisher.setup(espWifiClient.getWifiClient());
+  mqttPublisher.setup(espWifiClient.getWifiClient(), deviceName);
 
   // Setup OTA
   otaManager.setup();

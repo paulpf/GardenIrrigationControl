@@ -18,7 +18,6 @@ void EspWifiClient::setup(String deviceName)
     this->deviceName = deviceName;
     wifiClient = WiFiClient();
 
-    deviceName += "-" + WiFi.macAddress();
     WiFi.setHostname(deviceName.c_str());
     WiFi.begin(WIFI_SSID, WIFI_PWD);
     while (WiFi.status() != WL_CONNECTED)
