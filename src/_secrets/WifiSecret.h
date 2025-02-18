@@ -4,7 +4,7 @@
 #define WIFI_SECRET_H
 
 // WLAN settings
-const char *ssid = "<your_SSID>";
-const char *password = "<your_PASSWORD>";
+const char *WIFI_SSID = "<your_SSID>";
+const char *WIFI_PWD = "<your_PASSWORD>";
 
 #endif // WIFI_SECRET_H

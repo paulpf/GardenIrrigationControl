@@ -20,7 +20,7 @@ void EspWifiClient::setup(String deviceName)
 
     deviceName += "-" + WiFi.macAddress();
     WiFi.setHostname(deviceName.c_str());
-    WiFi.begin(ssid, password);
+    WiFi.begin(WIFI_SSID, WIFI_PWD);
     while (WiFi.status() != WL_CONNECTED)
     {
         delay(500);

@@ -7,6 +7,7 @@
 #include "Data.h"
 #include <Arduino.h>
 #include <WiFiClient.h>
+#include <PubSubClient.h>
 
 class MqttPublisher : public IPublisher
 {
@@ -18,6 +19,8 @@ public:
 private:
     static MqttPublisher *instance;
     WiFiClient *wifiClient;
+    PubSubClient mqttClient;
+    static void mqttCallback(char *topic, byte *payload, unsigned int length);
 };
 
 #endif // MQTT_PUBLISHER_H
