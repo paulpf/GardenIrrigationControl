@@ -7,6 +7,8 @@
   - [Introduction](#introduction)
   - [Requirements](#requirements)
   - [Hardware](#hardware)
+    - [ESP-32 Dev Kit C V4](#esp-32-dev-kit-c-v4)
+    - [Relais module](#relais-module)
 
 ## Introduction
 
@@ -27,3 +29,19 @@ The system should:
 - be able to measure the water level in the tank via capacitive sensor. This sensor has 4-20mA output.
 
 ## Hardware
+
+### ESP-32 Dev Kit C V4
+
+![alt text](_assets/_images/esp32DevKitCV4.png)
+
+Details and datasheets: <https://www.az-delivery.de/products/esp-32-dev-kit-c-v4>
+
+Pinout:
+
+![alt text](_assets/_images/pinoutESP.png)
+
+### Relais module
+
+![alt text](_assets/_images/8chSSRModule.png)
+
+Details and datasheets: <https://www.az-delivery.de/products/8-kanal-solid-state-relais?_pos=3&_sid=0b0fae013&_ss=r>
