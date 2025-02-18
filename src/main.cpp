@@ -17,7 +17,7 @@ Data data;
 String deviceName = "GardenIC-" + WiFi.macAddress() ;
 
 unsigned long previousMillis = 0;
-const long interval = 1000; // Update interval in milliseconds (1 second)
+const unsigned long updateInterval = 1000; // Update publish every second
 
 void setup() 
 {
@@ -46,8 +46,7 @@ void loop()
   otaManager.handle();
 
   static unsigned long lastUpdate = 0;
-  const unsigned long updateInterval = 1000; // Update every second
-  unsigned long currentMillis = millis();
+    unsigned long currentMillis = millis();
   
   if (currentMillis - lastUpdate >= updateInterval) 
   {
