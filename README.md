@@ -34,12 +34,12 @@ The system should:
 
 <img src="_assets/_images/esp32DevKitCV4.png" width="500" alt="ESP32 Dev Kit C V4">
 
-Product name: ESP32 Dev Kit C V4
-Seller: AZ-Delivery
+- Product name: ESP32 Dev Kit C V4
+- Seller: AZ-Delivery
 
 ### Relais module
 
 <img src="_assets/_images/8chSSRModule.png" width="500" alt="8 Channel SSR Module">
 
-Product name: 8 Kanal Solid State Relais 5V DC Low Level
-Seller: AZ-Delivery
+- Product name: 8 Kanal Solid State Relais 5V DC Low Level
+- Seller: AZ-Delivery
