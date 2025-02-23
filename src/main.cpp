@@ -6,6 +6,7 @@
 #include "_interfaces/PublishManager.h"
 #include "_interfaces/MqttPublisher.h"
 #include "_interfaces/Data.h"
+#include "_interfaces/ChannelController.h"
 
 EspWifiClient espWifiClient;
 OtaManager otaManager;
@@ -13,6 +14,9 @@ WebserverPublisher wsPublisher;
 PublishManager publishManager;
 MqttPublisher mqttPublisher;
 Data data;
+
+// from ESP32 it is GPIO 36
+ChannelController chCtrl(36);
 
 String deviceName = "GardenIC-" + WiFi.macAddress() ;
 
@@ -38,6 +42,8 @@ void setup()
 
   // Register MqttPublisher with PublishManager
   publishManager.registerPublishers(&mqttPublisher);
+
+  chCtrl.setup();
 }
 
 void loop() 
@@ -54,4 +60,16 @@ void loop()
       data.setCurrentTime(currentMillis);
       publishManager.publish(data);
   }
+
+  // wait for a second
+  delay(1000);
+
+  // turn the channel on
+  chCtrl.setChannel(true);
+
+  // wait for a second
+  delay(1000);
+
+  // turn the channel off
+  chCtrl.setChannel(false);
 }
