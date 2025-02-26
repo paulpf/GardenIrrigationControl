@@ -1,5 +1,9 @@
 # GardenIrrigationControl
 
+> **Note:** This project is still under construction.
+
+<img src="_assets/_images/underconstruction.png" alt="alt text" width="500" style="height: 80;">
+
 ## Table of Contents
 
 - [GardenIrrigationControl](#gardenirrigationcontrol)
@@ -11,6 +15,7 @@
     - [Relais module](#relais-module)
     - [Debugger ESP-Prog](#debugger-esp-prog)
   - [Circuit Diagram](#circuit-diagram)
+  - [Software design](#software-design)
 
 ## Introduction
 
@@ -52,8 +57,14 @@ The system should:
 
 ## Circuit Diagram
 
-Drawio svg file:
 
 <img src="_assets/_images/circuit.drawio.svg" width="500" alt="Circuit Diagram">
 
 
+## Software design
+
+The software is written in C++ and uses the Arduino framework.
+
+Classes used in the software are described in the following document: [Class Diagramm](ClassDiagramm.md)
+
+Activity diagrams of the software are described in the following document: [Activity Diagramm](ActivityDiagramm.md)

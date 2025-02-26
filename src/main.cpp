@@ -29,9 +29,36 @@ int buttonCount = sizeof(buttonPins) / sizeof(buttonPins[0]);
 // The drainage valve is connected to the following GPIO pin
 int drainageValvePin = 10;
 
+// Array to track button press states
+volatile bool buttonPressed[] = {false, false, false, false, false, false, false, false};
+
+// ISR functions for each button
+void IRAM_ATTR buttonISR0() { buttonPressed[0] = true; }
+void IRAM_ATTR buttonISR1() { buttonPressed[1] = true; }
+void IRAM_ATTR buttonISR2() { buttonPressed[2] = true; }
+void IRAM_ATTR buttonISR3() { buttonPressed[3] = true; }
+void IRAM_ATTR buttonISR4() { buttonPressed[4] = true; }
+void IRAM_ATTR buttonISR5() { buttonPressed[5] = true; }
+void IRAM_ATTR buttonISR6() { buttonPressed[6] = true; }
+void IRAM_ATTR buttonISR7() { buttonPressed[7] = true; }
+
+// Function pointer array to ISR functions
+typedef void (*ISRFunctionPointer)();
+ISRFunctionPointer buttonISRs[] = 
+{
+  buttonISR0, buttonISR1, buttonISR2, buttonISR3, 
+  buttonISR4, buttonISR5, buttonISR6, buttonISR7
+};
 
 void setup() 
 {
+  // For each button in your array
+  for (int i = 0; i < buttonCount; i++) 
+  {  
+    pinMode(buttonPins[i], INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(buttonPins[i]), buttonISRs[i], RISING);
+  }
+
   // IrrigationManager setup
   irrigationManager.setup();
 
@@ -58,6 +85,33 @@ void loop()
 {
   // Handle OTA
   otaManager.handle();
+
+
+  // ====================================================================================
+  // template code =====================================================================
+  // ====================================================================================
+
+  // Check if any button was pressed via interrupt
+  for (int i = 0; i < buttonCount; i++) 
+  {
+    if (buttonPressed[i]) 
+    {
+      // Button i was pressed
+      Serial.print("Button ");
+      Serial.print(i);
+      Serial.println(" was pressed!");
+      
+      // Add your button action code here
+      // For example, toggle the corresponding irrigation zone
+      
+      // Reset the flag
+      buttonPressed[i] = false;
+    }
+  }
+  
+  // ...rest of loop code...
+
+
 
   // ====================================================================================
   // Read data ==========================================================================
