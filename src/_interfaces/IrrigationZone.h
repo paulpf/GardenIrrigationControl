@@ -5,26 +5,18 @@
 #pragma once
 
 #include <Arduino.h>
-#include "Valve.h"
+#include "HardwareButton.h"
 
 class IrrigationZone
 {
 public:
-  IrrigationZone(String name, int gpioChannel);
+  IrrigationZone(String name, int hwButtonGpioPin, String swButtonAddress);
   ~IrrigationZone();
-  int getDuration();
-  void setDuration(int duration);
-  void start();
-  void stop();
 
 private:
-  Valve *valve;
-  bool isActive = false;
-  String name;
-  int duration;
-  int timeLeft;
-  unsigned long previousMillis;
-  const unsigned long updateInterval = 1000; // Update publish every second
+  String _name;
+  HardwareButton _hwButton;
+  String _swButtonAddress;
 };
 
 #endif // IRRIGATIONZONE_H

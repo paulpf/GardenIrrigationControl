@@ -12,7 +12,6 @@ public:
   ~PublishManager();
   void registerPublishers(IPublisher *publisher);
   void publish(Data &data);
-  void readData(Data &data);
 
   private:
   std::vector<IPublisher*> publishers;
