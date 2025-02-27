@@ -8,8 +8,6 @@ IrrigationManager::IrrigationManager()
 
 IrrigationManager::~IrrigationManager()
 {
-  delete drainageValve;
-
   for (int i = 0; i < 8; i++)
   {
     delete irrigationZones[i];
@@ -18,35 +16,33 @@ IrrigationManager::~IrrigationManager()
 
 void IrrigationManager::setup()
 {
-  // Create drainage valve
-  drainageValve = new Valve("Drainage Valve", 32);
-
   // Create irrigation zones
-  irrigationZones[0] = new IrrigationZone("Zone 1", 33);
-  irrigationZones[1] = new IrrigationZone("Zone 2", 34);  
-  irrigationZones[2] = new IrrigationZone("Zone 3", 35);
-  irrigationZones[3] = new IrrigationZone("Zone 4", 36);
-  irrigationZones[4] = new IrrigationZone("Zone 5", 37);
-  irrigationZones[5] = new IrrigationZone("Zone 6", 38);
-  irrigationZones[6] = new IrrigationZone("Zone 7", 39);
-  irrigationZones[7] = new IrrigationZone("Zone 8", 40);  
+  irrigationZones[0] = new IrrigationZone("Zone 1", 33, "Addr1");
+}
 
-  // Set initial drainage valve state
-  drainageValve->setValveState(CLOSE);
-
-  // Set initial irrigation zone states
+void IrrigationManager::readInputs()
+{
+  // Read inputs from all irrigation zones
   for (int i = 0; i < 8; i++)
   {
-    irrigationZones[i]->setDuration(0);
+    //irrigationZones[i]->readInputs();
   }
 }
 
-void IrrigationManager::updateZone(int zoneIndex)
+void IrrigationManager::processLogic()
 {
-  irrigationZones[zoneIndex]->start();
+  // Process logic for all irrigation zones
+  for (int i = 0; i < 8; i++)
+  {
+    //irrigationZones[i]->processLogic();
+  }
 }
 
-void IrrigationManager::stopZone(int zoneIndex)
+void IrrigationManager::writeOutputs()
 {
-  irrigationZones[zoneIndex]->stop();
+  // Write outputs for all irrigation zones
+  for (int i = 0; i < 8; i++)
+  {
+    //irrigationZones[i]->writeOutputs();
+  }
 }

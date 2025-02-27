@@ -13,14 +13,12 @@ public:
   IrrigationManager();
   ~IrrigationManager();
   void setup();
-  void updateZone(int zoneIndex);
-  void stopZone(int zoneIndex);
+  void readInputs();
+  void processLogic();
+  void writeOutputs();
 
 private:
   IrrigationZone *irrigationZones[8];
-  Valve *drainageValve;
-  void addZone(IrrigationZone *irrigationZone);
-  void removeZone(IrrigationZone *irrigationZone);
 };
 
 #endif // IRRIGATIONMANAGER_H

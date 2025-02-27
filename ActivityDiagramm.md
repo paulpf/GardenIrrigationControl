@@ -8,11 +8,13 @@ Setup method:
 
 ```plantuml
 start
-:createValve;
-:createHardwareButton;
-:createSoftwareButton;
-:createTimer;
-:createIrrigationZone;
+:createValves;
+:createHardwareButtons;
+:createSoftwareButtons;
+:createIrrigationZones;
+:addValvesToIrrigationZones;
+:addHardwareButtonsToIrrigationZones;
+:addSoftwareButtonsToIrrigationZones;
 :createIrrigationController;
 :addZones;
 end
