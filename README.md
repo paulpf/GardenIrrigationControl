@@ -65,6 +65,6 @@ The system should:
 
 The software is written in C++ and uses the Arduino framework.
 
-Classes used in the software are described in the following document: [Class Diagramm](ClassDiagramm.md)
+Following classes are implemented:
 
-Activity diagrams of the software are described in the following document: [Activity Diagramm](ActivityDiagramm.md)
+<img src="_assets/_images/classdiagramm.drawio.svg" width="500" alt="Class Diagram">
