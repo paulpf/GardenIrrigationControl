@@ -13,14 +13,6 @@ static void IRAM_ATTR handleButtonPressed()
   }
 }
 
-static void IRAM_ATTR handleButtonReleased() 
-{
-  if (activeInstance) 
-  {
-    activeInstance->buttonReleased();
-  }
-}
-
 HardwareButton::HardwareButton(int gpioPin)
 {
   _gpioPin = gpioPin;
@@ -29,19 +21,13 @@ HardwareButton::HardwareButton(int gpioPin)
   // Store instance pointer for the interrupt handlers
   activeInstance = this;
   
-  pinMode(_gpioPin, INPUT_PULLUP);
+  pinMode(_gpioPin, INPUT_PULLDOWN);
   attachInterrupt(digitalPinToInterrupt(_gpioPin), handleButtonPressed, RISING);
-  attachInterrupt(digitalPinToInterrupt(_gpioPin), handleButtonReleased, FALLING);
 }
 
 void IRAM_ATTR HardwareButton::buttonPressed() 
 { 
-  _pressed = true;
-}
-
-void IRAM_ATTR HardwareButton::buttonReleased() 
-{ 
-  _pressed = false;
+  _pressed = !_pressed;
 }
 
 bool HardwareButton::isPressed()

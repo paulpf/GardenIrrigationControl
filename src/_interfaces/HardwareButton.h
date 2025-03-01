@@ -12,7 +12,7 @@ class HardwareButton
     
     // Make these methods public so they can be called by interrupt handlers
     void IRAM_ATTR buttonPressed();
-    void IRAM_ATTR buttonReleased();
+    //void IRAM_ATTR buttonReleased();
     
   private:
     int _gpioPin;

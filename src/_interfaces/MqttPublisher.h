@@ -17,10 +17,10 @@ public:
     void setup(WiFiClient *wifiClient, String deviceName);
     void publish(Data &data);
 private:
-    static MqttPublisher *instance;
-    WiFiClient *wifiClient;
-    String deviceName;
-    PubSubClient mqttClient;
+    static MqttPublisher *_instance;
+    WiFiClient *_wifiClient;
+    String _deviceName;
+    PubSubClient _mqttClient;
     static void mqttCallback(char *topic, byte *payload, unsigned int length);
     void reconnectMqtt();
 };

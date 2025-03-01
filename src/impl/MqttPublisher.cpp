@@ -12,11 +12,11 @@
 #include "_config/MqttConfig.h"
 #endif
 
-MqttPublisher *MqttPublisher::instance = nullptr;
+MqttPublisher *MqttPublisher::_instance = nullptr;
 
 MqttPublisher::MqttPublisher()
 {
-    instance = this;
+    _instance = this;
 }
 
 MqttPublisher::~MqttPublisher()
@@ -28,30 +28,30 @@ void MqttPublisher::setup(WiFiClient *wifiClient, String deviceName)
     // Setup console
     Serial.begin(115200);
 
-    this->wifiClient = wifiClient;
-    this->deviceName = deviceName;
-    mqttClient.setClient(*wifiClient);
-    mqttClient.setServer(MQTT_SERVER_IP, MQTT_SERVER_PORT);
-    mqttClient.setCallback(mqttCallback);
+    this->_wifiClient = wifiClient;
+    this->_deviceName = deviceName;
+    _mqttClient.setClient(*wifiClient);
+    _mqttClient.setServer(MQTT_SERVER_IP, MQTT_SERVER_PORT);
+    _mqttClient.setCallback(mqttCallback);
 }
 
 void MqttPublisher::publish(Data &data)
 {
     // Connect to the mqtt broker
-    if (!mqttClient.connected())
+    if (!_mqttClient.connected())
     {
-        instance->reconnectMqtt();
+        _instance->reconnectMqtt();
     }
-    mqttClient.loop();
+    _mqttClient.loop();
 
     // Publish data
-    String message = "Hello from " + deviceName;
-    if(mqttClient.publish((deviceName + "/topic1").c_str(), message.c_str()) == false)
+    String message = "Hello from " + _deviceName;
+    if(_mqttClient.publish((_deviceName + "/topic1").c_str(), message.c_str()) == false)
     {
         Serial.println("Failed to send message to topic1");
     }
 
-    if(mqttClient.publish((deviceName + "/topic2").c_str(), message.c_str()) == false)
+    if(_mqttClient.publish((_deviceName + "/topic2").c_str(), message.c_str()) == false)
     {
         Serial.println("Failed to send message to topic2");
     }
@@ -61,23 +61,23 @@ void MqttPublisher::publish(Data &data)
 void MqttPublisher::reconnectMqtt()
 {
     // Loop until we're reconnected
-    while (!mqttClient.connected())
+    while (!_mqttClient.connected())
     {
         Serial.print("Attempting MQTT connection...");
         
         // Attempt to connect
-        if (mqttClient.connect(deviceName.c_str(), MQTT_USER, MQTT_PWD))
+        if (_mqttClient.connect(_deviceName.c_str(), MQTT_USER, MQTT_PWD))
         {
             Serial.println("connected");
 
             // Subscribe to messages
-            mqttClient.subscribe((deviceName + "/topic1").c_str());
-            mqttClient.subscribe((deviceName + "/topic2").c_str());
+            _mqttClient.subscribe((_deviceName + "/topic1").c_str());
+            _mqttClient.subscribe((_deviceName + "/topic2").c_str());
         }
         else
         {
             Serial.print("failed, rc=");
-            Serial.print(mqttClient.state());
+            Serial.print(_mqttClient.state());
             Serial.println(" try again in 5 seconds");
             // Wait 5 seconds before retrying
             delay(5000);
@@ -97,11 +97,11 @@ void MqttPublisher::mqttCallback(char *topic, byte *payload, unsigned int length
     }
 
     // Handle incoming messages
-    if (String(topic) == (instance->deviceName + "topic1"))
+    if (String(topic) == (_instance->_deviceName + "topic1"))
     {
         // Do something
     }
-    else if (String(topic) == (instance->deviceName + "topic2"))
+    else if (String(topic) == (_instance->_deviceName + "topic2"))
     {
         // Do something
     }

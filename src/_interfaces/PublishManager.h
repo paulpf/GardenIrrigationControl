@@ -13,8 +13,8 @@ public:
   void registerPublishers(IPublisher *publisher);
   void publish(Data &data);
 
-  private:
-  std::vector<IPublisher*> publishers;
+private:
+  std::vector<IPublisher*> _publishers;
 };
 
 #endif // PUBLISH_MANAGER_H

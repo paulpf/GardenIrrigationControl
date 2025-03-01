@@ -7,13 +7,12 @@
 
 class OtaManager
 {
-private:
-    void setupOta();
-
 public:
     OtaManager();
     void setup();
     void handle();
+private:
+    void setupOta();
 };
 
 #endif // OTA_MANAGER_H

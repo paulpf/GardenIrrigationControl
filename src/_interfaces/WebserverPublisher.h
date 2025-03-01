@@ -15,10 +15,10 @@ public:
     void handleRequest(AsyncWebServerRequest *request);
 
 private:
-    AsyncWebServer webServer;
-    AsyncWebServerRequest *request;
-    String sseData; // Add this line
-    static WebserverPublisher *instance;
+    AsyncWebServer _webServer;
+    AsyncWebServerRequest *_request;
+    String _sseData; // Add this line
+    static WebserverPublisher *_instance;
 };
 
 #endif // WEBSERVER_PUBLISHER_H

@@ -5,11 +5,11 @@
 #include "ESPAsyncWebServer.h"
 
 
-WebserverPublisher *WebserverPublisher::instance = nullptr;
+WebserverPublisher *WebserverPublisher::_instance = nullptr;
 
-WebserverPublisher::WebserverPublisher() : webServer(80), request(nullptr) // Initialize AsyncWebServer with port 80
+WebserverPublisher::WebserverPublisher() : _webServer(80), _request(nullptr) // Initialize AsyncWebServer with port 80
 {
-    instance = this;
+    _instance = this;
 }
 
 WebserverPublisher::~WebserverPublisher()
@@ -19,23 +19,23 @@ WebserverPublisher::~WebserverPublisher()
 void WebserverPublisher::setup()
 {
     // Route for root / web page
-    webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+    _webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
     {
-        if (instance != nullptr) 
+        if (_instance != nullptr) 
         {
-            instance->handleRequest(request);
+            _instance->handleRequest(request);
         }
     });
 
     // Route for SSE
-    webServer.on("/events", HTTP_GET, [](AsyncWebServerRequest *request)
+    _webServer.on("/events", HTTP_GET, [](AsyncWebServerRequest *request)
     {
         AsyncWebServerResponse *response = request->beginChunkedResponse("text/event-stream", [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t 
         {
-            if (instance != nullptr && instance->sseData.length() > 0)
+            if (_instance != nullptr && _instance->_sseData.length() > 0)
             {
-                String response = "data: " + instance->sseData + "\n\n";
-                instance->sseData = "";
+                String response = "data: " + _instance->_sseData + "\n\n";
+                _instance->_sseData = "";
                 memcpy(buffer, response.c_str(), response.length());
                 return response.length();
             }
@@ -46,14 +46,14 @@ void WebserverPublisher::setup()
     });
 
     // Start server
-    webServer.begin();
+    _webServer.begin();
 }
 
 // Implement the interface method
 void WebserverPublisher::publish(Data &data)
 {
     // Store the data in sseData member variable
-    sseData = String(data.getCurrentTime());
+    _sseData = String(data.getCurrentTime());
 }
 
 void WebserverPublisher::handleRequest(AsyncWebServerRequest *request)

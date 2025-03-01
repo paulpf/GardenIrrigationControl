@@ -15,8 +15,8 @@ EspWifiClient::EspWifiClient()
 
 void EspWifiClient::setup(String deviceName)
 {
-    this->deviceName = deviceName;
-    wifiClient = WiFiClient();
+    this->_deviceName = deviceName;
+    _wifiClient = WiFiClient();
 
     WiFi.setHostname(deviceName.c_str());
     WiFi.begin(WIFI_SSID, WIFI_PWD);
@@ -31,7 +31,7 @@ void EspWifiClient::setup(String deviceName)
 
 WiFiClient *EspWifiClient::getWifiClient()
 {
-    return &wifiClient;
+    return &_wifiClient;
 }
 
 // Method to get device name

@@ -3,7 +3,7 @@
 
 Data::Data()
 {
-    this->currentTime = 0;
+    this->_currentTime = 0;
 }
 
 Data::~Data()
@@ -12,10 +12,10 @@ Data::~Data()
 
 void Data::setCurrentTime(unsigned long currentTime)
 {
-    this->currentTime = currentTime;
+    this->_currentTime = currentTime;
 }
 
 unsigned long Data::getCurrentTime()
 {
-    return this->currentTime;
+    return this->_currentTime;
 }

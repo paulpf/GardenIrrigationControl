@@ -12,12 +12,12 @@ PublishManager::~PublishManager()
 
 void PublishManager::registerPublishers(IPublisher *publisher)
 {
-    publishers.push_back(publisher);
+    _publishers.push_back(publisher);
 }
 
 void PublishManager::publish(Data &data)
 {
-    for (IPublisher* publisher : publishers)
+    for (IPublisher* publisher : _publishers)
     {
         publisher->publish(data);
     }

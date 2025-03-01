@@ -18,7 +18,7 @@ public:
   void writeOutputs();
 
 private:
-  IrrigationZone *irrigationZones[8];
+  IrrigationZone *_irrigationZones[8];
 };
 
 #endif // IRRIGATIONMANAGER_H

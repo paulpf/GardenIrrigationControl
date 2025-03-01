@@ -13,7 +13,7 @@ public:
   unsigned long getCurrentTime();
 
 private:
-  unsigned long currentTime;
+  unsigned long _currentTime;
 };
 
 #endif // DATA_H

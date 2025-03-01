@@ -15,8 +15,8 @@ public:
     String getDeviceName();
 
 private:
-    WiFiClient wifiClient;
-    String deviceName;
+    WiFiClient _wifiClient;
+    String _deviceName;
     void connect();
     void reconnect();
 };
