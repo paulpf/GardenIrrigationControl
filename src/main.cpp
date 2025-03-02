@@ -1,18 +1,22 @@
 #include <Arduino.h>
+#include "./_interfaces/HardwareButton.h"
+#include <memory>
 
-// put function declarations here:
-int myFunction(int, int);
+const int HWBTN_PIN = 23;
 
-void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+std::unique_ptr<HardwareButton> hwbtn;
+
+void setup() 
+{
+  Serial.begin(115200);
+  hwbtn = std::unique_ptr<HardwareButton>(new HardwareButton());
+  hwbtn->setup(HWBTN_PIN);
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+void loop() 
+{
+  bool hwbuttonState = hwbtn->isPressed();
+  
+  delay(100);
 }
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
-}
