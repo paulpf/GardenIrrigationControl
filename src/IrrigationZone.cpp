@@ -15,24 +15,26 @@ void IrrigationZone::setup(int hwBtnPin, int relayPin, unsigned long relayDurati
     pinMode(_hwBtnPin, INPUT_PULLDOWN);
     pinMode(_relayPin, OUTPUT);
     switchRelayOFF();
-    attachInterrupt(digitalPinToInterrupt(_hwBtnPin), std::bind(&IrrigationZone::handleBtn1Pressed, this), RISING);
+    attachInterrupt(digitalPinToInterrupt(_hwBtnPin), std::bind(&IrrigationZone::OnHwBtnPressed, this), RISING);
 }
 
-void IrrigationZone::printToConsole(String message)
+void IrrigationZone::trace(String message)
 {
+    #ifdef TRACE
     String timeStamp = String(millis());
     Serial.println(timeStamp + " | " + message);
+    #endif
 }
 
-void IRAM_ATTR IrrigationZone::handleBtn1Pressed() 
+void IRAM_ATTR IrrigationZone::OnHwBtnPressed() 
 {
-    printToConsole("Interrupt triggered");
+    trace("Interrupt triggered");
     unsigned long now = millis();
     if (now - _lastDebounceTime > _debounceDelay) 
     {
         _lastDebounceTime = now;
         _btnPressed = true;
-        printToConsole("Button pressed");
+        trace("Button pressed");
     }
 }
 
@@ -40,14 +42,14 @@ void IrrigationZone::switchRelayON()
 {
     _relayState = HIGH;
     digitalWrite(_relayPin, LOW);
-    printToConsole("Relay switched on");
+    trace("Relay switched on");
 }
 
 void IrrigationZone::switchRelayOFF()
 {
     _relayState = LOW;
     digitalWrite(_relayPin, HIGH);
-    printToConsole("Relay switched off");
+    trace("Relay switched off");
 }
 
 void IrrigationZone::update()
@@ -55,7 +57,7 @@ void IrrigationZone::update()
     if (_btnPressed) 
     {
         _btnPressed = false;
-        printToConsole("Button pressed quit!");
+        trace("Button pressed quit!");
 
         if (_relayState == HIGH) 
         {

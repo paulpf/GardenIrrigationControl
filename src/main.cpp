@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "IrrigationZone.h"
 
+//#define TRACE
+
 IrrigationZone irrigationZone;
 
 void setup() 

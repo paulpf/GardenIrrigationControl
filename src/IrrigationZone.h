@@ -10,7 +10,7 @@ class IrrigationZone
 public:
     IrrigationZone();
     void setup(int hwBtnPin, int relayPin, unsigned long relayDuration);
-    void handleBtn1Pressed();
+    void OnHwBtnPressed();
     void switchRelayON();
     void switchRelayOFF();
     void update();
@@ -24,10 +24,7 @@ private:
     const int _debounceDelay = 500; // debounce time in milliseconds
     volatile bool _btnPressed;
     bool _relayState;
-
-
-    void printToConsole(String message);
+    void trace(String message);
 };
-
 
 #endif
