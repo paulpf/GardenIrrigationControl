@@ -1,77 +1,44 @@
 #include "IrrigationZone.h"
 #include <Arduino.h>
-#include "FunctionalInterrupt.h"
+#include "Trace.h"
 
 IrrigationZone::IrrigationZone()
 {
-
 }
 
-void IrrigationZone::setup(int hwBtnPin, int relayPin, unsigned long relayDuration)
+IrrigationZone::~IrrigationZone()
 {
-    _hwBtnPin = hwBtnPin;
-    _relayPin = relayPin;
-    _relayOnDuration = relayDuration;
-    pinMode(_hwBtnPin, INPUT_PULLDOWN);
-    pinMode(_relayPin, OUTPUT);
-    switchRelayOFF();
-    attachInterrupt(digitalPinToInterrupt(_hwBtnPin), std::bind(&IrrigationZone::OnHwBtnPressed, this), RISING);
 }
 
-void IrrigationZone::trace(String message)
+void IrrigationZone::setup()
 {
-    #ifdef TRACE
-    String timeStamp = String(millis());
-    Serial.println(timeStamp + " | " + message);
-    #endif
 }
 
-void IRAM_ATTR IrrigationZone::OnHwBtnPressed() 
+bool IrrigationZone::getRelaisState(int relayId)
 {
-    trace("Interrupt triggered");
-    unsigned long now = millis();
-    if (now - _lastDebounceTime > _debounceDelay) 
-    {
-        _lastDebounceTime = now;
-        _btnPressed = true;
-        trace("Button pressed");
-    }
+  // Here is to implement the logic to get the state of the relay
+  Trace::log("SwBtnState: " + String(_swBtnState) + " | HwBtnState: " + String(_hwBtnState));
+  if (_swBtnState || _hwBtnState)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }
 
-void IrrigationZone::switchRelayON()
+void IrrigationZone::setSwBtnState(bool btnState)
 {
-    _relayState = HIGH;
-    digitalWrite(_relayPin, LOW);
-    trace("Relay switched on");
+  _swBtnState = btnState;
 }
 
-void IrrigationZone::switchRelayOFF()
+void IrrigationZone::setHwBtnState(bool btnState)
 {
-    _relayState = LOW;
-    digitalWrite(_relayPin, HIGH);
-    trace("Relay switched off");
+  _hwBtnState = btnState;
 }
 
-void IrrigationZone::update()
+void IrrigationZone::setDuration(int duration)
 {
-    if (_btnPressed) 
-    {
-        _btnPressed = false;
-        trace("Button pressed quit!");
-
-        if (_relayState == HIGH) 
-        {
-            switchRelayOFF();
-        }
-        else
-        {
-            switchRelayON();
-            _relayOnStartTime = millis();
-        }    
-    }
-  
-    if (_relayState == HIGH && (millis() - _relayOnStartTime >= _relayOnDuration)) 
-    {
-        switchRelayOFF();
-    }
+  _duration = duration;
 }

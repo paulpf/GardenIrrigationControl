@@ -8,23 +8,20 @@
 class IrrigationZone 
 {
 public:
-    IrrigationZone();
-    void setup(int hwBtnPin, int relayPin, unsigned long relayDuration);
-    void OnHwBtnPressed();
-    void switchRelayON();
-    void switchRelayOFF();
-    void update();
+  IrrigationZone();
+  ~IrrigationZone();
+  void setup();
+  bool getRelaisState(int relayId);
+  void setSwBtnState(bool btnState);
+  void setHwBtnState(bool btnState);
+  void setDuration(int duration);
 
 private:
-    int _hwBtnPin;
-    int _relayPin;
-    unsigned long _relayOnDuration;
-    unsigned long _lastDebounceTime;
-    unsigned long _relayOnStartTime;
-    const int _debounceDelay = 500; // debounce time in milliseconds
-    volatile bool _btnPressed;
-    bool _relayState;
-    void trace(String message);
+  int _relayId;
+  bool _swBtnState;
+  bool _hwBtnState;
+  unsigned long _duration;
+  unsigned long _startTime;
 };
 
 #endif
