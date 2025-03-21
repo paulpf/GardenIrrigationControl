@@ -40,6 +40,31 @@ void setupWifi()
   Serial.println("Client name: '" + clientName + "'");
 }
 
+
+
+
+int btn1GpioChannel = 23;
+bool btn1Pressed = false;
+unsigned long _lastDebounceTime;
+const int _debounceDelay = 500; // debounce time in milliseconds
+
+void IRAM_ATTR OnHwBtn1Pressed() 
+{
+  unsigned long now = millis();
+  if (now - _lastDebounceTime > _debounceDelay) 
+  {
+    _lastDebounceTime = now;
+    btn1Pressed = true;
+  }  
+}
+
+void setupButton1()
+{
+  pinMode(btn1GpioChannel, INPUT_PULLDOWN);
+  attachInterrupt(digitalPinToInterrupt(btn1GpioChannel), OnHwBtn1Pressed, RISING);
+}
+
+
 void setup() 
 {
   // Setup console
@@ -48,6 +73,9 @@ void setup()
 
   // Setup wifi
   setupWifi();
+
+  // Setup button
+  setupButton1();
 }
 
 
@@ -57,6 +85,11 @@ void loop()
   Trace::log("Loop: " + String(millis()));
 
   // ============ Read ============
+  if (btn1Pressed)
+  {
+    Trace::log("Loop: Button1 pressed");
+    btn1Pressed = false;
+  }
 
 
   
