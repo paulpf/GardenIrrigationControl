@@ -12,26 +12,8 @@
 #include "./_secrets/WifiSecret.h"
 #endif
 
-int loopDelay = 1000;
-int countToTryReconnect = 0;
-int maximumCountToTryReconnect = 10;
-unsigned long lastWifiCheckMillis = 0;
-const unsigned long wifiCheckInterval = 30000; // Check every 30 seconds
-enum WifiState { WIFI_DISCONNECTED, WIFI_CONNECTING, WIFI_CONNECTED };
-WifiState wifiState = WIFI_DISCONNECTED;
-unsigned long wifiConnectStartTime = 0;
-int reconnectAttempt = 0;
-int delayTime = 0;
-
-int btn1GpioChannel = 23;
-bool btn1Pressed = false;
-unsigned long _lastDebounceTime;
-const int _debounceDelay = 500; // debounce time in milliseconds
-
-int relais1GpioChannel = 22;
-bool relais1State = false;
-
-
+// ================ Helper functions ================
+// Help function to replace characters in a string
 String replaceChars(String str, char charsToReplace, char replaceWith)
 {
   for (int i = 0; i < str.length(); i++)
@@ -44,15 +26,56 @@ String replaceChars(String str, char charsToReplace, char replaceWith)
   return str;
 }
 
+
+// ================ Constants ================
+int loopDelay = 1000;
 // Name is used for the hostname. It is combined with the MAC address to create a unique name.
 String clientName = "GardenController-" + replaceChars(WiFi.macAddress(), ':', '-');
 
+// ================ WiFi ================
+int countToTryReconnect = 0;
+int maximumCountToTryReconnect = 10;
+unsigned long lastWifiCheckMillis = 0;
+const unsigned long wifiCheckInterval = 30000; // Check every 30 seconds
+enum WifiState 
+{
+  WIFI_DISCONNECTED,
+  WIFI_CONNECTING,
+  WIFI_CONNECTED 
+};
+WifiState wifiState = WIFI_DISCONNECTED;
+unsigned long wifiConnectStartTime = 0;
+int reconnectAttempt = 0;
+
+// ================ Hardware ================
+// Button 1
+int btn1GpioChannel = 23;
+bool btn1Pressed = false;
+unsigned long _lastDebounceTime;
+const int _debounceDelay = 500; // debounce time in milliseconds
+
+// Relay 1
+int relais1GpioChannel = 22;
+bool relais1State = false;
+
+// ================ Wifi Functions ================
 void TraceWifiState()
 {
   Trace::log("WiFi got IP: " + WiFi.localIP().toString());
   Trace::log("WiFi signal strength: " + String(WiFi.RSSI()) + " dBm");
   Trace::log("WiFi SSID: " + WiFi.SSID());
   Trace::log("WiFi client name: " + clientName);
+}
+
+void checkWifiSignal() 
+{
+  long rssi = WiFi.RSSI();
+  Trace::log("WiFi signal strength: " + String(rssi) + " dBm");
+  
+  if (rssi < -80) 
+  {
+    Trace::log("Warning: Poor WiFi signal");
+  }
 }
 
 void manageWifiConnection() 
@@ -99,44 +122,11 @@ void manageWifiConnection()
         WiFi.disconnect();
         wifiState = WIFI_DISCONNECTED;
       }
+      else 
+      {
+        checkWifiSignal();
+      }
       break;
-  }
-}
-
-void IRAM_ATTR OnHwBtn1Pressed() 
-{
-  unsigned long now = millis();
-  if (now - _lastDebounceTime > _debounceDelay) 
-  {
-    _lastDebounceTime = now;
-    btn1Pressed = !btn1Pressed;
-    Trace::log("Loop: Button1 pressed");
-  }  
-}
-
-void setupButton1()
-{
-  pinMode(btn1GpioChannel, INPUT_PULLDOWN);
-  attachInterrupt(digitalPinToInterrupt(btn1GpioChannel), OnHwBtn1Pressed, RISING);
-}
-
-void setupRelais1()
-{
-  pinMode(relais1GpioChannel, OUTPUT);
-  digitalWrite(relais1GpioChannel, HIGH);
-}
-
-void switchRelay(bool state)
-{
-  if (state)
-  {
-    Trace::log("Switching relay ON");
-    digitalWrite(relais1GpioChannel, LOW);
-  }
-  else
-  {
-    Trace::log("Switching relay OFF");
-    digitalWrite(relais1GpioChannel, HIGH);
   }
 }
 
@@ -159,18 +149,48 @@ void WiFiEvent(WiFiEvent_t event)
   }
 }
 
-// Add to your regular checks
-void checkWifiSignal() 
+
+// ================ Hardware Functions ================
+// Button 1
+void IRAM_ATTR OnHwBtn1Pressed() 
 {
-  long rssi = WiFi.RSSI();
-  Trace::log("WiFi signal strength: " + String(rssi) + " dBm");
-  
-  if (rssi < -80) 
+  unsigned long now = millis();
+  if (now - _lastDebounceTime > _debounceDelay) 
   {
-    Trace::log("Warning: Poor WiFi signal");
+    _lastDebounceTime = now;
+    btn1Pressed = !btn1Pressed;
+    Trace::log("Loop: Button1 pressed");
+  }  
+}
+
+void setupButton1()
+{
+  pinMode(btn1GpioChannel, INPUT_PULLDOWN);
+  attachInterrupt(digitalPinToInterrupt(btn1GpioChannel), OnHwBtn1Pressed, RISING);
+}
+
+// Relay 1
+void setupRelais1()
+{
+  pinMode(relais1GpioChannel, OUTPUT);
+  digitalWrite(relais1GpioChannel, HIGH);
+}
+
+void switchRelay(bool state)
+{
+  if (state)
+  {
+    Trace::log("Switching relay ON");
+    digitalWrite(relais1GpioChannel, LOW);
+  }
+  else
+  {
+    Trace::log("Switching relay OFF");
+    digitalWrite(relais1GpioChannel, HIGH);
   }
 }
 
+// ================ Main ================
 
 void setup() 
 {
@@ -190,7 +210,6 @@ void setup()
 
   Trace::log("Setup end");
 }
-
 
 void loop() 
 {
