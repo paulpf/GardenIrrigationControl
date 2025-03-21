@@ -1,8 +1,8 @@
-#ifdef USE_PRIVATE_SECRET
-#include "../../_secrets/WifiSecret.h"
-#else
-#include "./_secrets/WifiSecret.h"
-#endif
+// #ifdef USE_PRIVATE_SECRET
+// #include "../../_secrets/WifiSecret.h"
+// #else
+// #include "./_secrets/WifiSecret.h"
+// #endif
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -19,7 +19,7 @@ void EspWifiClient::setup(String deviceName)
   _wifiClient = WiFiClient();
 
   WiFi.setHostname(deviceName.c_str());
-  WiFi.begin(WIFI_SSID, WIFI_PWD);
+  //WiFi.begin(WIFI_SSID, WIFI_PWD);
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);

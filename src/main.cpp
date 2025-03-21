@@ -1,107 +1,70 @@
-#include <Arduino.h>
-#include "IrrigationZone.h"
-#include "EspWifiClient.h"
-#include "MqttClient.h"
-#include "Data.h"
-#include "Trace.h"
-#include "HwButton.h"
-#include "SwButton.h"
-#include "Relais.h"
-#include "Timer.h"
-
 #define TRACE
 
-IrrigationZone irrigationZone;
-EspWifiClient espWifiClient;
-MqttClient mqttClient;
-Data data;
+#include <Arduino.h>
+#include "Trace.h"
 
-HwButton hwButton1;
-SwButton swButton1;
-Relais relais1;
-Timer timer1;
+#include <WiFi.h>
+#ifdef USE_PRIVATE_SECRET
+#include "../../_secrets/WifiSecret.h"
+#else
+#include "./_secrets/WifiSecret.h"
+#endif
 
-String deviceName = "GardenControl";
 
-void reconnectCommunication()
+String replaceChars(String str, char charsToReplace, char replaceWith)
 {
-  // Reconnect to wifi if connection is lost
-  espWifiClient.reconnectWifi();
+  for (int i = 0; i < str.length(); i++)
+  {
+    if (str[i] == charsToReplace)
+    {
+      str[i] = replaceWith;
+    }
+  }
+  return str;
+}
 
-  // Reconnect to mqtt if connection is lost
-  mqttClient.reconnectMqtt();
+// Name is used for the hostname. It is combined with the MAC address to create a unique name.
+String clientName = "GardenController-" + replaceChars(WiFi.macAddress(), ':', '-');
+
+void setupWifi()
+{
+  WiFi.begin(WIFI_SSID, WIFI_PWD);
+  WiFi.setHostname(clientName.c_str());
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WiFi connected at IP address: ");
+  Serial.println(WiFi.localIP());
+  Serial.println("Client name: '" + clientName + "'");
 }
 
 void setup() 
 {
   // Setup console
   Serial.begin(115200);
-
   Trace::log("Setup begin");
 
-  // EspWifiClient setup
-  Trace::log("EspWifiClient setup");
-  espWifiClient.setup(deviceName);
-
-  // MqttPublisher setup
-  Trace::log("MqttClient setup");
-  mqttClient = MqttClient();
-  mqttClient.setup(espWifiClient.getWifiClient(), deviceName);
-
-  reconnectCommunication();
-
-  // HwButton setup
-  hwButton1.setup(23);
-
-  // SwButton setup
-  swButton1.setup(&mqttClient, 1);
-  swButton1.setState(LOW);
-
-  // Relais setup
-  relais1.setup(22);
-
-  // Timer setup
-  timer1.setup(&mqttClient, 1);
-
-  // IrrigationZone setup
-  Trace::log("IrrigationZone setup");
-  irrigationZone.setup();
+  // Setup wifi
+  setupWifi();
 }
+
+
 
 void loop() 
 {
   Trace::log("Loop: " + String(millis()));
 
-  // Reconnect to wifi if connection is lost
-  espWifiClient.reconnectWifi();
-
-  // Reconnect to mqtt if connection is lost
-  mqttClient.reconnectMqtt();
-  
-  // Process incoming MQTT messages
-  mqttClient.loop();
-
   // ============ Read ============
 
-  bool swBtn1State = swButton1.getState();
-  bool hwBtn1State = hwButton1.getState();
-  int duration1 = timer1.getDuration();
-  Trace::log("swBtn1State: " + String(swBtn1State) + " | duration1: " + String(duration1) + " | hwBtn1State: " + String(hwBtn1State));
 
+  
   // ============ Process logic ============
 
-  irrigationZone.setSwBtnState(swBtn1State);
-  irrigationZone.setHwBtnState(hwBtn1State);
-  irrigationZone.setDuration(duration1);
-
-  bool relais1State = irrigationZone.getRelaisState(1);
-  Trace::log("Relais1State: " + String(relais1State));
-
+  
   // ============ Write ============
   
-  // Update swButton1 state in case if relay1 is switched on/off
-  swButton1.setState(relais1State);
-  relais1.setState(relais1State);
-
+  
   delay(1000);
 }
