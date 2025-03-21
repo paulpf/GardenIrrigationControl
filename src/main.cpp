@@ -95,6 +95,7 @@ void manageWifiConnection()
     case WIFI_CONNECTING:
       if (WiFi.status() == WL_CONNECTED) 
       {
+        Trace::log("WiFi connected after connection attempt " + String(countToTryReconnect));
         TraceWifiState();
         wifiState = WIFI_CONNECTED;
         countToTryReconnect = 0;
@@ -122,10 +123,6 @@ void manageWifiConnection()
         WiFi.disconnect();
         wifiState = WIFI_DISCONNECTED;
       }
-      else 
-      {
-        checkWifiSignal();
-      }
       break;
   }
 }
@@ -136,10 +133,13 @@ void WiFiEvent(WiFiEvent_t event)
   {
     case SYSTEM_EVENT_STA_CONNECTED:
       Trace::log("Connected to WiFi");
+      wifiState = WIFI_CONNECTED;
       break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
       Trace::log("Disconnected from WiFi");
+      wifiState = WIFI_DISCONNECTED;
       // Can trigger reconnection here
+      manageWifiConnection();
       break;
     case SYSTEM_EVENT_STA_GOT_IP:
       TraceWifiState();
@@ -232,6 +232,7 @@ void loop()
   if (WiFi.status() == WL_CONNECTED) 
   {
     // Online operations (cloud updates, etc.)
+    checkWifiSignal();
   } 
   else 
   {
