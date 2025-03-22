@@ -51,12 +51,17 @@ int reconnectAttempt = 0;
 // Button 1
 int btn1GpioChannel = 23;
 bool btn1Pressed = false;
-unsigned long _lastDebounceTime;
-const int _debounceDelay = 500; // debounce time in milliseconds
+unsigned long lastDebounceTime;
+const int debounceDelay = 500; // debounce time in milliseconds
 
 // Relay 1
 int relais1GpioChannel = 22;
 bool relais1State = false;
+
+// ================ Timer ================
+unsigned long startTimeRel1;
+int durationRel1;
+int remainingTimeRel1;
 
 // ================ Wifi Functions ================
 void TraceWifiState()
@@ -155,10 +160,10 @@ void WiFiEvent(WiFiEvent_t event)
 void IRAM_ATTR OnHwBtn1Pressed() 
 {
   unsigned long now = millis();
-  if (now - _lastDebounceTime > _debounceDelay) 
+  if (now - lastDebounceTime > debounceDelay) 
   {
-    _lastDebounceTime = now;
-    btn1Pressed = !btn1Pressed;
+    lastDebounceTime = now;
+    btn1Pressed = true;
     Trace::log("Loop: Button1 pressed");
   }  
 }
@@ -239,17 +244,39 @@ void loop()
     // Offline operations (use local controls only)
   }
 
-  if (btn1Pressed)
+  // Button 1 => Relay 1: switch on for 5 seconds
+  if (btn1Pressed && !relais1State)
   {
+    btn1Pressed = false;
     relais1State = true;
+
+    // Start timer
+    startTimeRel1 = millis();
+    durationRel1 = 5000;
   }
-  else
+
+  // Button 1 => Relay 1: switch off immediately if pressed again
+  if(btn1Pressed && relais1State)
   {
+    btn1Pressed = false;
     relais1State = false;
   }
   
   // ============ Write ============
+
+  // Update hardware depending on logic and timers
   switchRelay(relais1State);
+
+  // ============ Timers ============
+  if (relais1State)
+  {
+    remainingTimeRel1 = durationRel1 - (millis() - startTimeRel1);
+    Trace::log("Remaining time for relais1: " + String(remainingTimeRel1));
+    if (remainingTimeRel1 <= 0)
+    {
+      relais1State = false;
+    }
+  }
   
   delay(loopDelay);
 }
