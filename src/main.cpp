@@ -4,12 +4,19 @@
 #include "Trace.h"
 #include <algorithm>
 #include <cmath>
+#include <PubSubClient.h>
+#include <WiFiClient.h>
 
 #include <WiFi.h>
+
 #ifdef USE_PRIVATE_SECRET
 #include "../../_secrets/WifiSecret.h"
+#include "../../_configs/MqttConfig.h"
+#include "../../_secrets/MqttSecret.h"
 #else
 #include "./_secrets/WifiSecret.h"
+#include "./_config/MqttConfig.h"
+#include "./_secrets/MqttSecret.h"
 #endif
 
 // ================ Helper functions ================
@@ -47,21 +54,154 @@ WifiState wifiState = WIFI_DISCONNECTED;
 unsigned long wifiConnectStartTime = 0;
 int reconnectAttempt = 0;
 
-// ================ Hardware ================
+// ================ Hardware buttons ================
 // Button 1
 int btn1GpioChannel = 23;
-bool btn1Pressed = false;
+bool hwBtn1Pressed = false;
 unsigned long lastDebounceTime;
 const int debounceDelay = 500; // debounce time in milliseconds
 
+// ================ Software buttons (via MQTT) ================
+// Button 1
+bool swBtn1State = false;
+bool swBtn1StateOld = false;
+
+// ================ Relays ================
 // Relay 1
 int relais1GpioChannel = 22;
 bool relais1State = false;
 
-// ================ Timer ================
+// ================ Timers ================
+// for relay 1
 unsigned long startTimeRel1;
 int durationRel1;
 int remainingTimeRel1;
+
+// ================ MQTT ================
+WiFiClient wifiClient;
+PubSubClient pubSubClient(wifiClient);
+
+// MQTT state management
+enum MqttState 
+{
+  _MQTT_DISCONNECTED,
+  _MQTT_CONNECTING,
+  _MQTT_CONNECTED
+};
+MqttState mqttState = _MQTT_DISCONNECTED;
+unsigned long lastMqttAttemptMillis = 0;
+const unsigned long mqttRetryInterval = 5000; // Wait 5 seconds between connection attempts
+int mqttReconnectAttempts = 0;
+const int maxMqttReconnectAttempts = 5;
+
+// Callback function to handle incoming MQTT messages
+void mqttCallback(char* topic, byte* payload, unsigned int length)
+{
+  Trace::log("Message arrived [" + String(topic) + "]");
+    String message = "";
+    for (int i = 0; i < length; i++) 
+    {
+      message += (char)payload[i];
+    }
+    Trace::log("Message: " + message);
+
+    if (String(topic).startsWith(clientName + "/swBtn1"))
+    {
+      swBtn1State = message == "true";
+    }
+}
+
+bool checkDnsResolution() 
+{
+  IPAddress resolvedIP;
+  if(!WiFi.hostByName(MQTT_SERVER_IP, resolvedIP)) 
+  {
+    Trace::log("DNS resolution failed for " + String(MQTT_SERVER_IP));
+    return false;
+  }
+  Trace::log("Resolved MQTT server to: " + resolvedIP.toString());
+  return true;
+}
+
+void reconnectMqtt() 
+{
+  // Single connection attempt instead of blocking loop
+  Trace::log("Attempting MQTT connection...");
+  if (pubSubClient.connect(clientName.c_str(), MQTT_USER, MQTT_PWD)) 
+  {
+    Trace::log("MQTT connected");
+    mqttState = _MQTT_CONNECTED;
+    mqttReconnectAttempts = 0;
+    
+    // Subscribe to topics
+    pubSubClient.subscribe((clientName + "/swBtn1").c_str());
+  } 
+  else 
+  {
+    mqttReconnectAttempts++;
+    Trace::log("MQTT connection failed, rc=" + String(pubSubClient.state()) + 
+               ", attempts: " + String(mqttReconnectAttempts));
+    mqttState = _MQTT_DISCONNECTED;
+    
+    if (mqttReconnectAttempts >= maxMqttReconnectAttempts) {
+      Trace::log("Maximum MQTT reconnection attempts reached, will try again later");
+      mqttReconnectAttempts = 0;
+    }
+  }
+}
+
+void manageMqttConnection() 
+{
+  Trace::log("Managing MQTT connection");
+  
+  if (WiFi.status() != WL_CONNECTED) 
+  {
+    Trace::log("Cannot connect to MQTT - WiFi is disconnected");
+    mqttState = _MQTT_DISCONNECTED;
+    return; // Can't connect to MQTT without WiFi
+  }
+
+  // DNS check before attempting connection
+  if (mqttState == _MQTT_DISCONNECTED && !checkDnsResolution()) 
+  {
+    return;  // Skip connection attempt if DNS resolution fails
+  }
+  
+  switch (mqttState) 
+  {
+    case _MQTT_DISCONNECTED:
+      Trace::log("Mqtt is disconnected");
+      reconnectMqtt();
+      lastMqttAttemptMillis = millis();
+      break;
+      
+    case _MQTT_CONNECTED:
+      if (!pubSubClient.connected()) 
+      {
+        Trace::log("MQTT connection lost");
+        mqttState = _MQTT_DISCONNECTED;
+      } 
+      else 
+      {
+        Trace::log("MQTT loop");
+        pubSubClient.loop(); // Process incoming messages and maintain connection
+      }
+      break;
+  }
+}
+
+void publishMqtt(String topic, String payload) 
+{
+  if (mqttState == _MQTT_CONNECTED) 
+  {
+    pubSubClient.publish(topic.c_str(), payload.c_str());
+  }
+  else 
+  {
+    Trace::log("Cannot publish to MQTT - not connected");
+  }
+}
+
 
 // ================ Wifi Functions ================
 void TraceWifiState()
@@ -163,7 +303,7 @@ void IRAM_ATTR OnHwBtn1Pressed()
   if (now - lastDebounceTime > debounceDelay) 
   {
     lastDebounceTime = now;
-    btn1Pressed = true;
+    hwBtn1Pressed = true;
     Trace::log("Loop: Button1 pressed");
   }  
 }
@@ -203,10 +343,14 @@ void setup()
   Serial.begin(115200);
   Trace::log("Setup begin");
 
+  // Setup WiFi
   WiFi.onEvent(WiFiEvent);
-
   manageWifiConnection();
 
+  // Setup MQTT
+  pubSubClient.setServer(MQTT_SERVER_IP, MQTT_SERVER_PORT);
+  pubSubClient.setCallback(mqttCallback);
+  
   // Setup button
   setupButton1();
 
@@ -228,26 +372,31 @@ void loop()
     manageWifiConnection();
   }
 
+  // Non-blocking MQTT management
+  if (mqttState == _MQTT_DISCONNECTED && 
+    currentMillis - lastMqttAttemptMillis >= mqttRetryInterval) 
+  {
+    manageMqttConnection();
+  }
+  else if (mqttState == _MQTT_CONNECTED) 
+  {
+    pubSubClient.loop(); // Process incoming messages
+  }
+
   // ============ Read ============
   
 
 
   
   // ============ Process logic ============
-  if (WiFi.status() == WL_CONNECTED) 
-  {
-    // Online operations (cloud updates, etc.)
-    checkWifiSignal();
-  } 
-  else 
-  {
-    // Offline operations (use local controls only)
-  }
-
+  
   // Button 1 => Relay 1: switch on for 5 seconds
-  if (btn1Pressed && !relais1State)
+  if (!relais1State && 
+    (hwBtn1Pressed || 
+    (swBtn1State == true && swBtn1StateOld == false)))
   {
-    btn1Pressed = false;
+    hwBtn1Pressed = false;
+    swBtn1StateOld = swBtn1State;
     relais1State = true;
 
     // Start timer
@@ -256,9 +405,12 @@ void loop()
   }
 
   // Button 1 => Relay 1: switch off immediately if pressed again
-  if(btn1Pressed && relais1State)
+  if(relais1State && 
+    hwBtn1Pressed ||
+    (swBtn1State == false && swBtn1StateOld == true))
   {
-    btn1Pressed = false;
+    hwBtn1Pressed = false;
+    swBtn1StateOld = swBtn1State;
     relais1State = false;
   }
   
@@ -275,7 +427,32 @@ void loop()
     if (remainingTimeRel1 <= 0)
     {
       relais1State = false;
+      swBtn1State = false;
+      hwBtn1Pressed = false;
     }
+  }
+
+  // ============ MQTT ============
+  if (mqttState == _MQTT_CONNECTED) 
+  {
+    publishMqtt(clientName + "/relais1", String(relais1State));
+    publishMqtt(clientName + "/remainingTimeRel1", String(remainingTimeRel1));
+    // Block MQTT updates for buttons to avoid feedback loop
+    if(swBtn1State != swBtn1StateOld)
+    {
+      // Publisch a string representation of the boolean state
+      publishMqtt(clientName + "/swBtn1", swBtn1State ? "true" : "false");
+    }
+  }
+
+  if (WiFi.status() == WL_CONNECTED) 
+  {
+    // Online operations (cloud updates, etc.)
+    checkWifiSignal();
+  } 
+  else 
+  {
+    // Offline operations (use local controls only)
   }
   
   delay(loopDelay);

@@ -8,13 +8,13 @@
 #include "ITimer.h"
 
 
-#ifdef USE_PRIVATE_SECRET
-#include "../../_secrets/MqttSecret.h"
-#include "../../_configs/MqttConfig.h"
-#else
-#include "_secrets/MqttSecret.h"
-#include "_config/MqttConfig.h"
-#endif
+// #ifdef USE_PRIVATE_SECRET
+// #include "../../_secrets/MqttSecret.h"
+// #include "../../_configs/MqttConfig.h"
+// #else
+// #include "_secrets/MqttSecret.h"
+// #include "_config/MqttConfig.h"
+// #endif
 
 MqttClient *MqttClient::instance = nullptr;
 
@@ -35,7 +35,7 @@ void MqttClient::setup(WiFiClient *wifiClient, String deviceName)
   this->_wifiClient = wifiClient;
   this->_deviceName = deviceName;
   _pubSubClient.setClient(*wifiClient);
-  _pubSubClient.setServer(MQTT_SERVER_IP, MQTT_SERVER_PORT);
+  //_pubSubClient.setServer(MQTT_SERVER_IP, MQTT_SERVER_PORT);
   _pubSubClient.setCallback(MqttClient::instance->mqttCallback);
 }
 
@@ -64,7 +64,7 @@ void MqttClient::reconnectMqtt()
   {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (_pubSubClient.connect(_deviceName.c_str(), MQTT_USER, MQTT_PWD))
+    //if (_pubSubClient.connect(_deviceName.c_str(), MQTT_USER, MQTT_PWD))
     {
       Serial.println("connected");
       // Once connected, publish an announcement...
@@ -81,7 +81,7 @@ void MqttClient::reconnectMqtt()
         _pubSubClient.subscribe((_deviceName + "/timer_Nr" + String(x.first)).c_str());
       }
     }
-    else
+    //else
     {
       Serial.print("failed, rc=");
       Serial.print(_pubSubClient.state());
