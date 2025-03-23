@@ -15,7 +15,6 @@
     - [Relais module](#relais-module)
     - [Debugger ESP-Prog](#debugger-esp-prog)
   - [Circuit Diagram](#circuit-diagram)
-  - [Software design](#software-design)
 
 ## Introduction
 
@@ -60,11 +59,3 @@ The system should:
 
 <img src="_assets/_images/circuit.drawio.svg" width="500" alt="Circuit Diagram">
 
-
-## Software design
-
-The software is written in C++ and uses the Arduino framework.
-
-Following classes are implemented:
-
-<img src="_assets/_images/classdiagramm.drawio.svg" width="500" alt="Class Diagram">
