@@ -6,6 +6,8 @@
 #include <cmath>
 #include <PubSubClient.h>
 #include <WiFiClient.h>
+#include "esp_task_wdt.h"
+#include "esp_system.h"
 
 #include <WiFi.h>
 
@@ -36,6 +38,9 @@ String replaceChars(String str, char charsToReplace, char replaceWith)
 
 // ================ Constants ================
 int loopDelay = 1000;
+const int WIFI_CONNECTION_TIMEOUT = 10000; // 10 seconds
+const int WATCHDOG_TIMEOUT = 60000;
+
 // Name is used for the hostname. It is combined with the MAC address to create a unique name.
 String clientName = "GardenController-" + replaceChars(WiFi.macAddress(), ':', '-');
 
@@ -99,6 +104,11 @@ const unsigned long mqttRetryInterval = 5000; // Wait 5 seconds between connecti
 int mqttReconnectAttempts = 0;
 const int maxMqttReconnectAttempts = 5;
 
+void synchronizeButtonStates(bool newState) 
+{
+  synconizedBtn1NewState = swBtn1State = hwBtn1State = newState;
+}
+
 // Callback function to handle incoming MQTT messages
 void mqttCallback(char* topic, byte* payload, unsigned int length)
 {
@@ -114,7 +124,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length)
     {
       swBtn1State = message == "true";
       // synchronize the new state with the hardware state
-      synconizedBtn1NewState = hwBtn1State = swBtn1State;
+      synchronizeButtonStates(swBtn1State);
     }
 }
 
@@ -252,7 +262,7 @@ void manageWifiConnection()
         wifiState = WIFI_CONNECTED;
         countToTryReconnect = 0;
       } 
-      else if (millis() - wifiConnectStartTime > 10000) 
+      else if (millis() - wifiConnectStartTime > WIFI_CONNECTION_TIMEOUT) 
       { // 10 second timeout
         Trace::log("WiFi connection timeout");
         WiFi.disconnect();
@@ -312,7 +322,7 @@ void IRAM_ATTR OnHwBtn1Pressed()
     lastDebounceTime = now;
     hwBtn1State = !hwBtn1State;
     // synchronize the new state with the software state
-    synconizedBtn1NewState = swBtn1State = hwBtn1State;
+    synchronizeButtonStates(hwBtn1State);
   }  
 }
 
@@ -409,6 +419,10 @@ void setup()
   // Setup relais
   setupRelais1();
 
+  // Initialize the watchdog timer
+  esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
+  esp_task_wdt_add(NULL); // Add current thread to WDT watch
+
   Trace::log("Setup end");
 }
 
@@ -416,6 +430,9 @@ void loop()
 {
   Trace::log("Loop start: " + String(millis()));
 
+  // Reset the watchdog timer in each loop iteration
+  esp_task_wdt_reset();
+  
   // Non-blocking WiFi management
   nonBlockingWifiManagement();
 
@@ -437,9 +454,8 @@ void loop()
     startTimeRel1 = millis();
     durationRel1 = 10000; // 10 seconds
   }
-
-  // if btn1 is deactivate, relais 1 should be deactivated
-  if(relais1State == true && synconizedBtn1NewState == false)
+  // if btn1 is inactive, relais 1 should be inactive
+  else if(relais1State == true && synconizedBtn1NewState == false)
   {
     relais1State = false;
     remainingTimeRel1 = 0;
@@ -455,7 +471,7 @@ void loop()
       Trace::log("Relais1 timer expired");
       remainingTimeRel1 = 0;
       relais1State = false;
-      synconizedBtn1NewState = swBtn1State = hwBtn1State = false;
+      synchronizeButtonStates(false);
     }
   }
   
