@@ -54,10 +54,14 @@ WifiState wifiState = WIFI_DISCONNECTED;
 unsigned long wifiConnectStartTime = 0;
 int reconnectAttempt = 0;
 
+//
+bool synconizedBtn1NewState = false;
+bool synconizedBtn1OldState = false;
+
 // ================ Hardware buttons ================
 // Button 1
 int btn1GpioChannel = 23;
-bool hwBtn1Pressed = false;
+bool hwBtn1State = false;
 unsigned long lastDebounceTime;
 const int debounceDelay = 500; // debounce time in milliseconds
 
@@ -76,6 +80,7 @@ bool relais1State = false;
 unsigned long startTimeRel1;
 int durationRel1;
 int remainingTimeRel1;
+
 
 // ================ MQTT ================
 WiFiClient wifiClient;
@@ -108,6 +113,8 @@ void mqttCallback(char* topic, byte* payload, unsigned int length)
     if (String(topic).startsWith(clientName + "/swBtn1"))
     {
       swBtn1State = message == "true";
+      // synchronize the new state with the hardware state
+      synconizedBtn1NewState = hwBtn1State = swBtn1State;
     }
 }
 
@@ -303,8 +310,9 @@ void IRAM_ATTR OnHwBtn1Pressed()
   if (now - lastDebounceTime > debounceDelay) 
   {
     lastDebounceTime = now;
-    hwBtn1Pressed = true;
-    Trace::log("Loop: Button1 pressed");
+    hwBtn1State = !hwBtn1State;
+    // synchronize the new state with the software state
+    synconizedBtn1NewState = swBtn1State = hwBtn1State;
   }  
 }
 
@@ -335,10 +343,54 @@ void switchRelay(bool state)
   }
 }
 
+
+
+void nonBlockingWifiManagement()
+{
+  unsigned long currentMillis = millis();
+  if (currentMillis - lastWifiCheckMillis >= wifiCheckInterval) 
+  {
+    lastWifiCheckMillis = currentMillis;
+    manageWifiConnection();
+  }
+}
+
+void nonBlockingMqttManagement()
+{
+  unsigned long currentMillis = millis();
+  if (mqttState == _MQTT_DISCONNECTED && 
+    currentMillis - lastMqttAttemptMillis >= mqttRetryInterval) 
+  {
+    manageMqttConnection();
+  }
+  else if (mqttState == _MQTT_CONNECTED) 
+  {
+    pubSubClient.loop(); // Process incoming messages
+  }
+}
+
+void lastOperationsInTheLoop()
+{
+  if (WiFi.status() == WL_CONNECTED) 
+  {
+    // Online operations (cloud updates, etc.)
+    checkWifiSignal();
+  } 
+  else 
+  {
+    // Offline operations (use local controls only)
+  }
+}
+
 // ================ Main ================
 
 void setup() 
 {
+  synconizedBtn1NewState = false;
+  synconizedBtn1OldState = false;
+  hwBtn1State = false;
+  swBtn1State = false;
+  
   // Setup console
   Serial.begin(115200);
   Trace::log("Setup begin");
@@ -362,62 +414,36 @@ void setup()
 
 void loop() 
 {
-  Trace::log("Loop: " + String(millis()));
+  Trace::log("Loop start: " + String(millis()));
 
   // Non-blocking WiFi management
-  unsigned long currentMillis = millis();
-  if (currentMillis - lastWifiCheckMillis >= wifiCheckInterval) 
-  {
-    lastWifiCheckMillis = currentMillis;
-    manageWifiConnection();
-  }
+  nonBlockingWifiManagement();
 
   // Non-blocking MQTT management
-  if (mqttState == _MQTT_DISCONNECTED && 
-    currentMillis - lastMqttAttemptMillis >= mqttRetryInterval) 
-  {
-    manageMqttConnection();
-  }
-  else if (mqttState == _MQTT_CONNECTED) 
-  {
-    pubSubClient.loop(); // Process incoming messages
-  }
+  nonBlockingMqttManagement();
 
   // ============ Read ============
-  
+
 
 
   
   // ============ Process logic ============
-  
-  // Button 1 => Relay 1: switch on for 5 seconds
-  if (!relais1State && 
-    (hwBtn1Pressed || 
-    (swBtn1State == true && swBtn1StateOld == false)))
+  // if btn1 is active, relais 1 should be active for specific time
+  if (relais1State == false && synconizedBtn1NewState == true)
   {
-    hwBtn1Pressed = false;
-    swBtn1StateOld = swBtn1State;
     relais1State = true;
 
     // Start timer
     startTimeRel1 = millis();
-    durationRel1 = 5000;
+    durationRel1 = 10000; // 10 seconds
   }
 
-  // Button 1 => Relay 1: switch off immediately if pressed again
-  if(relais1State && 
-    hwBtn1Pressed ||
-    (swBtn1State == false && swBtn1StateOld == true))
+  // if btn1 is deactivate, relais 1 should be deactivated
+  if(relais1State == true && synconizedBtn1NewState == false)
   {
-    hwBtn1Pressed = false;
-    swBtn1StateOld = swBtn1State;
     relais1State = false;
+    remainingTimeRel1 = 0;
   }
-  
-  // ============ Write ============
-
-  // Update hardware depending on logic and timers
-  switchRelay(relais1State);
 
   // ============ Timers ============
   if (relais1State)
@@ -426,34 +452,32 @@ void loop()
     Trace::log("Remaining time for relais1: " + String(remainingTimeRel1));
     if (remainingTimeRel1 <= 0)
     {
+      Trace::log("Relais1 timer expired");
+      remainingTimeRel1 = 0;
       relais1State = false;
-      swBtn1State = false;
-      hwBtn1Pressed = false;
+      synconizedBtn1NewState = swBtn1State = hwBtn1State = false;
     }
   }
+  
+  // ============ Write ============
+  // Update hardware depending on logic and timers
+  switchRelay(relais1State);
 
-  // ============ MQTT ============
+  
+
+  // ============ MQTT update ============
   if (mqttState == _MQTT_CONNECTED) 
   {
     publishMqtt(clientName + "/relais1", String(relais1State));
     publishMqtt(clientName + "/remainingTimeRel1", String(remainingTimeRel1));
     // Block MQTT updates for buttons to avoid feedback loop
-    if(swBtn1State != swBtn1StateOld)
-    {
-      // Publisch a string representation of the boolean state
-      publishMqtt(clientName + "/swBtn1", swBtn1State ? "true" : "false");
-    }
+    Trace::log("Publishing button state: " + String(synconizedBtn1NewState ? "true" : "false"));
+    // Publisch a string representation of the boolean state
+    publishMqtt(clientName + "/swBtn1", synconizedBtn1NewState ? "true" : "false");
   }
 
-  if (WiFi.status() == WL_CONNECTED) 
-  {
-    // Online operations (cloud updates, etc.)
-    checkWifiSignal();
-  } 
-  else 
-  {
-    // Offline operations (use local controls only)
-  }
+  lastOperationsInTheLoop();
   
   delay(loopDelay);
+  Trace::log("Loop end");
 }
