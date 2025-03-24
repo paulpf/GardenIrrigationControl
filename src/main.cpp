@@ -8,6 +8,7 @@
 #include <WiFiClient.h>
 #include "esp_task_wdt.h"
 #include "esp_system.h"
+#include "MqttManager.h"
 
 #include <WiFi.h>
 
@@ -76,21 +77,7 @@ int durationRel1;
 int remainingTimeRel1;
 
 // ================ MQTT ================
-WiFiClient wifiClient;
-PubSubClient pubSubClient(wifiClient);
-
-// MQTT state management
-enum MqttState 
-{
-  _MQTT_DISCONNECTED,
-  _MQTT_CONNECTING,
-  _MQTT_CONNECTED
-};
-MqttState mqttState = _MQTT_DISCONNECTED;
-unsigned long lastMqttAttemptMillis = 0;
-const unsigned long mqttRetryInterval = 5000; // Wait 5 seconds between connection attempts
-int mqttReconnectAttempts = 0;
-const int maxMqttReconnectAttempts = 5;
+MqttManager mqttManager(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName);
 
 // ================ WifiManager Instance ================
 WifiManager wifiManager(WIFI_SSID, WIFI_PWD, clientName);
@@ -98,104 +85,6 @@ WifiManager wifiManager(WIFI_SSID, WIFI_PWD, clientName);
 void synchronizeButtonStates(bool newState) 
 {
   synconizedBtn1NewState = swBtn1State = hwBtn1State = newState;
-}
-
-// Callback function to handle incoming MQTT messages
-void mqttCallback(char* topic, byte* payload, unsigned int length)
-{
-  Trace::log("Message arrived [" + String(topic) + "]");
-  String message = "";
-  for (int i = 0; i < length; i++) 
-  {
-    message += (char)payload[i];
-  }
-  Trace::log("Message: " + message);
-
-  if (String(topic).startsWith(clientName + "/swBtn1"))
-  {
-    swBtn1State = message == "true";
-    // synchronize the new state with the hardware state
-    synchronizeButtonStates(swBtn1State);
-  }
-}
-
-void reconnectMqtt() 
-{
-  // Single connection attempt instead of blocking loop
-  Trace::log("Attempting MQTT connection...");
-  if (pubSubClient.connect(clientName.c_str(), MQTT_USER, MQTT_PWD)) 
-  {
-    Trace::log("MQTT connected");
-    mqttState = _MQTT_CONNECTED;
-    mqttReconnectAttempts = 0;
-    
-    // Subscribe to topics
-    pubSubClient.subscribe((clientName + "/swBtn1").c_str());
-  } 
-  else 
-  {
-    mqttReconnectAttempts++;
-    Trace::log("MQTT connection failed, rc=" + String(pubSubClient.state()) + 
-               ", attempts: " + String(mqttReconnectAttempts));
-    mqttState = _MQTT_DISCONNECTED;
-    
-    if (mqttReconnectAttempts >= maxMqttReconnectAttempts) {
-      Trace::log("Maximum MQTT reconnection attempts reached, will try again later");
-      mqttReconnectAttempts = 0;
-    }
-  }
-}
-
-void manageMqttConnection() 
-{
-  Trace::log("Managing MQTT connection");
-  
-  if (!wifiManager.isConnected()) 
-  {
-    Trace::log("Cannot connect to MQTT - WiFi is disconnected");
-    mqttState = _MQTT_DISCONNECTED;
-    return; // Can't connect to MQTT without WiFi
-  }
-
-  // DNS check before attempting connection
-  if (mqttState == _MQTT_DISCONNECTED && !wifiManager.checkDnsResolution(MQTT_SERVER_IP)) 
-  {
-    return;  // Skip connection attempt if DNS resolution fails
-  }
-  
-  switch (mqttState) 
-  {
-    case _MQTT_DISCONNECTED:
-      Trace::log("Mqtt is disconnected");
-      reconnectMqtt();
-      lastMqttAttemptMillis = millis();
-      break;
-      
-    case _MQTT_CONNECTED:
-      if (!pubSubClient.connected()) 
-      {
-        Trace::log("MQTT connection lost");
-        mqttState = _MQTT_DISCONNECTED;
-      } 
-      else 
-      {
-        Trace::log("MQTT loop");
-        pubSubClient.loop(); // Process incoming messages and maintain connection
-      }
-      break;
-  }
-}
-
-void publishMqtt(String topic, String payload) 
-{
-  if (mqttState == _MQTT_CONNECTED) 
-  {
-    pubSubClient.publish(topic.c_str(), payload.c_str());
-  }
-  else 
-  {
-    Trace::log("Cannot publish to MQTT - not connected");
-  }
 }
 
 // ================ Hardware Functions ================
@@ -239,19 +128,6 @@ void switchRelay(bool state)
   }
 }
 
-void nonBlockingMqttManagement()
-{
-  unsigned long currentMillis = millis();
-  if (mqttState == _MQTT_DISCONNECTED && 
-    currentMillis - lastMqttAttemptMillis >= mqttRetryInterval) 
-  {
-    manageMqttConnection();
-  }
-  else if (mqttState == _MQTT_CONNECTED) 
-  {
-    pubSubClient.loop(); // Process incoming messages
-  }
-}
 
 void lastOperationsInTheLoop()
 {
@@ -283,8 +159,21 @@ void setup()
   wifiManager.setup();
 
   // Setup MQTT
-  pubSubClient.setServer(MQTT_SERVER_IP, MQTT_SERVER_PORT);
-  pubSubClient.setCallback(mqttCallback);
+  mqttManager.setup();
+  mqttManager.setCallback([](char* topic, byte* payload, unsigned int length) {
+    // Your callback code here
+    // Example:
+    Trace::log("Message arrived [" + String(topic) + "]");
+    String message = "";
+    for (int i = 0; i < length; i++) {
+        message += (char)payload[i];
+    }
+    
+    if (String(topic).startsWith(clientName + "/swBtn1")) {
+        swBtn1State = message == "true";
+        synchronizeButtonStates(swBtn1State);
+    }
+});
   
   // Setup button
   setupButton1();
@@ -310,7 +199,7 @@ void loop()
   wifiManager.connectionLoop();
   
   // Non-blocking MQTT management
-  nonBlockingMqttManagement();
+  mqttManager.nonBlockingMqttManagement(wifiManager.isConnected(), wifiManager.checkDnsResolution(MQTT_SERVER_IP));
 
   // ============ Read ============
 
@@ -350,15 +239,11 @@ void loop()
   switchRelay(relais1State);
 
   // ============ MQTT update ============
-  if (mqttState == _MQTT_CONNECTED) 
-  {
-    publishMqtt(clientName + "/relais1", String(relais1State));
-    publishMqtt(clientName + "/remainingTimeRel1", String(remainingTimeRel1));
-    // Block MQTT updates for buttons to avoid feedback loop
-    Trace::log("Publishing button state: " + String(synconizedBtn1NewState ? "true" : "false"));
-    // Publish a string representation of the boolean state
-    publishMqtt(clientName + "/swBtn1", synconizedBtn1NewState ? "true" : "false");
-  }
+  if (mqttManager.isConnected()) {
+    mqttManager.publish(clientName + "/relais1", String(relais1State));
+    mqttManager.publish(clientName + "/remainingTimeRel1", String(remainingTimeRel1));
+    mqttManager.publish(clientName + "/swBtn1", synconizedBtn1NewState ? "true" : "false");
+}
 
   lastOperationsInTheLoop();
   

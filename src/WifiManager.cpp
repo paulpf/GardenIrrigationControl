@@ -149,6 +149,5 @@ bool WifiManager::checkDnsResolution(const char* ipAddress)
     Trace::log("DNS resolution failed for " + String(ipAddress));
     return false;
   }
-  Trace::log("Resolved DNS to: " + resolvedIP.toString());
   return true;
 }
