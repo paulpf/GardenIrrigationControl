@@ -1,17 +1,5 @@
 #define TRACE
 
-#include <Arduino.h>
-#include "Trace.h"
-#include <algorithm>
-#include <cmath>
-#include <PubSubClient.h>
-#include <WiFiClient.h>
-#include "esp_task_wdt.h"
-#include "esp_system.h"
-#include "MqttManager.h"
-
-#include <WiFi.h>
-
 #ifdef USE_PRIVATE_SECRET
 #include "../../_secrets/WifiSecret.h"
 #include "../../_configs/MqttConfig.h"
@@ -22,36 +10,29 @@
 #include "./_secrets/MqttSecret.h"
 #endif
 
+#include <Arduino.h>
+#include "Trace.h"
+#include <algorithm>
+#include <cmath>
+#include <PubSubClient.h>
+#include <WiFiClient.h>
+#include "esp_task_wdt.h"
+#include "esp_system.h"
+#include "MqttManager.h"
+#include <WiFi.h>
 #include "WifiManager.h" // Include the WifiManager header
-
-// ================ Helper functions ================
-// Help function to replace characters in a string
-String replaceChars(String str, char charsToReplace, char replaceWith)
-{
-  for (int i = 0; i < str.length(); i++)
-  {
-    if (str[i] == charsToReplace)
-    {
-      str[i] = replaceWith;
-    }
-  }
-  return str;
-}
+#include "Tools.h"
 
 // ================ Constants ================
-int loopDelay = 1000;
+String CLIENT_NAME = "GardenController-" + Tools::replaceChars(WiFi.macAddress(), ':', '-');
+int LOOP_DELAY = 1000;
 const int WATCHDOG_TIMEOUT = 60000;
 
-// Name is used for the hostname. It is combined with the MAC address to create a unique name.
-String clientName = "GardenController-" + replaceChars(WiFi.macAddress(), ':', '-');
-
-// ================ WiFi ================
-unsigned long lastWifiCheckMillis = 0;
-const unsigned long wifiCheckInterval = 30000; // Check every 30 seconds
-int reconnectAttempt = 0;
+WifiManager wifiManager(WIFI_SSID, WIFI_PWD, CLIENT_NAME);
+MqttManager mqttManager(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, CLIENT_NAME);
 
 bool synconizedBtn1NewState = false;
-bool synconizedBtn1OldState = false;
+
 
 // ================ Hardware buttons ================
 // Button 1
@@ -70,22 +51,16 @@ bool swBtn1StateOld = false;
 int relais1GpioChannel = 22;
 bool relais1State = false;
 
+void synchronizeButtonStates(bool newState) 
+{
+  synconizedBtn1NewState = swBtn1State = hwBtn1State = newState;
+}
+
 // ================ Timers ================
 // for relay 1
 unsigned long startTimeRel1;
 int durationRel1;
 int remainingTimeRel1;
-
-// ================ MQTT ================
-MqttManager mqttManager(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName);
-
-// ================ WifiManager Instance ================
-WifiManager wifiManager(WIFI_SSID, WIFI_PWD, clientName);
-
-void synchronizeButtonStates(bool newState) 
-{
-  synconizedBtn1NewState = swBtn1State = hwBtn1State = newState;
-}
 
 // ================ Hardware Functions ================
 // Button 1
@@ -147,7 +122,6 @@ void lastOperationsInTheLoop()
 void setup() 
 {
   synconizedBtn1NewState = false;
-  synconizedBtn1OldState = false;
   hwBtn1State = false;
   swBtn1State = false;
   
@@ -159,21 +133,15 @@ void setup()
   wifiManager.setup();
 
   // Setup MQTT
+  // Register MQTT topic handlers
+  mqttManager.registerTopicHandler(CLIENT_NAME + "/swBtn1", [](const String& message) {
+    swBtn1State = message == "true";
+    synchronizeButtonStates(swBtn1State);
+  });
+  
+  // Setup MQTT
   mqttManager.setup();
-  mqttManager.setCallback([](char* topic, byte* payload, unsigned int length) {
-    // Your callback code here
-    // Example:
-    Trace::log("Message arrived [" + String(topic) + "]");
-    String message = "";
-    for (int i = 0; i < length; i++) {
-        message += (char)payload[i];
-    }
-    
-    if (String(topic).startsWith(clientName + "/swBtn1")) {
-        swBtn1State = message == "true";
-        synchronizeButtonStates(swBtn1State);
-    }
-});
+  mqttManager.subscribeToTopic(CLIENT_NAME + "/swBtn1");
   
   // Setup button
   setupButton1();
@@ -240,13 +208,13 @@ void loop()
 
   // ============ MQTT update ============
   if (mqttManager.isConnected()) {
-    mqttManager.publish(clientName + "/relais1", String(relais1State));
-    mqttManager.publish(clientName + "/remainingTimeRel1", String(remainingTimeRel1));
-    mqttManager.publish(clientName + "/swBtn1", synconizedBtn1NewState ? "true" : "false");
+    mqttManager.publish(CLIENT_NAME + "/relais1", String(relais1State));
+    mqttManager.publish(CLIENT_NAME + "/remainingTimeRel1", String(remainingTimeRel1));
+    mqttManager.publish(CLIENT_NAME + "/swBtn1", synconizedBtn1NewState ? "true" : "false");
 }
 
   lastOperationsInTheLoop();
   
-  delay(loopDelay);
+  delay(LOOP_DELAY);
   Trace::log("Loop end");
 }
