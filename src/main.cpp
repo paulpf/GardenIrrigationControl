@@ -22,39 +22,42 @@
 #include <WiFi.h>
 #include "WifiManager.h" // Include the WifiManager header
 #include "Tools.h"
+#include "HardwareButton.h"
 
 // ================ Constants ================
 String CLIENT_NAME = "GardenController-" + Tools::replaceChars(WiFi.macAddress(), ':', '-');
 int LOOP_DELAY = 1000;
 const int WATCHDOG_TIMEOUT = 60000;
+int HWBTN1_GPIOPIN = 23;
+int HWBTN_DEBOUNCE_DELAY = 500;
 
 WifiManager wifiManager(WIFI_SSID, WIFI_PWD, CLIENT_NAME);
 MqttManager mqttManager(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, CLIENT_NAME);
 
-bool synconizedBtn1NewState = false;
-
-
-// ================ Hardware buttons ================
-// Button 1
-int btn1GpioChannel = 23;
+bool synchronizedBtn1NewState = false;
 bool hwBtn1State = false;
-unsigned long lastDebounceTime;
-const int debounceDelay = 500; // debounce time in milliseconds
-
-// ================ Software buttons (via MQTT) ================
-// Button 1
 bool swBtn1State = false;
 bool swBtn1StateOld = false;
+
+void synchronizeButtonStates(bool newState) 
+{
+  synchronizedBtn1NewState = swBtn1State = hwBtn1State = newState;
+}
+
+void IRAM_ATTR onHwBtn1Pressed() {
+    hwBtn1State = !hwBtn1State;
+    synchronizeButtonStates(hwBtn1State);
+}
+
+HardwareButton hwButton1(HWBTN1_GPIOPIN, HWBTN_DEBOUNCE_DELAY, onHwBtn1Pressed);
+
 
 // ================ Relays ================
 // Relay 1
 int relais1GpioChannel = 22;
 bool relais1State = false;
 
-void synchronizeButtonStates(bool newState) 
-{
-  synconizedBtn1NewState = swBtn1State = hwBtn1State = newState;
-}
+
 
 // ================ Timers ================
 // for relay 1
@@ -62,25 +65,6 @@ unsigned long startTimeRel1;
 int durationRel1;
 int remainingTimeRel1;
 
-// ================ Hardware Functions ================
-// Button 1
-void IRAM_ATTR OnHwBtn1Pressed() 
-{
-  unsigned long now = millis();
-  if (now - lastDebounceTime > debounceDelay) 
-  {
-    lastDebounceTime = now;
-    hwBtn1State = !hwBtn1State;
-    // synchronize the new state with the software state
-    synchronizeButtonStates(hwBtn1State);
-  }  
-}
-
-void setupButton1()
-{
-  pinMode(btn1GpioChannel, INPUT_PULLDOWN);
-  attachInterrupt(digitalPinToInterrupt(btn1GpioChannel), OnHwBtn1Pressed, RISING);
-}
 
 // Relay 1
 void setupRelais1()
@@ -121,7 +105,7 @@ void lastOperationsInTheLoop()
 
 void setup() 
 {
-  synconizedBtn1NewState = false;
+  synchronizedBtn1NewState = false;
   hwBtn1State = false;
   swBtn1State = false;
   
@@ -144,7 +128,7 @@ void setup()
   mqttManager.subscribeToTopic(CLIENT_NAME + "/swBtn1");
   
   // Setup button
-  setupButton1();
+  hwButton1.setup();
 
   // Setup relais
   setupRelais1();
@@ -173,7 +157,7 @@ void loop()
 
   // ============ Process logic ============
   // if btn1 is active, relais 1 should be active for specific time
-  if (relais1State == false && synconizedBtn1NewState == true)
+  if (relais1State == false && synchronizedBtn1NewState == true)
   {
     relais1State = true;
 
@@ -182,7 +166,7 @@ void loop()
     durationRel1 = 10000; // 10 seconds
   }
   // if btn1 is inactive, relais 1 should be inactive
-  else if(relais1State == true && synconizedBtn1NewState == false)
+  else if(relais1State == true && synchronizedBtn1NewState == false)
   {
     relais1State = false;
     remainingTimeRel1 = 0;
@@ -210,7 +194,7 @@ void loop()
   if (mqttManager.isConnected()) {
     mqttManager.publish(CLIENT_NAME + "/relais1", String(relais1State));
     mqttManager.publish(CLIENT_NAME + "/remainingTimeRel1", String(remainingTimeRel1));
-    mqttManager.publish(CLIENT_NAME + "/swBtn1", synconizedBtn1NewState ? "true" : "false");
+    mqttManager.publish(CLIENT_NAME + "/swBtn1", synchronizedBtn1NewState ? "true" : "false");
 }
 
   lastOperationsInTheLoop();
