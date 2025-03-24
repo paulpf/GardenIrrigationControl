@@ -63,7 +63,7 @@ public:
     
     // Main connection management methods
     void manageMqttConnection(bool wifiIsConnected, bool dnsResolutionOk);
-    void nonBlockingMqttManagement(bool wifiIsConnected, bool dnsResolutionOk);
+    void loop(bool wifiIsConnected, bool dnsResolutionOk);
     
     // Publish and subscribe methods
     bool publish(const String& topic, const String& payload);

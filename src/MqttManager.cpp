@@ -119,7 +119,7 @@ void MqttManager::manageMqttConnection(bool wifiIsConnected, bool dnsResolutionO
     }
 }
 
-void MqttManager::nonBlockingMqttManagement(bool wifiIsConnected, bool dnsResolutionOk) {
+void MqttManager::loop(bool wifiIsConnected, bool dnsResolutionOk) {
     unsigned long currentMillis = millis();
     if (mqttState == _MQTT_DISCONNECTED && 
         currentMillis - lastAttemptMillis >= mqttRetryInterval) {

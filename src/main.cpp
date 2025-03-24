@@ -23,6 +23,7 @@
 #include "WifiManager.h" // Include the WifiManager header
 #include "Tools.h"
 #include "HardwareButton.h"
+#include "Relay.h"
 
 // ================ Constants ================
 String CLIENT_NAME = "GardenController-" + Tools::replaceChars(WiFi.macAddress(), ':', '-');
@@ -30,6 +31,7 @@ int LOOP_DELAY = 1000;
 const int WATCHDOG_TIMEOUT = 60000;
 int HWBTN1_GPIOPIN = 23;
 int HWBTN_DEBOUNCE_DELAY = 500;
+int RELAY1_GPIOPIN = 22;
 
 WifiManager wifiManager(WIFI_SSID, WIFI_PWD, CLIENT_NAME);
 MqttManager mqttManager(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, CLIENT_NAME);
@@ -50,7 +52,7 @@ void IRAM_ATTR onHwBtn1Pressed() {
 }
 
 HardwareButton hwButton1(HWBTN1_GPIOPIN, HWBTN_DEBOUNCE_DELAY, onHwBtn1Pressed);
-
+Relay relay1(RELAY1_GPIOPIN);
 
 // ================ Relays ================
 // Relay 1
@@ -64,28 +66,6 @@ bool relais1State = false;
 unsigned long startTimeRel1;
 int durationRel1;
 int remainingTimeRel1;
-
-
-// Relay 1
-void setupRelais1()
-{
-  pinMode(relais1GpioChannel, OUTPUT);
-  digitalWrite(relais1GpioChannel, HIGH);
-}
-
-void switchRelay(bool state)
-{
-  if (state)
-  {
-    Trace::log("Switching relay ON");
-    digitalWrite(relais1GpioChannel, LOW);
-  }
-  else
-  {
-    Trace::log("Switching relay OFF");
-    digitalWrite(relais1GpioChannel, HIGH);
-  }
-}
 
 
 void lastOperationsInTheLoop()
@@ -131,7 +111,7 @@ void setup()
   hwButton1.setup();
 
   // Setup relais
-  setupRelais1();
+  relay1.setup();
 
   // Initialize the watchdog timer
   esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
@@ -150,14 +130,14 @@ void loop()
   // Manage WiFi connection
   wifiManager.connectionLoop();
   
-  // Non-blocking MQTT management
-  mqttManager.nonBlockingMqttManagement(wifiManager.isConnected(), wifiManager.checkDnsResolution(MQTT_SERVER_IP));
+  // Manage MQTT connection and loop
+  mqttManager.loop(wifiManager.isConnected(), wifiManager.checkDnsResolution(MQTT_SERVER_IP));
 
   // ============ Read ============
 
   // ============ Process logic ============
   // if btn1 is active, relais 1 should be active for specific time
-  if (relais1State == false && synchronizedBtn1NewState == true)
+  if (relay1.getState() == false && synchronizedBtn1NewState == true)
   {
     relais1State = true;
 
@@ -166,7 +146,7 @@ void loop()
     durationRel1 = 10000; // 10 seconds
   }
   // if btn1 is inactive, relais 1 should be inactive
-  else if(relais1State == true && synchronizedBtn1NewState == false)
+  else if(relay1.getState() == true && synchronizedBtn1NewState == false)
   {
     relais1State = false;
     remainingTimeRel1 = 0;
@@ -188,11 +168,11 @@ void loop()
   
   // ============ Write ============
   // Update hardware depending on logic and timers
-  switchRelay(relais1State);
+  relay1.switchRelay(relais1State);
 
   // ============ MQTT update ============
   if (mqttManager.isConnected()) {
-    mqttManager.publish(CLIENT_NAME + "/relais1", String(relais1State));
+    mqttManager.publish(CLIENT_NAME + "/relais1", String(relay1.getState()));
     mqttManager.publish(CLIENT_NAME + "/remainingTimeRel1", String(remainingTimeRel1));
     mqttManager.publish(CLIENT_NAME + "/swBtn1", synchronizedBtn1NewState ? "true" : "false");
 }
