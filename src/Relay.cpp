@@ -10,7 +10,7 @@ void Relay::setup() {
     digitalWrite(gpioChannel, HIGH); // Set relay to OFF initially
 }
 
-void Relay::switchRelay(bool newState) {
+void Relay::activate(bool newState) {
     state = newState;
     if (state) {
         Trace::log("Switching relay ON");
@@ -21,6 +21,6 @@ void Relay::switchRelay(bool newState) {
     }
 }
 
-bool Relay::getState() const {
+bool Relay::isActive() const {
     return digitalRead(gpioChannel) == LOW;
 }

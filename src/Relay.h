@@ -6,8 +6,8 @@ class Relay {
   public:
       Relay(int gpioChannel);
       void setup();
-      void switchRelay(bool state);
-      bool getState() const;
+      void activate(bool state);
+      bool isActive() const;
   
   private:
       int gpioChannel;

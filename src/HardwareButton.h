@@ -5,9 +5,11 @@
 
 class HardwareButton {
 public:
+    static HardwareButton* instance;
     HardwareButton(int gpioChannel, unsigned long debounceDelay, void (*callback)());
     void setup();
     void IRAM_ATTR onPressed();
+    static void IRAM_ATTR onPressedStatic();
 
 private:
     int gpioChannel;

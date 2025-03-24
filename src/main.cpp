@@ -12,22 +12,18 @@
 
 #include <Arduino.h>
 #include "Trace.h"
-#include <algorithm>
-#include <cmath>
-#include <PubSubClient.h>
-#include <WiFiClient.h>
 #include "esp_task_wdt.h"
 #include "esp_system.h"
 #include "MqttManager.h"
-#include <WiFi.h>
 #include "WifiManager.h" // Include the WifiManager header
 #include "Tools.h"
 #include "HardwareButton.h"
 #include "Relay.h"
+#include "Timer.h"
 
 // ================ Constants ================
 String CLIENT_NAME = "GardenController-" + Tools::replaceChars(WiFi.macAddress(), ':', '-');
-int LOOP_DELAY = 1000;
+int LOOP_DELAY = 100;
 const int WATCHDOG_TIMEOUT = 60000;
 int HWBTN1_GPIOPIN = 23;
 int HWBTN_DEBOUNCE_DELAY = 500;
@@ -39,7 +35,6 @@ MqttManager mqttManager(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, C
 bool synchronizedBtn1NewState = false;
 bool hwBtn1State = false;
 bool swBtn1State = false;
-bool swBtn1StateOld = false;
 
 void synchronizeButtonStates(bool newState) 
 {
@@ -47,39 +42,34 @@ void synchronizeButtonStates(bool newState)
 }
 
 void IRAM_ATTR onHwBtn1Pressed() {
-    hwBtn1State = !hwBtn1State;
-    synchronizeButtonStates(hwBtn1State);
+  Trace::log("Hardware button 1 pressed");  
+  hwBtn1State = !hwBtn1State;
+  synchronizeButtonStates(hwBtn1State);
 }
 
 HardwareButton hwButton1(HWBTN1_GPIOPIN, HWBTN_DEBOUNCE_DELAY, onHwBtn1Pressed);
+
+void handleSwBtn1Message(const String& message) {
+  Trace::log("Received message on topic " + CLIENT_NAME + "/swBtn1: " + message);
+  swBtn1State = message == "true";
+  synchronizeButtonStates(swBtn1State);
+}
+
 Relay relay1(RELAY1_GPIOPIN);
 
-// ================ Relays ================
-// Relay 1
-int relais1GpioChannel = 22;
-bool relais1State = false;
-
-
-
-// ================ Timers ================
-// for relay 1
-unsigned long startTimeRel1;
-int durationRel1;
-int remainingTimeRel1;
-
-
-void lastOperationsInTheLoop()
-{
-  if (wifiManager.isConnected()) 
-  {
-    // Online operations (cloud updates, etc.)
-    wifiManager.checkSignal();
-  } 
-  else 
-  {
-    // Offline operations (use local controls only)
-  }
+void onRelay1TimerDeactivated() {
+  Trace::log("Relay 1 timer deactivated");
+  relay1.activate(false);
+  synchronizeButtonStates(false);
 }
+
+void onRelay1TimerActivated() {
+  Trace::log("Relay 1 timer activated");
+  relay1.activate(true);
+  synchronizeButtonStates(true);
+}
+
+Timer relay1Timer;
 
 // ================ Main ================
 
@@ -97,13 +87,7 @@ void setup()
   wifiManager.setup();
 
   // Setup MQTT
-  // Register MQTT topic handlers
-  mqttManager.registerTopicHandler(CLIENT_NAME + "/swBtn1", [](const String& message) {
-    swBtn1State = message == "true";
-    synchronizeButtonStates(swBtn1State);
-  });
-  
-  // Setup MQTT
+  mqttManager.registerTopicHandler(CLIENT_NAME + "/swBtn1", handleSwBtn1Message);
   mqttManager.setup();
   mqttManager.subscribeToTopic(CLIENT_NAME + "/swBtn1");
   
@@ -112,6 +96,8 @@ void setup()
 
   // Setup relais
   relay1.setup();
+  relay1Timer.setActivationCallback(onRelay1TimerActivated);
+  relay1Timer.setDeactivationCallback(onRelay1TimerDeactivated);
 
   // Initialize the watchdog timer
   esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
@@ -133,51 +119,27 @@ void loop()
   // Manage MQTT connection and loop
   mqttManager.loop(wifiManager.isConnected(), wifiManager.checkDnsResolution(MQTT_SERVER_IP));
 
-  // ============ Read ============
-
-  // ============ Process logic ============
-  // if btn1 is active, relais 1 should be active for specific time
-  if (relay1.getState() == false && synchronizedBtn1NewState == true)
-  {
-    relais1State = true;
-
-    // Start timer
-    startTimeRel1 = millis();
-    durationRel1 = 10000; // 10 seconds
-  }
-  // if btn1 is inactive, relais 1 should be inactive
-  else if(relay1.getState() == true && synchronizedBtn1NewState == false)
-  {
-    relais1State = false;
-    remainingTimeRel1 = 0;
+  // Handle button press and timer logic
+  if (synchronizedBtn1NewState == true && relay1Timer.isActive() == false) {
+    relay1Timer.start(10000); // Start timer for 10 seconds
+  } else if (synchronizedBtn1NewState == false && relay1Timer.isActive() == true) {
+    relay1Timer.stop();
   }
 
-  // ============ Timers ============
-  if (relais1State)
-  {
-    remainingTimeRel1 = durationRel1 - (millis() - startTimeRel1);
-    Trace::log("Remaining time for relais1: " + String(remainingTimeRel1));
-    if (remainingTimeRel1 <= 0)
-    {
-      Trace::log("Relais1 timer expired");
-      remainingTimeRel1 = 0;
-      relais1State = false;
-      synchronizeButtonStates(false);
-    }
-  }
-  
-  // ============ Write ============
-  // Update hardware depending on logic and timers
-  relay1.switchRelay(relais1State);
+  relay1Timer.update(); // Update timer state
 
   // ============ MQTT update ============
   if (mqttManager.isConnected()) {
-    mqttManager.publish(CLIENT_NAME + "/relais1", String(relay1.getState()));
-    mqttManager.publish(CLIENT_NAME + "/remainingTimeRel1", String(remainingTimeRel1));
+    mqttManager.publish(CLIENT_NAME + "/relais1", String(relay1.isActive()));
+    mqttManager.publish(CLIENT_NAME + "/remainingTimeRel1", String(relay1Timer.getRemainingTime()));
     mqttManager.publish(CLIENT_NAME + "/swBtn1", synchronizedBtn1NewState ? "true" : "false");
-}
+  }
 
-  lastOperationsInTheLoop();
+  if (wifiManager.isConnected()) 
+  {
+    // Online operations (cloud updates, etc.)
+    wifiManager.checkSignal();
+  }
   
   delay(LOOP_DELAY);
   Trace::log("Loop end");
