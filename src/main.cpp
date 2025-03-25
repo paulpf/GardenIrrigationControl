@@ -44,7 +44,7 @@ void IRAM_ATTR onHwBtn1Pressed() {
   synchronizeButtonStates(hwBtn1State);  
 }
 
-HardwareButton hwButton1(HWBTN1_GPIOPIN, HWBTN_DEBOUNCE_DELAY, onHwBtn1Pressed);
+HardwareButton hwButton1(HWBTN1_GPIOPIN, HWBTN_DEBOUNCE_DELAY);
 
 void handleSwBtn1Message(const String& message) {
   Trace::log("Received message on topic " + CLIENT_NAME + "/swBtn1: " + message);
@@ -112,6 +112,7 @@ void setup()
   
   // Setup button
   hwButton1.setup();
+  hwButton1.setCallback(onHwBtn1Pressed);
 
   // Setup relay timer
   relay1Timer.setTickCallback(onRelay1TimerTick);

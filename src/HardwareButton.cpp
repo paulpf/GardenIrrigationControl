@@ -2,13 +2,17 @@
 
 HardwareButton* HardwareButton::instance = nullptr;
 
-HardwareButton::HardwareButton(int gpioChannel, unsigned long debounceDelay, void (*callback)())
-    : gpioChannel(gpioChannel), debounceDelay(debounceDelay), lastDebounceTime(0), callback(callback) {}
+HardwareButton::HardwareButton(int gpioChannel, unsigned long debounceDelay)
+    : gpioChannel(gpioChannel), debounceDelay(debounceDelay), lastDebounceTime(0){}
 
 void HardwareButton::setup() {
     pinMode(gpioChannel, INPUT_PULLDOWN);
     instance = this;
     attachInterrupt(digitalPinToInterrupt(gpioChannel), HardwareButton::onPressedStatic, RISING);
+}
+
+void HardwareButton::setCallback(void (*callback)()) {
+    this->callback = callback;
 }
 
 void IRAM_ATTR HardwareButton::onPressedStatic() {
