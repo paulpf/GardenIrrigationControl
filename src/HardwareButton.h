@@ -7,16 +7,16 @@ class HardwareButton {
 public:
     static HardwareButton* instance;
     HardwareButton(int gpioChannel, unsigned long debounceDelay);
-    void setCallback(void (*callback)());
+    void setOnPressedCallback(const std::function<void()>& callback);
     void setup();
     void IRAM_ATTR onPressed();
-    static void IRAM_ATTR onPressedStatic();
+    //static void IRAM_ATTR onPressedStatic();
 
 private:
     int gpioChannel;
     unsigned long debounceDelay;
     unsigned long lastDebounceTime;
-    void (*callback)();
+    std::function<void()> onPressedCallback;
 };
 
 #endif // HARDWARE_BUTTON_H

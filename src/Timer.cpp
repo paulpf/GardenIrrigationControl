@@ -48,14 +48,14 @@ void Timer::handleTick() {
   }
 }
 
-void Timer::setDeactivationCallback(void (*callback)()) {
+void Timer::setDeactivationCallback(const std::function<void()>& callback) {
   deactivationCallback = callback;
 }
 
-void Timer::setActivationCallback(void (*callback)()) {
+void Timer::setActivationCallback(const std::function<void()>& callback) {
   activationCallback = callback;
 }
 
-void Timer::setTickCallback(void (*callback)()) {
+void Timer::setTickCallback(const std::function<void()>& callback) {
   tickCallback = callback;
 }

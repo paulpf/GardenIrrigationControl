@@ -112,7 +112,7 @@ void setup()
   
   // Setup button
   hwButton1.setup();
-  hwButton1.setCallback(onHwBtn1Pressed);
+  hwButton1.setOnPressedCallback(onHwBtn1Pressed);
 
   // Setup relay timer
   relay1Timer.setTickCallback(onRelay1TimerTick);

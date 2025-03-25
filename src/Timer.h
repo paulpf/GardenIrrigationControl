@@ -12,18 +12,18 @@ public:
   bool isActive() const;
   unsigned long getRemainingTime() const;
   void handleTick();
-  void setDeactivationCallback(void (*callback)());
-  void setActivationCallback(void (*callback)());
-  void setTickCallback(void (*callback)());
+  void setDeactivationCallback(const std::function<void()>& callback);
+  void setActivationCallback(const std::function<void()>& callback);
+  void setTickCallback(const std::function<void()>& callback);
 
 private:
   unsigned long startTime;
   unsigned long duration;
   unsigned long lastTickTime;
   bool active;
-  void (*deactivationCallback)();
-  void (*activationCallback)();
-  void (*tickCallback)();
+  std::function<void()> deactivationCallback;
+  std::function<void()> activationCallback;
+  std::function<void()> tickCallback;
 };
 
 #endif // TIMER_H
