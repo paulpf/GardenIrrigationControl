@@ -2,6 +2,8 @@
 #ifndef RELAY_H
 #define RELAY_H
 
+#include "GlobalDefines.h"
+
 class Relay {
   public:
       Relay(int gpioChannel);

@@ -1,7 +1,7 @@
 #ifndef HARDWARE_BUTTON_H
 #define HARDWARE_BUTTON_H
 
-#include <Arduino.h>
+#include "GlobalDefines.h"
 
 class HardwareButton {
 public:

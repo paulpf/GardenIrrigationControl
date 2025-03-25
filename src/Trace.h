@@ -1,7 +1,7 @@
 #ifndef TRACE_H
 #define TRACE_H
 
-#include <Arduino.h>
+#include "globaldefines.h"
 
 class Trace
 {

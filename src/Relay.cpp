@@ -1,6 +1,4 @@
 #include "Relay.h"
-#include <Arduino.h>
-#include "Trace.h"
 
 Relay::Relay(int gpioChannel) : gpioChannel(gpioChannel), state(false) {
 }

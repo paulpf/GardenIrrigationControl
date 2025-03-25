@@ -1,10 +1,11 @@
 #include "Timer.h"
 
-Timer::Timer() : startTime(0), duration(0), active(false), deactivationCallback(nullptr) {}
+Timer::Timer() : startTime(0), duration(0), active(false), deactivationCallback(nullptr), lastTickTime(0) {}
 
 void Timer::start(unsigned long duration) {
   this->duration = duration;
   startTime = millis();
+  lastTickTime = startTime; // Initialize lastTickTime when the timer starts
   active = true;
   if (activationCallback) {
     activationCallback();
@@ -12,6 +13,7 @@ void Timer::start(unsigned long duration) {
 }
 
 void Timer::stop() {
+  
   active = false;
   if (deactivationCallback) {
     deactivationCallback();
@@ -36,10 +38,24 @@ unsigned long Timer::getRemainingTime() const {
   }
 }
 
+void Timer::handleTick() {
+  if (active && tickCallback) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastTickTime >= 1000) { // Check if one second has passed
+      lastTickTime = currentMillis;
+      tickCallback();
+    }
+  }
+}
+
 void Timer::setDeactivationCallback(void (*callback)()) {
   deactivationCallback = callback;
 }
 
 void Timer::setActivationCallback(void (*callback)()) {
   activationCallback = callback;
+}
+
+void Timer::setTickCallback(void (*callback)()) {
+  tickCallback = callback;
 }

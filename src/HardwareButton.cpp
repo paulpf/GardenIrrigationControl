@@ -1,6 +1,4 @@
 #include "HardwareButton.h"
-#include <Arduino.h>
-#include <functional>
 
 HardwareButton* HardwareButton::instance = nullptr;
 

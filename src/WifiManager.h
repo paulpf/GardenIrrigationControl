@@ -1,8 +1,8 @@
 #ifndef WifiManager_H
 #define WifiManager_H
 
+#include "GlobalDefines.h"
 #include <WiFi.h>
-#include "Trace.h"
 
 // Forward declaration
 class MainContext;

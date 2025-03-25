@@ -1,12 +1,9 @@
 #ifndef MQTT_MANAGER_H
 #define MQTT_MANAGER_H
 
-#include <Arduino.h>
+#include "GlobalDefines.h"
 #include <PubSubClient.h>
 #include <WiFiClient.h>
-#include <functional>
-#include <map>
-#include "Trace.h"
 
 class MqttManager {
 

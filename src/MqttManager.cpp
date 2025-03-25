@@ -1,6 +1,4 @@
 #include "MqttManager.h"
-#include <map>
-#include <functional>
 
 // Initialize static member
 MqttManager* MqttManager::instance = nullptr;
