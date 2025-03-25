@@ -12,15 +12,15 @@ public:
     IrrigationZone(int buttonPin, int relayPin, unsigned long debounceDelay, const String& clientName, MqttManager& mqttManager);
 
     void setup();
-    void handleButtonPress();
-    void handleSwBtnMessage(const String& message);
     void onTimerActivated();
     void onTimerDeactivated();
     void onTimerTick();
-    void updateTimerState();
+    void onHwButtonPressed();
+    void handleSwBtnMessage(const String& message);
+    void loop();
 
 private:
-    HardwareButton button;
+    HardwareButton hwButton;
     Relay relay;
     Timer timer;
 
@@ -30,6 +30,8 @@ private:
 
     String clientName;
     MqttManager& mqttManager;
+
+    void updateTimerState();
 };
 
 #endif // IRRIGATION_ZONE_H

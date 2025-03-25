@@ -3,6 +3,7 @@
 Timer::Timer() : startTime(0), duration(0), active(false), deactivationCallback(nullptr), lastTickTime(0) {}
 
 void Timer::start(unsigned long duration) {
+  Trace::log("Timer started with duration " + String(duration));
   this->duration = duration;
   startTime = millis();
   lastTickTime = startTime; // Initialize lastTickTime when the timer starts
@@ -13,7 +14,7 @@ void Timer::start(unsigned long duration) {
 }
 
 void Timer::stop() {
-  
+  Trace::log("Timer stopped");
   active = false;
   if (deactivationCallback) {
     deactivationCallback();

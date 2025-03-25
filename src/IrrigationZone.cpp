@@ -1,22 +1,29 @@
 #include "IrrigationZone.h"
 
-IrrigationZone::IrrigationZone(int buttonPin, int relayPin, unsigned long debounceDelay, const String& clientName, MqttManager& mqttManager)
-    : button(buttonPin, debounceDelay), relay(relayPin), clientName(clientName), mqttManager(mqttManager),
-      synchronizedState(false), hwButtonState(false), swButtonState(false) {}
+IrrigationZone::IrrigationZone(int buttonPin, int relayPin, unsigned long debounceDelay, const String& clientName, MqttManager& mqttManager): 
+    hwButton(buttonPin, debounceDelay), 
+    relay(relayPin), 
+    clientName(clientName), 
+    mqttManager(mqttManager),
+    synchronizedState(false), 
+    hwButtonState(false), 
+    swButtonState(false) {}
 
 void IrrigationZone::setup() {
-    button.setup();
-    button.setOnPressedCallback(std::bind(&IrrigationZone::handleButtonPress, this));
+    hwButton.setup();
+    hwButton.setOnPressedCallback(std::bind(&IrrigationZone::onHwButtonPressed, this));
 
     relay.setup();
 
-    timer.setTickCallback([this]() { onTimerTick(); });
-    timer.setActivationCallback([this]() { onTimerActivated(); });
-    timer.setDeactivationCallback([this]() { onTimerDeactivated(); });
+    timer.setTickCallback(std::bind(&IrrigationZone::onTimerTick, this));
+    timer.setActivationCallback(std::bind(&IrrigationZone::onTimerActivated, this));
+    timer.setDeactivationCallback(std::bind(&IrrigationZone::onTimerDeactivated, this));
+
+    mqttManager.registerTopicHandler(clientName + "/swBtn", std::bind(&IrrigationZone::handleSwBtnMessage, this, std::placeholders::_1));
+    mqttManager.subscribeToTopic(clientName + "/swBtn");
 }
 
-void IrrigationZone::handleButtonPress() {
-    Trace::log("Hardware button pressed");
+void IrrigationZone::onHwButtonPressed() {
     hwButtonState = !hwButtonState;
     synchronizedState = swButtonState = hwButtonState;
 }
@@ -45,13 +52,21 @@ void IrrigationZone::onTimerDeactivated() {
 }
 
 void IrrigationZone::onTimerTick() {
-    mqttManager.publish(clientName + "/remainingTime", String(timer.getRemainingTime()));
+  Trace::log("Timer tick"); 
+  mqttManager.publish(clientName + "/remainingTime", String(timer.getRemainingTime()));
 }
 
 void IrrigationZone::updateTimerState() {
-    if (synchronizedState && !timer.isActive()) {
+  Trace::log("Updating timer state");  
+  if (synchronizedState && !timer.isActive()) {
         timer.start(10000); // Start timer for 10 seconds
     } else if (!synchronizedState && timer.isActive()) {
         timer.stop();
     }
+}
+
+void IrrigationZone::loop() {
+    timer.update();
+    timer.handleTick();
+    updateTimerState();    
 }

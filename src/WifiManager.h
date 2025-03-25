@@ -11,7 +11,7 @@ class WifiManager {
 public:
   WifiManager(const char* ssid, const char* password, String clientName);
   void setup();
-  void connectionLoop();
+  void loop();
   void checkSignal();
   bool isConnected();
   String getLocalIP();

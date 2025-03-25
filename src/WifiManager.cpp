@@ -60,7 +60,7 @@ void WifiManager::setup()
 }
 
 // Non-blocking WiFi management
-void WifiManager::connectionLoop() 
+void WifiManager::loop() 
 {
   unsigned long currentMillis = millis();
   if (currentMillis - _lastWifiCheckMillis >= _wifiCheckInterval) 

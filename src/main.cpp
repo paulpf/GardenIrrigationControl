@@ -17,6 +17,7 @@
 #include "HardwareButton.h"
 #include "Relay.h"
 #include "Timer.h"
+#include "IrrigationZone.h"
 
 // ================ Constants ================
 String CLIENT_NAME = "GardenController-" + Tools::replaceChars(WiFi.macAddress(), ':', '-');
@@ -29,74 +30,77 @@ int RELAY1_GPIOPIN = 22;
 WifiManager wifiManager(WIFI_SSID, WIFI_PWD, CLIENT_NAME);
 MqttManager mqttManager(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, CLIENT_NAME);
 
-bool synchronizedBtn1NewState = false;
-bool hwBtn1State = false;
-bool swBtn1State = false;
+IrrigationZone irrigationZone(HWBTN1_GPIOPIN, RELAY1_GPIOPIN, HWBTN_DEBOUNCE_DELAY, CLIENT_NAME, mqttManager);
 
-void synchronizeButtonStates(bool newState) 
-{
-  synchronizedBtn1NewState = swBtn1State = hwBtn1State = newState;
-}
 
-void IRAM_ATTR onHwBtn1Pressed() {
-  Trace::log("Hardware button 1 pressed");  
-  hwBtn1State = !hwBtn1State;
-  synchronizeButtonStates(hwBtn1State);  
-}
+// bool synchronizedBtn1NewState = false;
+// bool hwBtn1State = false;
+// bool swBtn1State = false;
 
-HardwareButton hwButton1(HWBTN1_GPIOPIN, HWBTN_DEBOUNCE_DELAY);
+// void synchronizeButtonStates(bool newState) 
+// {
+//   synchronizedBtn1NewState = swBtn1State = hwBtn1State = newState;
+// }
 
-void handleSwBtn1Message(const String& message) {
-  Trace::log("Received message on topic " + CLIENT_NAME + "/swBtn1: " + message);
-  swBtn1State = message == "true";
-  synchronizeButtonStates(swBtn1State);
-}
+// void IRAM_ATTR onHwBtn1Pressed() {
+//   Trace::log("Hardware button 1 pressed");  
+//   hwBtn1State = !hwBtn1State;
+//   synchronizeButtonStates(hwBtn1State);  
+// }
 
-Relay relay1(RELAY1_GPIOPIN);
+// HardwareButton hwButton1(HWBTN1_GPIOPIN, HWBTN_DEBOUNCE_DELAY);
 
-void onRelay1TimerDeactivated() {
-  Trace::log("Relay 1 timer deactivated");
-  relay1.activate(false);
-  synchronizeButtonStates(false);
-  mqttManager.publish(CLIENT_NAME + "/relais1", String(relay1.isActive()));
-  mqttManager.publish(CLIENT_NAME + "/swBtn1", synchronizedBtn1NewState ? "true" : "false");  
-  mqttManager.publish(CLIENT_NAME + "/remainingTimeRel1", String(0));
-}
+// void handleSwBtn1Message(const String& message) {
+//   Trace::log("Received message on topic " + CLIENT_NAME + "/swBtn1: " + message);
+//   swBtn1State = message == "true";
+//   synchronizeButtonStates(swBtn1State);
+// }
 
-void onRelay1TimerActivated() {
-  Trace::log("Relay 1 timer activated");
-  relay1.activate(true);
-  synchronizeButtonStates(true);
-  mqttManager.publish(CLIENT_NAME + "/relais1", String(relay1.isActive()));
-  mqttManager.publish(CLIENT_NAME + "/swBtn1", synchronizedBtn1NewState ? "true" : "false");  
-}
+// Relay relay1(RELAY1_GPIOPIN);
 
-Timer relay1Timer;
+// void onRelay1TimerDeactivated() {
+//   Trace::log("Relay 1 timer deactivated");
+//   relay1.activate(false);
+//   synchronizeButtonStates(false);
+//   mqttManager.publish(CLIENT_NAME + "/relais1", String(relay1.isActive()));
+//   mqttManager.publish(CLIENT_NAME + "/swBtn1", synchronizedBtn1NewState ? "true" : "false");  
+//   mqttManager.publish(CLIENT_NAME + "/remainingTimeRel1", String(0));
+// }
 
-void onRelay1TimerTick() {
-  mqttManager.publish(CLIENT_NAME + "/remainingTimeRel1", String(relay1Timer.getRemainingTime()));
-}
+// void onRelay1TimerActivated() {
+//   Trace::log("Relay 1 timer activated");
+//   relay1.activate(true);
+//   synchronizeButtonStates(true);
+//   mqttManager.publish(CLIENT_NAME + "/relais1", String(relay1.isActive()));
+//   mqttManager.publish(CLIENT_NAME + "/swBtn1", synchronizedBtn1NewState ? "true" : "false");  
+// }
 
-void updateRelayTimerState()
-{
-  if (synchronizedBtn1NewState == true && relay1Timer.isActive() == false)
-  {
-    relay1Timer.start(10000); // Start timer for 10 seconds
-  }
-  else if (synchronizedBtn1NewState == false && relay1Timer.isActive() == true)
-  {
-    relay1Timer.stop();
-  }
-}
+// Timer relay1Timer;
+
+// void onRelay1TimerTick() {
+//   mqttManager.publish(CLIENT_NAME + "/remainingTimeRel1", String(relay1Timer.getRemainingTime()));
+// }
+
+// void updateRelayTimerState()
+// {
+//   if (synchronizedBtn1NewState == true && relay1Timer.isActive() == false)
+//   {
+//     relay1Timer.start(10000); // Start timer for 10 seconds
+//   }
+//   else if (synchronizedBtn1NewState == false && relay1Timer.isActive() == true)
+//   {
+//     relay1Timer.stop();
+//   }
+// }
 
 
 // ================ Main ================
 
 void setup() 
 {
-  synchronizedBtn1NewState = false;
-  hwBtn1State = false;
-  swBtn1State = false;
+  // synchronizedBtn1NewState = false;
+  // hwBtn1State = false;
+  // swBtn1State = false;
   
   // Setup console
   Serial.begin(115200);
@@ -106,21 +110,14 @@ void setup()
   wifiManager.setup();
 
   // Setup MQTT
-  mqttManager.registerTopicHandler(CLIENT_NAME + "/swBtn1", handleSwBtn1Message);
+  // mqttManager.registerTopicHandler(CLIENT_NAME + "/swBtn1", [&](const String& message) {
+  //   irrigationZone.handleSwBtnMessage(message);
+  // });
   mqttManager.setup();
-  mqttManager.subscribeToTopic(CLIENT_NAME + "/swBtn1");
+  // mqttManager.subscribeToTopic(CLIENT_NAME + "/swBtn1");
   
-  // Setup button
-  hwButton1.setup();
-  hwButton1.setOnPressedCallback(onHwBtn1Pressed);
-
-  // Setup relay timer
-  relay1Timer.setTickCallback(onRelay1TimerTick);
-  relay1Timer.setActivationCallback(onRelay1TimerActivated);
-  relay1Timer.setDeactivationCallback(onRelay1TimerDeactivated);
-
-  // Setup relais
-  relay1.setup();
+  // Setup IrrigationZone
+  irrigationZone.setup();
 
   // Initialize the watchdog timer
   esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
@@ -137,15 +134,13 @@ void loop()
   esp_task_wdt_reset();
   
   // Manage WiFi connection
-  wifiManager.connectionLoop();
+  wifiManager.loop();
   
   // Manage MQTT connection and loop
   mqttManager.loop(wifiManager.isConnected(), wifiManager.checkDnsResolution(MQTT_SERVER_IP));
 
-  relay1Timer.update();
-  relay1Timer.handleTick();
-
-  updateRelayTimerState();
+  // Update IrrigationZone state
+  irrigationZone.loop();
 
   delay(LOOP_DELAY);
   Trace::log("Loop end");
