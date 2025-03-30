@@ -19,28 +19,13 @@
 #include "./_secrets/MqttSecret.h"
 #endif
 
-// ================ Helper functions ================
-// Help function to replace characters in a string
-String replaceChars(String str, char charsToReplace, char replaceWith)
-{
-  for (int i = 0; i < str.length(); i++)
-  {
-    if (str[i] == charsToReplace)
-    {
-      str[i] = replaceWith;
-    }
-  }
-  return str;
-}
-
-
 // ================ Constants ================
 int loopDelay = 1000;
 const int WIFI_CONNECTION_TIMEOUT = 10000; // 10 seconds
 const int WATCHDOG_TIMEOUT = 60000;
 
 // Name is used for the hostname. It is combined with the MAC address to create a unique name.
-String clientName = "GardenController-" + replaceChars(WiFi.macAddress(), ':', '-');
+String clientName = "GardenController-" + Tools::replaceChars(WiFi.macAddress(), ':', '-');
 
 // ================ WiFi ================
 int countToTryReconnect = 0;

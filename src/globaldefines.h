@@ -4,10 +4,12 @@
 #define TRACE
 
 #include <Arduino.h>
-#include "Trace.h"
 #include <functional>
 #include <map>
 #include <algorithm>
 #include <cmath>
+
+#include "trace.h"
+#include "tools.h"
 
 #endif // GLOBAL_DEFINES_H
