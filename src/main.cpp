@@ -1,9 +1,7 @@
 #define TRACE
 
-#include <Arduino.h>
-#include "Trace.h"
-#include <algorithm>
-#include <cmath>
+#include "globaldefines.h"
+
 #include <PubSubClient.h>
 #include <WiFiClient.h>
 #include "esp_task_wdt.h"
