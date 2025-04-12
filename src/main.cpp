@@ -21,9 +21,6 @@
 #include "esp_system.h"
 
 
-
-
-
 // ================ Constants ================
 int loopDelay = 1000;
 const int WIFI_CONNECTION_TIMEOUT = 10000; // 10 seconds
@@ -46,13 +43,6 @@ enum WifiState
 WifiState wifiState = WIFI_DISCONNECTED;
 unsigned long wifiConnectStartTime = 0;
 int reconnectAttempt = 0;
-
-// ================ Timers ================
-// for relay 1
-unsigned long startTimeRel1;
-int durationRel1;
-int remainingTimeRel1;
-
 
 // ================ MQTT ================
 WiFiClient wifiClient;
@@ -275,10 +265,6 @@ void WiFiEvent(WiFiEvent_t event)
   }
 }
 
-
-
-
-
 void nonBlockingWifiManagement()
 {
   unsigned long currentMillis = millis();
@@ -300,19 +286,6 @@ void nonBlockingMqttManagement()
   else if (mqttState == _MQTT_CONNECTED) 
   {
     pubSubClient.loop(); // Process incoming messages
-  }
-}
-
-void lastOperationsInTheLoop()
-{
-  if (WiFi.status() == WL_CONNECTED) 
-  {
-    // Online operations (cloud updates, etc.)
-    checkWifiSignal();
-  } 
-  else 
-  {
-    // Offline operations (use local controls only)
   }
 }
 
@@ -354,57 +327,24 @@ void loop()
   // Non-blocking MQTT management
   nonBlockingMqttManagement();
 
-  irrigationZone1.loop(); // Loop irrigation zone
-
-  // ============ Process logic ============
-  // if btn1 is active, relais 1 should be active for specific time
-  if (irrigationZone1.getRelayState() == false && irrigationZone1.getBtnState() == true)
-  {
-    irrigationZone1.setRelayState(true);
-
-    // Start timer
-    startTimeRel1 = millis();
-    durationRel1 = 10000; // 10 seconds
-  }
-  // if btn1 is inactive, relais 1 should be inactive
-  else if(irrigationZone1.getRelayState() == true && irrigationZone1.getBtnState() == false)
-  {
-    irrigationZone1.setRelayState(false);
-    remainingTimeRel1 = 0;
-  }
-
-  // ============ Timers ============
-  if (irrigationZone1.getRelayState())
-  {
-    remainingTimeRel1 = durationRel1 - (millis() - startTimeRel1);
-    Trace::log("Remaining time for relais1: " + String(remainingTimeRel1));
-    if (remainingTimeRel1 <= 0)
-    {
-      Trace::log("Relais1 timer expired");
-      remainingTimeRel1 = 0;
-      irrigationZone1.setRelayState(false);
-      irrigationZone1.synchronizeButtonStates(false);
-    }
-  }
-  
-  // ============ Write ============
-  // Update hardware depending on logic and timers
-  irrigationZone1.switchRelay(irrigationZone1.getRelayState());
-
-  
+  // ============ Irrigation zone loop ============
+  irrigationZone1.loop();
 
   // ============ MQTT update ============
   if (mqttState == _MQTT_CONNECTED) 
   {
-    publishMqtt(clientName + "/relais1", String(irrigationZone1.getRelayState()));
-    publishMqtt(clientName + "/remainingTimeRel1", String(remainingTimeRel1));
-    // Block MQTT updates for buttons to avoid feedback loop
-    Trace::log("Publishing button state: " + String(irrigationZone1.getBtnState() ? "true" : "false"));
-    // Publisch a string representation of the boolean state
+    // Irrigation zone 1
+    publishMqtt(irrigationZone1.getMqttTopicForRelay(), irrigationZone1.getRelayState() ? "true" : "false");
+    publishMqtt(irrigationZone1.getMqttTopicForRemainingTime(), String(irrigationZone1.getRemainingTime()));
     publishMqtt(irrigationZone1.getMqttTopicForSwButton(), irrigationZone1.getBtnState() ? "true" : "false");
+
+    // Publish other topics as needed
   }
 
-  lastOperationsInTheLoop();
+  if (WiFi.status() == WL_CONNECTED) 
+  {
+    checkWifiSignal();
+  } 
   
   delay(loopDelay);
   Trace::log("Loop end");
