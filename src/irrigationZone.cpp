@@ -14,7 +14,7 @@ void IrrigationZone::setup(int hwBtnGpioChannel, String mqttTopicForZone)
   _mqttTopicForSwButton = mqttTopicForZone + "/swBtn";
   _hwBtnState = false;
   _swBtnState = false;
-  _synconizedBtnNewState = false;
+  _synchronizedBtnNewState = false;
   setupHwButton(_hwBtnGpioChannel);
 }
 
@@ -45,7 +45,7 @@ void IRAM_ATTR IrrigationZone::onHwBtnPressed()
 
 void IrrigationZone::synchronizeButtonStates(bool newState) 
 {
-  _synconizedBtnNewState = _swBtnState = _hwBtnState = newState;
+  _synchronizedBtnNewState = _swBtnState = _hwBtnState = newState;
 }
 
 void IrrigationZone::loop() 
