@@ -49,9 +49,9 @@ int reconnectAttempt = 0;
 
 // ================ Timers ================
 // for relay 1
-unsigned long startTimeRel1;
-int durationRel1;
-int remainingTimeRel1;
+// unsigned long startTimeRel1;
+// int durationRel1;
+// int remainingTimeRel1;
 
 
 // ================ MQTT ================
@@ -363,25 +363,27 @@ void loop()
     irrigationZone1.setRelayState(true);
 
     // Start timer
-    startTimeRel1 = millis();
-    durationRel1 = 10000; // 10 seconds
+    irrigationZone1.setDurationTime(10000); // 10 seconds
+    irrigationZone1.startTimer();
   }
   // if btn1 is inactive, relais 1 should be inactive
   else if(irrigationZone1.getRelayState() == true && irrigationZone1.getBtnState() == false)
   {
     irrigationZone1.setRelayState(false);
-    remainingTimeRel1 = 0;
+    irrigationZone1.resetTimer();
   }
+
+  
 
   // ============ Timers ============
   if (irrigationZone1.getRelayState())
   {
-    remainingTimeRel1 = durationRel1 - (millis() - startTimeRel1);
-    Trace::log("Remaining time for relais1: " + String(remainingTimeRel1));
-    if (remainingTimeRel1 <= 0)
+    int remainingTime = irrigationZone1.getRemainingTime();
+    Trace::log("Remaining time for relais1: " + String(remainingTime));
+    if (remainingTime <= 0)
     {
       Trace::log("Relais1 timer expired");
-      remainingTimeRel1 = 0;
+      irrigationZone1.resetTimer();
       irrigationZone1.setRelayState(false);
       irrigationZone1.synchronizeButtonStates(false);
     }
@@ -396,8 +398,9 @@ void loop()
   // ============ MQTT update ============
   if (mqttState == _MQTT_CONNECTED) 
   {
+    int remainingTime = irrigationZone1.getRemainingTime();
     publishMqtt(clientName + "/relais1", String(irrigationZone1.getRelayState()));
-    publishMqtt(clientName + "/remainingTimeRel1", String(remainingTimeRel1));
+    publishMqtt(clientName + "/remainingTimeRel1", String(remainingTime));
     // Block MQTT updates for buttons to avoid feedback loop
     Trace::log("Publishing button state: " + String(irrigationZone1.getBtnState() ? "true" : "false"));
     // Publisch a string representation of the boolean state

@@ -15,6 +15,12 @@ public:
     void switchRelay(bool state);
     bool getRelayState() { return _relaisState; } // Get the relay state
     void setRelayState(bool state) { _relaisState = state; } // Set the relay state
+    void startTimer(); // Set the relay start time
+    unsigned long getStartTime() { return _startTime; } // Get the relay start time
+    void setDurationTime(int durationTime) { _durationTime = durationTime; } // Set the relay duration time
+    int getDurationTime() { return _durationTime; } // Get the relay duration time
+    int getRemainingTime(); // Get the remaining time for the relay
+    void resetTimer();
 
 private:
     String _mqttTopicForSwButton;
@@ -38,6 +44,11 @@ private:
     int _relayGpioChannel;
     bool _relaisState = false;
     void setupRelay(int relayGpioChannel);
+
+    // ================ timer ================
+    bool _timerIsActive = false;
+    unsigned long _startTime;
+    int _durationTime;
 };
 
 #endif // IRRIGATION_ZONE_H

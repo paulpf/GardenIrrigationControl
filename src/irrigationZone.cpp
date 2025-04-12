@@ -80,3 +80,23 @@ void IrrigationZone::switchRelay(bool state)
     digitalWrite(_relayGpioChannel, HIGH);
   }
 }
+
+int IrrigationZone::getRemainingTime() 
+{
+  if (!_timerIsActive) 
+  {
+    return 0; // Timer is not active, return 0
+  }
+  return _durationTime - (millis() - _startTime);
+}
+
+void IrrigationZone::startTimer() 
+{
+  _timerIsActive = true;
+  _startTime = millis();
+}
+
+void IrrigationZone::resetTimer() 
+{
+  _timerIsActive = false;
+}
