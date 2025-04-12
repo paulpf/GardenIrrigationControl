@@ -6,14 +6,55 @@ IrrigationZone::IrrigationZone()
   // Constructor implementation (if needed)
 }
 
-void IrrigationZone::setup() 
+void IrrigationZone::setup(int hwBtnGpioChannel, String mqttTopicForZone) 
 {
   // Setup code for the irrigation zone
   Trace::log("IrrigationZone setup complete.");
+  _hwBtnGpioChannel = hwBtnGpioChannel;
+  _mqttTopicForSwButton = mqttTopicForZone + "/swBtn";
+  _hwBtnState = false;
+  _swBtnState = false;
+  _synconizedBtnNewState = false;
+  setupHwButton(_hwBtnGpioChannel);
+}
+
+void IrrigationZone::setupHwButton(int hwBtnGpioChannel)
+{
+  pinMode(hwBtnGpioChannel, INPUT_PULLDOWN);
+  // Using ESP32's built-in support for std::function in attachInterruptArg
+  attachInterruptArg(
+    digitalPinToInterrupt(hwBtnGpioChannel),
+    [](void* arg) { static_cast<IrrigationZone*>(arg)->onHwBtnPressed(); },
+    this,
+    RISING
+  );
+}
+
+void IRAM_ATTR IrrigationZone::onHwBtnPressed() 
+{
+  Trace::log("Hardware button pressed.");
+  unsigned long now = millis();
+  if (now - _lastDebounceTime > _debounceDelay) 
+  {
+    _lastDebounceTime = now;
+    _hwBtnState = !_hwBtnState;
+    // synchronize the new state with the software state
+    synchronizeButtonStates(_hwBtnState);
+  }  
+}
+
+void IrrigationZone::synchronizeButtonStates(bool newState) 
+{
+  _synconizedBtnNewState = _swBtnState = _hwBtnState = newState;
 }
 
 void IrrigationZone::loop() 
 {
   // Loop code for the irrigation zone
   Trace::log("IrrigationZone loop running.");
+}
+
+String IrrigationZone::getMqttTopicForSwButton() 
+{
+  return _mqttTopicForSwButton;
 }

@@ -47,17 +47,6 @@ WifiState wifiState = WIFI_DISCONNECTED;
 unsigned long wifiConnectStartTime = 0;
 int reconnectAttempt = 0;
 
-//
-bool synconizedBtn1NewState = false;
-bool synconizedBtn1OldState = false;
-
-// ================ Hardware buttons ================
-// Button 1
-int btn1GpioChannel = 23;
-bool hwBtn1State = false;
-unsigned long lastDebounceTime;
-const int debounceDelay = 500; // debounce time in milliseconds
-
 // ================ Software buttons (via MQTT) ================
 // Button 1
 bool swBtn1State = false;
@@ -95,11 +84,6 @@ const int maxMqttReconnectAttempts = 5;
 // ================ Irrigation zones ================
 IrrigationZone irrigationZone1;
 
-void synchronizeButtonStates(bool newState) 
-{
-  synconizedBtn1NewState = swBtn1State = hwBtn1State = newState;
-}
-
 // Callback function to handle incoming MQTT messages
 void mqttCallback(char* topic, byte* payload, unsigned int length)
 {
@@ -111,11 +95,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length)
     }
     Trace::log("Message: " + message);
 
-    if (String(topic).startsWith(clientName + "/swBtn1"))
+    if (String(topic).startsWith(irrigationZone1.getMqttTopicForSwButton()))
     {
-      swBtn1State = message == "true";
-      // synchronize the new state with the hardware state
-      synchronizeButtonStates(swBtn1State);
+      irrigationZone1.synchronizeButtonStates(message == "true");
     }
 }
 
@@ -142,7 +124,8 @@ void reconnectMqtt()
     mqttReconnectAttempts = 0;
     
     // Subscribe to topics
-    pubSubClient.subscribe((clientName + "/swBtn1").c_str());
+    //pubSubClient.subscribe((clientName + "/swBtn1").c_str());
+    pubSubClient.subscribe(irrigationZone1.getMqttTopicForSwButton().c_str());
   } 
   else 
   {
@@ -303,26 +286,6 @@ void WiFiEvent(WiFiEvent_t event)
 }
 
 
-// ================ Hardware Functions ================
-// Button 1
-void IRAM_ATTR OnHwBtn1Pressed() 
-{
-  unsigned long now = millis();
-  if (now - lastDebounceTime > debounceDelay) 
-  {
-    lastDebounceTime = now;
-    hwBtn1State = !hwBtn1State;
-    // synchronize the new state with the software state
-    synchronizeButtonStates(hwBtn1State);
-  }  
-}
-
-void setupButton1()
-{
-  pinMode(btn1GpioChannel, INPUT_PULLDOWN);
-  attachInterrupt(digitalPinToInterrupt(btn1GpioChannel), OnHwBtn1Pressed, RISING);
-}
-
 // Relay 1
 void setupRelais1()
 {
@@ -387,11 +350,6 @@ void lastOperationsInTheLoop()
 
 void setup() 
 {
-  synconizedBtn1NewState = false;
-  synconizedBtn1OldState = false;
-  hwBtn1State = false;
-  swBtn1State = false;
-  
   // Setup console
   Serial.begin(115200);
   Trace::log("Setup begin");
@@ -404,13 +362,10 @@ void setup()
   pubSubClient.setServer(MQTT_SERVER_IP, MQTT_SERVER_PORT);
   pubSubClient.setCallback(mqttCallback);
   
-  // Setup button
-  setupButton1();
-
   // Setup relais
   setupRelais1();
 
-  irrigationZone1.setup(); // Setup irrigation zone
+  irrigationZone1.setup(23, clientName + "/irrigationZone1"); // GPIO 23 for button
 
   // Initialize the watchdog timer
   esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
@@ -441,7 +396,7 @@ void loop()
   
   // ============ Process logic ============
   // if btn1 is active, relais 1 should be active for specific time
-  if (relais1State == false && synconizedBtn1NewState == true)
+  if (relais1State == false && irrigationZone1.getBtnState() == true)
   {
     relais1State = true;
 
@@ -450,7 +405,7 @@ void loop()
     durationRel1 = 10000; // 10 seconds
   }
   // if btn1 is inactive, relais 1 should be inactive
-  else if(relais1State == true && synconizedBtn1NewState == false)
+  else if(relais1State == true && irrigationZone1.getBtnState() == false)
   {
     relais1State = false;
     remainingTimeRel1 = 0;
@@ -466,7 +421,8 @@ void loop()
       Trace::log("Relais1 timer expired");
       remainingTimeRel1 = 0;
       relais1State = false;
-      synchronizeButtonStates(false);
+      //synchronizeButtonStates(false);
+      irrigationZone1.synchronizeButtonStates(false);
     }
   }
   
@@ -482,9 +438,9 @@ void loop()
     publishMqtt(clientName + "/relais1", String(relais1State));
     publishMqtt(clientName + "/remainingTimeRel1", String(remainingTimeRel1));
     // Block MQTT updates for buttons to avoid feedback loop
-    Trace::log("Publishing button state: " + String(synconizedBtn1NewState ? "true" : "false"));
+    Trace::log("Publishing button state: " + String(irrigationZone1.getBtnState() ? "true" : "false"));
     // Publisch a string representation of the boolean state
-    publishMqtt(clientName + "/swBtn1", synconizedBtn1NewState ? "true" : "false");
+    publishMqtt(irrigationZone1.getMqttTopicForSwButton(), irrigationZone1.getBtnState() ? "true" : "false");
   }
 
   lastOperationsInTheLoop();
