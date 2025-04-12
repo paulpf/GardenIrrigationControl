@@ -7,11 +7,14 @@ class IrrigationZone {
 public:
     IrrigationZone();
 
-    void setup(int hwBtnGpioChannel, String mqttTopic);
+    void setup(int hwBtnGpioChannel, int relayGpioChannel, String mqttTopic);
     void loop();
     String getMqttTopicForSwButton();
     void synchronizeButtonStates(bool newState);
     bool getBtnState() { return _hwBtnState; } // Get the hardware button state
+    void switchRelay(bool state);
+    bool getRelayState() { return _relaisState; } // Get the relay state
+    void setRelayState(bool state) { _relaisState = state; } // Set the relay state
 
 private:
     String _mqttTopicForSwButton;
@@ -30,6 +33,11 @@ private:
     // ================ Software button (via MQTT) ================
     bool _swBtnState = false;
     bool _swBtnStateOld = false;
+
+    // ================ Relay ================
+    int _relayGpioChannel;
+    bool _relaisState = false;
+    void setupRelay(int relayGpioChannel);
 };
 
 #endif // IRRIGATION_ZONE_H
