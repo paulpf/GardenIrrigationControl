@@ -1,14 +1,5 @@
 #define TRACE
 
-#include "globaldefines.h"
-
-#include <PubSubClient.h>
-#include <WiFiClient.h>
-#include "esp_task_wdt.h"
-#include "esp_system.h"
-
-#include <WiFi.h>
-
 #ifdef USE_PRIVATE_SECRET
 #include "../../_secrets/WifiSecret.h"
 #include "../../_configs/MqttConfig.h"
@@ -18,6 +9,20 @@
 #include "./_config/MqttConfig.h"
 #include "./_secrets/MqttSecret.h"
 #endif
+
+#include "globaldefines.h"
+
+#include <WiFi.h>
+#include <PubSubClient.h>
+#include <WiFiClient.h>
+#include "irrigationZone.h"
+
+#include "esp_task_wdt.h"
+#include "esp_system.h"
+
+
+
+
 
 // ================ Constants ================
 int loopDelay = 1000;
@@ -86,6 +91,9 @@ unsigned long lastMqttAttemptMillis = 0;
 const unsigned long mqttRetryInterval = 5000; // Wait 5 seconds between connection attempts
 int mqttReconnectAttempts = 0;
 const int maxMqttReconnectAttempts = 5;
+
+// ================ Irrigation zones ================
+IrrigationZone irrigationZone1;
 
 void synchronizeButtonStates(bool newState) 
 {
@@ -402,6 +410,8 @@ void setup()
   // Setup relais
   setupRelais1();
 
+  irrigationZone1.setup(); // Setup irrigation zone
+
   // Initialize the watchdog timer
   esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
   esp_task_wdt_add(NULL); // Add current thread to WDT watch
@@ -421,6 +431,8 @@ void loop()
 
   // Non-blocking MQTT management
   nonBlockingMqttManagement();
+
+  irrigationZone1.loop(); // Loop irrigation zone
 
   // ============ Read ============
 
