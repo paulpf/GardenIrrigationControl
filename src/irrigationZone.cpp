@@ -6,16 +6,18 @@ IrrigationZone::IrrigationZone()
   // Constructor implementation (if needed)
 }
 
-void IrrigationZone::setup(int hwBtnGpioChannel, String mqttTopicForZone) 
+void IrrigationZone::setup(int hwBtnGpioChannel, int relayGpioChannel, String mqttTopicForZone) 
 {
   // Setup code for the irrigation zone
   Trace::log("IrrigationZone setup complete.");
   _hwBtnGpioChannel = hwBtnGpioChannel;
+  _relayGpioChannel = relayGpioChannel;
   _mqttTopicForSwButton = mqttTopicForZone + "/swBtn";
   _hwBtnState = false;
   _swBtnState = false;
   _synchronizedBtnNewState = false;
   setupHwButton(_hwBtnGpioChannel);
+  setupRelay(_relayGpioChannel);
 }
 
 void IrrigationZone::setupHwButton(int hwBtnGpioChannel)
@@ -57,4 +59,24 @@ void IrrigationZone::loop()
 String IrrigationZone::getMqttTopicForSwButton() 
 {
   return _mqttTopicForSwButton;
+}
+
+void IrrigationZone::setupRelay(int relayGpioChannel) 
+{
+  pinMode(relayGpioChannel, OUTPUT);
+  digitalWrite(relayGpioChannel, HIGH); // Set relay to HIGH (off) by default
+}
+
+void IrrigationZone::switchRelay(bool state)
+{
+  if (state)
+  {
+    Trace::log("Switching relay ON");
+    digitalWrite(_relayGpioChannel, LOW);
+  }
+  else
+  {
+    Trace::log("Switching relay OFF");
+    digitalWrite(_relayGpioChannel, HIGH);
+  }
 }

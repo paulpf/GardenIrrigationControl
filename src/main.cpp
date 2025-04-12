@@ -47,16 +47,6 @@ WifiState wifiState = WIFI_DISCONNECTED;
 unsigned long wifiConnectStartTime = 0;
 int reconnectAttempt = 0;
 
-// ================ Software buttons (via MQTT) ================
-// Button 1
-bool swBtn1State = false;
-bool swBtn1StateOld = false;
-
-// ================ Relays ================
-// Relay 1
-int relais1GpioChannel = 22;
-bool relais1State = false;
-
 // ================ Timers ================
 // for relay 1
 unsigned long startTimeRel1;
@@ -286,26 +276,6 @@ void WiFiEvent(WiFiEvent_t event)
 }
 
 
-// Relay 1
-void setupRelais1()
-{
-  pinMode(relais1GpioChannel, OUTPUT);
-  digitalWrite(relais1GpioChannel, HIGH);
-}
-
-void switchRelay(bool state)
-{
-  if (state)
-  {
-    Trace::log("Switching relay ON");
-    digitalWrite(relais1GpioChannel, LOW);
-  }
-  else
-  {
-    Trace::log("Switching relay OFF");
-    digitalWrite(relais1GpioChannel, HIGH);
-  }
-}
 
 
 
@@ -362,10 +332,7 @@ void setup()
   pubSubClient.setServer(MQTT_SERVER_IP, MQTT_SERVER_PORT);
   pubSubClient.setCallback(mqttCallback);
   
-  // Setup relais
-  setupRelais1();
-
-  irrigationZone1.setup(23, clientName + "/irrigationZone1"); // GPIO 23 for button
+  irrigationZone1.setup(23, 22, clientName + "/irrigationZone1"); // GPIO 23 for button, GPIO 22 for relay
 
   // Initialize the watchdog timer
   esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
@@ -389,30 +356,25 @@ void loop()
 
   irrigationZone1.loop(); // Loop irrigation zone
 
-  // ============ Read ============
-
-
-
-  
   // ============ Process logic ============
   // if btn1 is active, relais 1 should be active for specific time
-  if (relais1State == false && irrigationZone1.getBtnState() == true)
+  if (irrigationZone1.getRelayState() == false && irrigationZone1.getBtnState() == true)
   {
-    relais1State = true;
+    irrigationZone1.setRelayState(true);
 
     // Start timer
     startTimeRel1 = millis();
     durationRel1 = 10000; // 10 seconds
   }
   // if btn1 is inactive, relais 1 should be inactive
-  else if(relais1State == true && irrigationZone1.getBtnState() == false)
+  else if(irrigationZone1.getRelayState() == true && irrigationZone1.getBtnState() == false)
   {
-    relais1State = false;
+    irrigationZone1.setRelayState(false);
     remainingTimeRel1 = 0;
   }
 
   // ============ Timers ============
-  if (relais1State)
+  if (irrigationZone1.getRelayState())
   {
     remainingTimeRel1 = durationRel1 - (millis() - startTimeRel1);
     Trace::log("Remaining time for relais1: " + String(remainingTimeRel1));
@@ -420,22 +382,21 @@ void loop()
     {
       Trace::log("Relais1 timer expired");
       remainingTimeRel1 = 0;
-      relais1State = false;
-      //synchronizeButtonStates(false);
+      irrigationZone1.setRelayState(false);
       irrigationZone1.synchronizeButtonStates(false);
     }
   }
   
   // ============ Write ============
   // Update hardware depending on logic and timers
-  switchRelay(relais1State);
+  irrigationZone1.switchRelay(irrigationZone1.getRelayState());
 
   
 
   // ============ MQTT update ============
   if (mqttState == _MQTT_CONNECTED) 
   {
-    publishMqtt(clientName + "/relais1", String(relais1State));
+    publishMqtt(clientName + "/relais1", String(irrigationZone1.getRelayState()));
     publishMqtt(clientName + "/remainingTimeRel1", String(remainingTimeRel1));
     // Block MQTT updates for buttons to avoid feedback loop
     Trace::log("Publishing button state: " + String(irrigationZone1.getBtnState() ? "true" : "false"));
