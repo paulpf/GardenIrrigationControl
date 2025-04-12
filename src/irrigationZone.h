@@ -21,7 +21,7 @@ private:
     bool _hwBtnState = false;
     unsigned long _lastDebounceTime;
     const int _debounceDelay = 500; // debounce time in milliseconds
-    bool _synconizedBtnNewState = false;
+    bool _synchronizedBtnNewState = false;
     //bool _synconizedBtnOldState = false;
 
     void setupHwButton(int hwBtnGpioChannel);
