@@ -12,7 +12,7 @@ void IrrigationZone::setup(int hwBtnGpioChannel, int relayGpioChannel, String mq
   Trace::log("IrrigationZone setup complete.");
   _hwBtnGpioChannel = hwBtnGpioChannel;
   _relayGpioChannel = relayGpioChannel;
-  _mqttTopicForSwButton = mqttTopicForZone + "/swBtn";
+  _mqttTopicForZone = mqttTopicForZone;
   _hwBtnState = false;
   _swBtnState = false;
   _synchronizedBtnNewState = false;
@@ -54,11 +54,6 @@ void IrrigationZone::loop()
 {
   // Loop code for the irrigation zone
   Trace::log("IrrigationZone loop running.");
-}
-
-String IrrigationZone::getMqttTopicForSwButton() 
-{
-  return _mqttTopicForSwButton;
 }
 
 void IrrigationZone::setupRelay(int relayGpioChannel) 

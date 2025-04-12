@@ -9,7 +9,12 @@ public:
 
     void setup(int hwBtnGpioChannel, int relayGpioChannel, String mqttTopic);
     void loop();
-    String getMqttTopicForSwButton();
+
+    // ================ Mqtt topics ================
+    String getMqttTopicForSwButton() { return _mqttTopicForZone + "/swBtn"; } // Get the MQTT topic for the software button
+    String getMqttTopicForRelay() { return _mqttTopicForZone + "/relayState"; } // Get the MQTT topic for the relay state
+    String getMqttTopicForRemainingTime() { return _mqttTopicForZone + "/remainingTime"; } // Get the MQTT topic for the remaining time
+    
     void synchronizeButtonStates(bool newState);
     bool getBtnState() { return _hwBtnState; } // Get the hardware button state
     void switchRelay(bool state);
@@ -23,6 +28,8 @@ public:
     void resetTimer();
 
 private:
+    // ================ Mqtt topics ================
+    String _mqttTopicForZone;
     String _mqttTopicForSwButton;
 
     // ================ Hardware button ================

@@ -393,17 +393,11 @@ void loop()
   // Update hardware depending on logic and timers
   irrigationZone1.switchRelay(irrigationZone1.getRelayState());
 
-  
-
   // ============ MQTT update ============
   if (mqttState == _MQTT_CONNECTED) 
   {
-    int remainingTime = irrigationZone1.getRemainingTime();
-    publishMqtt(clientName + "/relais1", String(irrigationZone1.getRelayState()));
-    publishMqtt(clientName + "/remainingTimeRel1", String(remainingTime));
-    // Block MQTT updates for buttons to avoid feedback loop
-    Trace::log("Publishing button state: " + String(irrigationZone1.getBtnState() ? "true" : "false"));
-    // Publisch a string representation of the boolean state
+    publishMqtt(irrigationZone1.getMqttTopicForRelay(), irrigationZone1.getRelayState() ? "true" : "false");
+    publishMqtt(irrigationZone1.getMqttTopicForRemainingTime(), String(irrigationZone1.getRemainingTime()));
     publishMqtt(irrigationZone1.getMqttTopicForSwButton(), irrigationZone1.getBtnState() ? "true" : "false");
   }
 
