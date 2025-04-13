@@ -1,10 +1,8 @@
 #include "Trace.h"
 
-//#define TRACE
-
 void Trace::log(String message)
 {
-  #ifdef TRACE
+  #if TRACE_ENABLED
   String timeStamp = String(millis());
   Serial.println(timeStamp + " | " + message);
   #endif

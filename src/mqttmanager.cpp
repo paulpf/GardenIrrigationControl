@@ -53,6 +53,23 @@ void MqttManager::instanceMqttCallback(char* topic, byte* payload, unsigned int 
             _irrigationZones[i]->synchronizeButtonStates(message == "true");
             break; // Exit the loop after processing the message
         }
+
+        if(String(topic).startsWith(_irrigationZones[i]->getMqttTopicForDurationTime())) 
+        {
+            int durationTime = message.toInt();
+            if (durationTime > 0 && durationTime <= MAX_DURATION_TIME) 
+            {
+                _irrigationZones[i]->setDurationTime(durationTime);
+                Trace::log("Updated duration time for zone " + String(i) + ": " + String(durationTime));
+            } 
+            else 
+            {
+                // Invalid duration time, reset to default
+                _irrigationZones[i]->setDurationTime(DEFAULT_DURATION_TIME);
+                Trace::log("Invalid duration time received for zone " + String(i) + ": " + String(durationTime));
+            }
+            break; // Exit the loop after processing the message
+        }
     }
 }
 
@@ -100,10 +117,7 @@ void MqttManager::reconnect()
         _mqttReconnectAttempts = 0;
         
         // Resubscribe to all topics for irrigation zones
-        for (int i = 0; i < _numIrrigationZones; i++) 
-        {
-            _pubSubClient.subscribe(_irrigationZones[i]->getMqttTopicForSwButton().c_str());
-        }
+        subscribeIrrigationZones();
     } 
     else 
     {
@@ -132,6 +146,18 @@ void MqttManager::publish(const char* topic, const char* payload)
     }
 }
 
+void MqttManager::subscribeIrrigationZones() 
+{
+    // Subscribe to all irrigation zones
+    for (int i = 0; i < _numIrrigationZones; i++) 
+    {
+        subscribe(_irrigationZones[i]->getMqttTopicForRelay().c_str());
+        subscribe(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str());
+        subscribe(_irrigationZones[i]->getMqttTopicForSwButton().c_str());
+        subscribe(_irrigationZones[i]->getMqttTopicForDurationTime().c_str());
+    }
+}
+
 void MqttManager::subscribe(const char* topic) 
 {
     if (_mqttState == MQTT_CONNECTED_STATE) 
@@ -152,12 +178,6 @@ void MqttManager::addIrrigationZone(IrrigationZone* zone)
         _irrigationZones[_numIrrigationZones] = zone;
         _numIrrigationZones++;
         Trace::log("Added irrigation zone: " + zone->getMqttTopicForZone());
-        
-        // Subscribe to the zone's button topic if we're connected
-        if (_mqttState == MQTT_CONNECTED_STATE) 
-        {
-            subscribe(zone->getMqttTopicForSwButton().c_str());
-        }
     } 
     else 
     {

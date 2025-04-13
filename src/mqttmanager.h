@@ -14,7 +14,8 @@ public:
     void loop();
     void publish(const char* topic, const char* payload);
     void subscribe(const char* topic);
-    void addIrrigationZone(IrrigationZone* zone);
+    void addIrrigationZone(IrrigationZone *zone);
+    void subscribeIrrigationZones();
     bool isConnected();
     void publishAllIrrigationZones();
 
@@ -23,37 +24,38 @@ public:
 
 private:
     // Instance callback that will be called by the static callback
-    void instanceMqttCallback(char* topic, byte* payload, unsigned int length);
-    void reconnect();
-    
-    // Static pointer to the MqttManager instance
-    static MqttManager* _instance;
-    
-    const char* _mqttServer;
-    int _mqttPort;
-    const char* _mqttUser;
-    const char* _mqttPassword;
-    const char* _clientName;
-    
-    WiFiClient _wifiClient;
-    PubSubClient _pubSubClient;
+  void instanceMqttCallback(char *topic, byte *payload, unsigned int length);
+  void handleTopicForSwButton(char *topic, int i, String &message, int &retFlag);
+  void reconnect();
 
-    // MQTT state management
-    enum MqttState 
-    {
-      MQTT_DISCONNECTED_STATE,
-      MQTT_CONNECTING_STATE,
-      MQTT_CONNECTED_STATE
-    };
-    MqttState _mqttState = MQTT_DISCONNECTED_STATE;
-    unsigned long _lastMqttAttemptMillis = 0;
-    const unsigned long _mqttRetryInterval = 5000; // Wait 5 seconds between connection attempts
-    int _mqttReconnectAttempts = 0;
-    const int _maxMqttReconnectAttempts = 5;
+  // Static pointer to the MqttManager instance
+  static MqttManager *_instance;
 
-    // Array of irrigation zones
-    IrrigationZone* _irrigationZones[MAX_IRRIGATION_ZONES];
-    int _numIrrigationZones = 0; // Number of irrigation zones
+  const char *_mqttServer;
+  int _mqttPort;
+  const char *_mqttUser;
+  const char *_mqttPassword;
+  const char *_clientName;
+
+  WiFiClient _wifiClient;
+  PubSubClient _pubSubClient;
+
+  // MQTT state management
+  enum MqttState
+  {
+    MQTT_DISCONNECTED_STATE,
+    MQTT_CONNECTING_STATE,
+    MQTT_CONNECTED_STATE
+  };
+  MqttState _mqttState = MQTT_DISCONNECTED_STATE;
+  unsigned long _lastMqttAttemptMillis = 0;
+  const unsigned long _mqttRetryInterval = 5000; // Wait 5 seconds between connection attempts
+  int _mqttReconnectAttempts = 0;
+  const int _maxMqttReconnectAttempts = 5;
+
+  // Array of irrigation zones
+  IrrigationZone *_irrigationZones[MAX_IRRIGATION_ZONES];
+  int _numIrrigationZones = 0; // Number of irrigation zones
 };
 
 #endif // MQTTMANAGER_H

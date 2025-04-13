@@ -100,7 +100,6 @@ void IrrigationZone::loop()
     setRelayState(true);
 
     // Start timer
-    setDurationTime(10000); // 10 seconds
     startTimer();
   }
   // if btn1 is inactive, relais 1 should be inactive
