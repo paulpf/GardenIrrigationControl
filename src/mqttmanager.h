@@ -12,6 +12,7 @@ public:
     MqttManager();
     void setup(const char* mqttServer, int mqttPort, const char* mqttUser, const char* mqttPassword, const char* clientName);
     void loop();
+    void initPublish();
     void publish(const char* topic, const char* payload);
     void subscribe(const char* topic);
     void addIrrigationZone(IrrigationZone *zone);
@@ -27,6 +28,8 @@ private:
   void instanceMqttCallback(char *topic, byte *payload, unsigned int length);
   void handleTopicForSwButton(char *topic, int i, String &message, int &retFlag);
   void reconnect();
+
+  bool _blockPublish; // Flag to block publish if needed
 
   // Static pointer to the MqttManager instance
   static MqttManager *_instance;

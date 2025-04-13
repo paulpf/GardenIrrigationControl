@@ -2,12 +2,14 @@
 #define IRRIGATION_ZONE_H
 
 #include "globalDefines.h"
+#include "StorageManager.h"
 
 class IrrigationZone {
 public:
     IrrigationZone();
 
-    void setup(int hwBtnGpioChannel, int relayGpioChannel, String mqttTopic);
+    void setup(int hwBtnGpioChannel, int relayGpioChannel, String mqttTopicForZone);
+    void loadSettingsFromStorage(int zoneIndex);
     void loop();
 
     // ================ Mqtt topics ================
@@ -21,10 +23,10 @@ public:
     bool getBtnState() { return _hwBtnState; } // Get the hardware button state
     void switchRelay(bool state);
     bool getRelayState() { return _relaisState; } // Get the relay state
-    void setRelayState(bool state) { _relaisState = state; } // Set the relay state
+    void setRelayState(bool state); // Set the relay state
     void startTimer(); // Set the relay start time
     unsigned long getStartTime() { return _startTime; } // Get the relay start time
-    void setDurationTime(int durationTime) { _durationTime = durationTime; } // Set the relay duration time
+    void setDurationTime(int durationTime, int zoneIndex); // Set the relay duration time
     int getDurationTime() { return _durationTime; } // Get the relay duration time
     int getRemainingTime(); // Get the remaining time for the relay
     void resetTimer();
@@ -58,6 +60,9 @@ private:
     bool _timerIsActive = false;
     unsigned long _startTime;
     int _durationTime;
+    
+    // ================ Storage ================
+    int _zoneIndex; // To track which zone index this is for storage
 };
 
 #endif // IRRIGATION_ZONE_H

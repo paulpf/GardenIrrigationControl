@@ -21,6 +21,7 @@ void MqttManager::setup(const char* mqttServer, int mqttPort, const char* mqttUs
     _clientName = clientName;
     _pubSubClient.setServer(_mqttServer, _mqttPort);
     _pubSubClient.setCallback(staticMqttCallback);
+    reconnect(); // Attempt to connect to MQTT broker
     Trace::log("MqttManager setup complete.");
 }
 
@@ -56,18 +57,21 @@ void MqttManager::instanceMqttCallback(char* topic, byte* payload, unsigned int 
 
         if(String(topic).startsWith(_irrigationZones[i]->getMqttTopicForDurationTime())) 
         {
+            _blockPublish = true; // Set block to true to prevent further processing
             int durationTime = message.toInt();
             if (durationTime > 0 && durationTime <= MAX_DURATION_TIME) 
             {
-                _irrigationZones[i]->setDurationTime(durationTime);
+                // Update to use new method with zone index for storage
+                _irrigationZones[i]->setDurationTime(durationTime, i);
                 Trace::log("Updated duration time for zone " + String(i) + ": " + String(durationTime));
             } 
             else 
             {
                 // Invalid duration time, reset to default
-                _irrigationZones[i]->setDurationTime(DEFAULT_DURATION_TIME);
+                _irrigationZones[i]->setDurationTime(DEFAULT_DURATION_TIME, i);
                 Trace::log("Invalid duration time received for zone " + String(i) + ": " + String(durationTime));
             }
+            _blockPublish = false; // Reset block to false after processing
             break; // Exit the loop after processing the message
         }
     }
@@ -118,6 +122,8 @@ void MqttManager::reconnect()
         
         // Resubscribe to all topics for irrigation zones
         subscribeIrrigationZones();
+        // Publish initial state of all irrigation zones
+        initPublish();
     } 
     else 
     {
@@ -207,5 +213,14 @@ void MqttManager::publishAllIrrigationZones()
     else 
     {
         Trace::log("Cannot publish to MQTT - not connected");
+    }
+}
+
+void MqttManager::initPublish()
+{
+    for (int i = 0; i < _numIrrigationZones; i++) 
+    {
+        publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
+            String(_irrigationZones[i]->getDurationTime()).c_str());
     }
 }

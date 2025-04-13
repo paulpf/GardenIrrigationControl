@@ -15,6 +15,7 @@
 #include "mqttmanager.h"
 #include "irrigationZone.h"
 #include "helper.h"
+#include "StorageManager.h"
 
 #include "esp_task_wdt.h"
 #include "esp_system.h"
@@ -47,6 +48,10 @@ void setup()
   Serial.begin(115200);
   Trace::log("Setup begin");
 
+  // Initialize storage manager first
+  StorageManager::getInstance().begin();
+  Trace::log("StorageManager initialized");
+
   // Set initial client name (will be updated later)
   strncpy(clientName, "GardenController-Init", CLIENT_NAME_MAX_SIZE - 1);
   clientName[CLIENT_NAME_MAX_SIZE - 1] = '\0';
@@ -62,11 +67,17 @@ void setup()
   // Setup MQTT
   mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName);
 
-  // Setup all 8 irrigation zones
-  Trace::log("Initializing 8 irrigation zones...");
+  // Setup all irrigation zones
+  Trace::log("Initializing irrigation zones...");
   
   // Zone 1
   Helper::addIrrigationZone(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
+  
+  // Load saved settings for each zone from storage
+  for (int i = 0; i < activeZones; i++) 
+  {
+    irrigationZones[i].loadSettingsFromStorage(i);
+  }
   
   Trace::log("Irrigation zones initialized: " + String(activeZones) + " zones");
 
