@@ -7,7 +7,7 @@ String Helper::replaceChars(const String &str, char findChar, char replaceChar)
     return result;
 }
 
-// Verbesserte String-Handhabung zur Vermeidung von Heap-Fragmentierung
+// Improved string handling to avoid heap fragmentation
 char* Helper::createCharArray(const String &str) 
 {
     size_t len = str.length() + 1;
@@ -16,7 +16,7 @@ char* Helper::createCharArray(const String &str)
     return buffer;
 }
 
-// Speichereffiziente concat-Operation für Strings
+// Memory-efficient concat operation for strings
 void Helper::concatToBuffer(char* buffer, size_t bufferSize, const char* str1, const char* str2) 
 {
     strncpy(buffer, str1, bufferSize);
@@ -25,10 +25,10 @@ void Helper::concatToBuffer(char* buffer, size_t bufferSize, const char* str1, c
     {
         strncat(buffer, str2, bufferSize - len1 - 1);
     }
-    buffer[bufferSize - 1] = '\0'; // Sicherstellung der Nullterminierung
+    buffer[bufferSize - 1] = '\0'; // Ensuring null termination
 }
 
-// Formatierte Ausgabe in einen Puffer
+// Formatted output to a buffer
 void Helper::formatToBuffer(char* buffer, size_t bufferSize, const char* format, ...) 
 {
     va_list args;
@@ -37,7 +37,7 @@ void Helper::formatToBuffer(char* buffer, size_t bufferSize, const char* format,
     va_end(args);
 }
 
-// Beispiel für die Verwendung von addIrrigationZone
+// Example for using addIrrigationZone
 bool Helper::addIrrigationZone(int buttonPin, int relayPin, IrrigationZone* irrigationZones, MqttManager* mqttManager, int &activeZones, const char* clientNameBuffer) 
 {
     if (activeZones < MAX_IRRIGATION_ZONES) 
@@ -48,12 +48,12 @@ bool Helper::addIrrigationZone(int buttonPin, int relayPin, IrrigationZone* irri
       irrigationZones[activeZones].setup(buttonPin, relayPin, topicBuffer);
       mqttManager->addIrrigationZone(&irrigationZones[activeZones]);
       activeZones++;
-      Trace::log("Neue Bewässerungszone hinzugefügt: " + String(topicBuffer) + " (Zone " + String(activeZones) + ")");
+      Trace::log("New irrigation zone added: " + String(topicBuffer) + " (Zone " + String(activeZones) + ")");
       return true;
     } 
     else 
     {
-      Trace::log("Maximale Anzahl an Bewässerungszonen erreicht!");
+      Trace::log("Maximum number of irrigation zones reached!");
       return false;
     }
 }

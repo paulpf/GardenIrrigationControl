@@ -1,36 +1,36 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-// Hardware configuration für 8 Bewässerungszonen
-// Pins für Zone 1
+// Hardware configuration for 8 irrigation zones
+// Pins for Zone 1
 #define ZONE1_BUTTON_PIN 23
 #define ZONE1_RELAY_PIN 22
 
-// Pins für Zone 2
+// Pins for Zone 2
 #define ZONE2_BUTTON_PIN 21
 #define ZONE2_RELAY_PIN 19
 
-// Pins für Zone 3
+// Pins for Zone 3
 #define ZONE3_BUTTON_PIN 18
 #define ZONE3_RELAY_PIN 5
 
-// Pins für Zone 4
+// Pins for Zone 4
 #define ZONE4_BUTTON_PIN 17
 #define ZONE4_RELAY_PIN 16
 
-// Pins für Zone 5
+// Pins for Zone 5
 #define ZONE5_BUTTON_PIN 4
 #define ZONE5_RELAY_PIN 2
 
-// Pins für Zone 6
+// Pins for Zone 6
 #define ZONE6_BUTTON_PIN 15
 #define ZONE6_RELAY_PIN 13
 
-// Pins für Zone 7
+// Pins for Zone 7
 #define ZONE7_BUTTON_PIN 12
 #define ZONE7_RELAY_PIN 14
 
-// Pins für Zone 8
+// Pins for Zone 8
 #define ZONE8_BUTTON_PIN 27
 #define ZONE8_RELAY_PIN 26
 

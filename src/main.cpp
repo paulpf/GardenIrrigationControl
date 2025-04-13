@@ -21,8 +21,8 @@
 
 // ================ Variables ================
 // Name is used for the hostname. This will be updated after WiFi init with actual MAC
-const int CLIENT_NAME_MAX_SIZE = 50;  // Max Größe für den Client-Namen
-char clientName[CLIENT_NAME_MAX_SIZE]; // Buffer für clientName
+const int CLIENT_NAME_MAX_SIZE = 50;  // Maximum size for the client name
+char clientName[CLIENT_NAME_MAX_SIZE]; // Buffer for clientName
 
 // ================ WiFi ================
 WifiManager wifiManager;
@@ -31,9 +31,9 @@ WifiManager wifiManager;
 MqttManager mqttManager;
 
 // ================ Irrigation zones ================
-// Verwendung eines Arrays für bessere Skalierbarkeit mit 8 Zonen
+// Using an array for better scalability with 8 zones
 IrrigationZone irrigationZones[MAX_IRRIGATION_ZONES];
-int activeZones = 0; // Wird im Setup erhöht
+int activeZones = 0; // Will be increased in setup
 
 // ================ Timing ================
 unsigned long previousMillis = 0;
@@ -46,28 +46,28 @@ void setup()
   Serial.begin(115200);
   Trace::log("Setup begin");
 
-  // Initialen Client-Namen setzen (wird später aktualisiert)
+  // Set initial client name (will be updated later)
   strncpy(clientName, "GardenController-Init", CLIENT_NAME_MAX_SIZE - 1);
   clientName[CLIENT_NAME_MAX_SIZE - 1] = '\0';
 
   // Setup WiFi
   wifiManager.setup(WIFI_SSID, WIFI_PWD, clientName);
 
-  // Aktualisiere den Client-Namen mit MAC-Adresse für eindeutige Identifizierung
+  // Update client name with MAC address for unique identification
   String macFormatted = Helper::replaceChars(WiFi.macAddress(), ':', '-');
   Helper::formatToBuffer(clientName, CLIENT_NAME_MAX_SIZE, "GardenController-%s", macFormatted.c_str());
-  Trace::log("Client-Name gesetzt: " + String(clientName));
+  Trace::log("Client name set: " + String(clientName));
 
   // Setup MQTT
   mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName);
 
-  // Setup aller 8 Bewässerungszonen
-  Trace::log("Initialisiere 8 Bewässerungszonen...");
+  // Setup all 8 irrigation zones
+  Trace::log("Initializing 8 irrigation zones...");
   
   // Zone 1
   Helper::addIrrigationZone(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
   
-  Trace::log("Bewässerungszonen initialisiert: " + String(activeZones) + " Zonen");
+  Trace::log("Irrigation zones initialized: " + String(activeZones) + " zones");
 
   // Initialize the watchdog timer
   esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
@@ -83,29 +83,29 @@ void loop()
   // Reset the watchdog timer in each loop iteration
   esp_task_wdt_reset();
   
-  // Haupt-Timer-basierte Ereignisse
+  // Main timer-based events
   if (currentMillis - previousMillis >= LOOP_INTERVAL) 
   {
     previousMillis = currentMillis;
 
-    // Periodische Aufgaben ausführen (mit reduziertem Logging)
+    // Execute periodic tasks (with reduced logging)
     #if DEBUG_MODE
     Trace::log("Loop: " + String(millis()));
     #endif
 
-    // MQTT-Daten veröffentlichen (nur periodisch notwendig)
+    // Publish MQTT data (only needed periodically)
     mqttManager.publishAllIrrigationZones();
   }
 
-  // Diese Funktionen sollten in jedem Durchlauf aufgerufen werden (ohne Verzögerung)
+  // These functions should be called in every iteration (without delay)
   
-  // WiFi-Status überprüfen und verwalten
+  // Check and manage WiFi status
   wifiManager.loop();
   
-  // MQTT-Nachrichten verarbeiten
+  // Process MQTT messages
   mqttManager.loop();
   
-  // Bewässerungszonen aktualisieren
+  // Update irrigation zones
   for (int i = 0; i < activeZones; i++) 
   {
     irrigationZones[i].loop();

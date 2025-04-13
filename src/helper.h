@@ -12,7 +12,7 @@ class Helper
 public:
   static String replaceChars(const String &str, char charsToReplace, char replaceWith);
   
-  // Neue speichereffiziente Methoden
+  // New memory-efficient methods
   static char* createCharArray(const String &str);
   static void concatToBuffer(char* buffer, size_t bufferSize, const char* str1, const char* str2);
   static void formatToBuffer(char* buffer, size_t bufferSize, const char* format, ...);
