@@ -3,6 +3,7 @@
     "istream": "cpp",
     "ostream": "cpp",
     "cmath": "cpp",
-    "functional": "cpp"
+    "functional": "cpp",
+    "string": "cpp"
   }
 }

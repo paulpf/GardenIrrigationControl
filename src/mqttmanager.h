@@ -16,6 +16,7 @@ public:
     void subscribe(const char* topic);
     void addIrrigationZone(IrrigationZone* zone);
     bool isConnected();
+    void publishAllIrrigationZones();
 
     // Make this public and static so it can be used as a callback
     static void staticMqttCallback(char* topic, byte* payload, unsigned int length);

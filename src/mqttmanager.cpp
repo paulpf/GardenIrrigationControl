@@ -169,3 +169,23 @@ bool MqttManager::isConnected()
 {
     return _mqttState == MQTT_CONNECTED_STATE;
 }
+
+void MqttManager::publishAllIrrigationZones() 
+{
+    if(isConnected()) 
+    {
+        for (int i = 0; i < _numIrrigationZones; i++) 
+        {
+            publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(), 
+                _irrigationZones[i]->getRelayState() ? "true" : "false");
+            publish(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str(), 
+                String(_irrigationZones[i]->getRemainingTime()).c_str());
+            publish(_irrigationZones[i]->getMqttTopicForSwButton().c_str(),
+                _irrigationZones[i]->getBtnState() ? "true" : "false");
+        }
+    } 
+    else 
+    {
+        Trace::log("Cannot publish to MQTT - not connected");
+    }
+}
