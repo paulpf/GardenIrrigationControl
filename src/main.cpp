@@ -21,7 +21,7 @@
 // ================ Variables ================
 // Name is used for the hostname. This will be updated after WiFi init with actual MAC
 const int CLIENT_NAME_MAX_SIZE = 50;  // Max Größe für den Client-Namen
-char clientNameBuffer[CLIENT_NAME_MAX_SIZE]; // Buffer für clientName
+char clientName[CLIENT_NAME_MAX_SIZE]; // Buffer für clientName
 
 // ================ WiFi ================
 WifiManager wifiManager;
@@ -35,25 +35,25 @@ IrrigationZone irrigationZones[MAX_IRRIGATION_ZONES];
 int activeZones = 0; // Wird im Setup erhöht
 
 // Extra-Hilfsfunktion zur Konfiguration zusätzlicher Zonen
-bool addIrrigationZone(int buttonPin, int relayPin, const char* zoneName) 
-{
-  if (activeZones < MAX_IRRIGATION_ZONES) 
-  {
-    char topicBuffer[100];
-    snprintf(topicBuffer, sizeof(topicBuffer), "%s/irrigationZone%d", clientNameBuffer, activeZones + 1);
+// bool addIrrigationZone(int buttonPin, int relayPin, const char* zoneName) 
+// {
+//   if (activeZones < MAX_IRRIGATION_ZONES) 
+//   {
+//     char topicBuffer[100];
+//     snprintf(topicBuffer, sizeof(topicBuffer), "%s/irrigationZone%d", clientNameBuffer, activeZones + 1);
     
-    irrigationZones[activeZones].setup(buttonPin, relayPin, topicBuffer);
-    mqttManager.addIrrigationZone(&irrigationZones[activeZones]);
-    activeZones++;
-    Trace::log("Neue Bewässerungszone hinzugefügt: " + String(zoneName) + " (Zone " + String(activeZones) + ")");
-    return true;
-  } 
-  else 
-  {
-    Trace::log("Maximale Anzahl an Bewässerungszonen erreicht!");
-    return false;
-  }
-}
+//     irrigationZones[activeZones].setup(buttonPin, relayPin, topicBuffer);
+//     mqttManager.addIrrigationZone(&irrigationZones[activeZones]);
+//     activeZones++;
+//     Trace::log("Neue Bewässerungszone hinzugefügt: " + String(zoneName) + " (Zone " + String(activeZones) + ")");
+//     return true;
+//   } 
+//   else 
+//   {
+//     Trace::log("Maximale Anzahl an Bewässerungszonen erreicht!");
+//     return false;
+//   }
+// }
 
 // ================ Timing ================
 unsigned long previousMillis = 0;
@@ -69,25 +69,25 @@ void setup()
   Trace::log("Setup begin");
 
   // Initialen Client-Namen setzen (wird später aktualisiert)
-  strncpy(clientNameBuffer, "GardenController-Init", CLIENT_NAME_MAX_SIZE - 1);
-  clientNameBuffer[CLIENT_NAME_MAX_SIZE - 1] = '\0';
+  strncpy(clientName, "GardenController-Init", CLIENT_NAME_MAX_SIZE - 1);
+  clientName[CLIENT_NAME_MAX_SIZE - 1] = '\0';
 
   // Setup WiFi
-  wifiManager.setup(WIFI_SSID, WIFI_PWD, clientNameBuffer);
+  wifiManager.setup(WIFI_SSID, WIFI_PWD, clientName);
 
   // Aktualisiere den Client-Namen mit MAC-Adresse für eindeutige Identifizierung
   String macFormatted = Tools::replaceChars(WiFi.macAddress(), ':', '-');
-  Tools::formatToBuffer(clientNameBuffer, CLIENT_NAME_MAX_SIZE, "GardenController-%s", macFormatted.c_str());
-  Trace::log("Client-Name gesetzt: " + String(clientNameBuffer));
+  Tools::formatToBuffer(clientName, CLIENT_NAME_MAX_SIZE, "GardenController-%s", macFormatted.c_str());
+  Trace::log("Client-Name gesetzt: " + String(clientName));
 
   // Setup MQTT
-  mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientNameBuffer);
+  mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName);
 
   // Setup aller 8 Bewässerungszonen
   Trace::log("Initialisiere 8 Bewässerungszonen...");
   
   // Zone 1
-  addIrrigationZone(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, "Rasen vorne");
+  Tools::addIrrigationZone(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, "Rasen vorne", irrigationZones, &mqttManager, activeZones, clientName);
   
   Trace::log("Bewässerungszonen initialisiert: " + String(activeZones) + " Zonen");
 
