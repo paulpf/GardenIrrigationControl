@@ -11,6 +11,7 @@ public:
     void loop();
 
     // ================ Mqtt topics ================
+    String getMqttTopicForZone() { return _mqttTopicForZone; } // Get the MQTT topic for the zone
     String getMqttTopicForSwButton() { return _mqttTopicForZone + "/swBtn"; } // Get the MQTT topic for the software button
     String getMqttTopicForRelay() { return _mqttTopicForZone + "/relayState"; } // Get the MQTT topic for the relay state
     String getMqttTopicForRemainingTime() { return _mqttTopicForZone + "/remainingTime"; } // Get the MQTT topic for the remaining time
