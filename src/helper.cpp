@@ -1,10 +1,6 @@
-#include "tools.h"
-#include "globaldefines.h"
-#include "config.h"
-#include "irrigationZone.h"
-#include "mqttmanager.h"
+#include "helper.h"
 
-String Tools::replaceChars(const String &str, char findChar, char replaceChar) 
+String Helper::replaceChars(const String &str, char findChar, char replaceChar) 
 {
     String result = str;
     result.replace(findChar, replaceChar);
@@ -12,7 +8,7 @@ String Tools::replaceChars(const String &str, char findChar, char replaceChar)
 }
 
 // Verbesserte String-Handhabung zur Vermeidung von Heap-Fragmentierung
-char* Tools::createCharArray(const String &str) 
+char* Helper::createCharArray(const String &str) 
 {
     size_t len = str.length() + 1;
     char* buffer = new char[len];
@@ -21,7 +17,7 @@ char* Tools::createCharArray(const String &str)
 }
 
 // Speichereffiziente concat-Operation für Strings
-void Tools::concatToBuffer(char* buffer, size_t bufferSize, const char* str1, const char* str2) 
+void Helper::concatToBuffer(char* buffer, size_t bufferSize, const char* str1, const char* str2) 
 {
     strncpy(buffer, str1, bufferSize);
     size_t len1 = strlen(str1);
@@ -33,7 +29,7 @@ void Tools::concatToBuffer(char* buffer, size_t bufferSize, const char* str1, co
 }
 
 // Formatierte Ausgabe in einen Puffer
-void Tools::formatToBuffer(char* buffer, size_t bufferSize, const char* format, ...) 
+void Helper::formatToBuffer(char* buffer, size_t bufferSize, const char* format, ...) 
 {
     va_list args;
     va_start(args, format);
@@ -42,7 +38,7 @@ void Tools::formatToBuffer(char* buffer, size_t bufferSize, const char* format, 
 }
 
 // Beispiel für die Verwendung von addIrrigationZone
-bool Tools::addIrrigationZone(int buttonPin, int relayPin, const char* zoneName, IrrigationZone* irrigationZones, MqttManager* mqttManager, int &activeZones, const char* clientNameBuffer) 
+bool Helper::addIrrigationZone(int buttonPin, int relayPin, IrrigationZone* irrigationZones, MqttManager* mqttManager, int &activeZones, const char* clientNameBuffer) 
 {
     if (activeZones < MAX_IRRIGATION_ZONES) 
     {
@@ -52,7 +48,7 @@ bool Tools::addIrrigationZone(int buttonPin, int relayPin, const char* zoneName,
       irrigationZones[activeZones].setup(buttonPin, relayPin, topicBuffer);
       mqttManager->addIrrigationZone(&irrigationZones[activeZones]);
       activeZones++;
-      Trace::log("Neue Bewässerungszone hinzugefügt: " + String(zoneName) + " (Zone " + String(activeZones) + ")");
+      Trace::log("Neue Bewässerungszone hinzugefügt: " + String(topicBuffer) + " (Zone " + String(activeZones) + ")");
       return true;
     } 
     else 

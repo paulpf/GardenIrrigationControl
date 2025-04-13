@@ -12,8 +12,9 @@
 #include "config.h"
 
 #include "wifimanager.h"
-#include "irrigationZone.h"
 #include "mqttmanager.h"
+#include "irrigationZone.h"
+#include "helper.h"
 
 #include "esp_task_wdt.h"
 #include "esp_system.h"
@@ -34,31 +35,8 @@ MqttManager mqttManager;
 IrrigationZone irrigationZones[MAX_IRRIGATION_ZONES];
 int activeZones = 0; // Wird im Setup erhöht
 
-// Extra-Hilfsfunktion zur Konfiguration zusätzlicher Zonen
-// bool addIrrigationZone(int buttonPin, int relayPin, const char* zoneName) 
-// {
-//   if (activeZones < MAX_IRRIGATION_ZONES) 
-//   {
-//     char topicBuffer[100];
-//     snprintf(topicBuffer, sizeof(topicBuffer), "%s/irrigationZone%d", clientNameBuffer, activeZones + 1);
-    
-//     irrigationZones[activeZones].setup(buttonPin, relayPin, topicBuffer);
-//     mqttManager.addIrrigationZone(&irrigationZones[activeZones]);
-//     activeZones++;
-//     Trace::log("Neue Bewässerungszone hinzugefügt: " + String(zoneName) + " (Zone " + String(activeZones) + ")");
-//     return true;
-//   } 
-//   else 
-//   {
-//     Trace::log("Maximale Anzahl an Bewässerungszonen erreicht!");
-//     return false;
-//   }
-// }
-
 // ================ Timing ================
 unsigned long previousMillis = 0;
-unsigned long previousReconnectMillis = 0;
-const unsigned long reconnectInterval = 30000; // Reconnect every 30 seconds
 
 // ================ Main ================
 
@@ -76,8 +54,8 @@ void setup()
   wifiManager.setup(WIFI_SSID, WIFI_PWD, clientName);
 
   // Aktualisiere den Client-Namen mit MAC-Adresse für eindeutige Identifizierung
-  String macFormatted = Tools::replaceChars(WiFi.macAddress(), ':', '-');
-  Tools::formatToBuffer(clientName, CLIENT_NAME_MAX_SIZE, "GardenController-%s", macFormatted.c_str());
+  String macFormatted = Helper::replaceChars(WiFi.macAddress(), ':', '-');
+  Helper::formatToBuffer(clientName, CLIENT_NAME_MAX_SIZE, "GardenController-%s", macFormatted.c_str());
   Trace::log("Client-Name gesetzt: " + String(clientName));
 
   // Setup MQTT
@@ -87,7 +65,7 @@ void setup()
   Trace::log("Initialisiere 8 Bewässerungszonen...");
   
   // Zone 1
-  Tools::addIrrigationZone(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, "Rasen vorne", irrigationZones, &mqttManager, activeZones, clientName);
+  Helper::addIrrigationZone(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
   
   Trace::log("Bewässerungszonen initialisiert: " + String(activeZones) + " Zonen");
 
