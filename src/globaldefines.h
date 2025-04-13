@@ -13,4 +13,6 @@
 #include "trace.h"
 #include "tools.h"
 
+#include "config.h"
+
 #endif // GLOBAL_DEFINES_H

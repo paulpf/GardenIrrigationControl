@@ -9,6 +9,7 @@
 #endif
 
 #include "globaldefines.h"
+#include "config.h"
 
 #include "wifimanager.h"
 #include "irrigationZone.h"
@@ -17,14 +18,10 @@
 #include "esp_task_wdt.h"
 #include "esp_system.h"
 
-// ================ Constants ================
-const long LOOP_INTERVAL = 500;
-const int WATCHDOG_TIMEOUT = 60000;
-const int ZONE1_BUTTON_PIN = 23;
-const int ZONE1_RELAY_PIN = 22;
-
-// Name is used for the hostname. It is combined with the MAC address to create a unique name.
-String clientName = "GardenController-" + Tools::replaceChars(WiFi.macAddress(), ':', '-');
+// ================ Variables ================
+// Name is used for the hostname. This will be updated after WiFi init with actual MAC
+const int CLIENT_NAME_MAX_SIZE = 50;  // Max Größe für den Client-Namen
+char clientNameBuffer[CLIENT_NAME_MAX_SIZE]; // Buffer für clientName
 
 // ================ WiFi ================
 WifiManager wifiManager;
@@ -33,10 +30,35 @@ WifiManager wifiManager;
 MqttManager mqttManager;
 
 // ================ Irrigation zones ================
-IrrigationZone irrigationZone1;
+// Verwendung eines Arrays für bessere Skalierbarkeit mit 8 Zonen
+IrrigationZone irrigationZones[MAX_IRRIGATION_ZONES];
+int activeZones = 0; // Wird im Setup erhöht
+
+// Extra-Hilfsfunktion zur Konfiguration zusätzlicher Zonen
+bool addIrrigationZone(int buttonPin, int relayPin, const char* zoneName) 
+{
+  if (activeZones < MAX_IRRIGATION_ZONES) 
+  {
+    char topicBuffer[100];
+    snprintf(topicBuffer, sizeof(topicBuffer), "%s/irrigationZone%d", clientNameBuffer, activeZones + 1);
+    
+    irrigationZones[activeZones].setup(buttonPin, relayPin, topicBuffer);
+    mqttManager.addIrrigationZone(&irrigationZones[activeZones]);
+    activeZones++;
+    Trace::log("Neue Bewässerungszone hinzugefügt: " + String(zoneName) + " (Zone " + String(activeZones) + ")");
+    return true;
+  } 
+  else 
+  {
+    Trace::log("Maximale Anzahl an Bewässerungszonen erreicht!");
+    return false;
+  }
+}
 
 // ================ Timing ================
 unsigned long previousMillis = 0;
+unsigned long previousReconnectMillis = 0;
+const unsigned long reconnectInterval = 30000; // Reconnect every 30 seconds
 
 // ================ Main ================
 
@@ -46,15 +68,28 @@ void setup()
   Serial.begin(115200);
   Trace::log("Setup begin");
 
-  // Setup WiFi - use the WiFiManager class now
-  wifiManager.setup(WIFI_SSID, WIFI_PWD, clientName);
+  // Initialen Client-Namen setzen (wird später aktualisiert)
+  strncpy(clientNameBuffer, "GardenController-Init", CLIENT_NAME_MAX_SIZE - 1);
+  clientNameBuffer[CLIENT_NAME_MAX_SIZE - 1] = '\0';
 
-  // Setup Irrigation zones
-  irrigationZone1.setup(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, clientName + "/irrigationZone1"); // GPIO 23 for button, GPIO 22 for relay
+  // Setup WiFi
+  wifiManager.setup(WIFI_SSID, WIFI_PWD, clientNameBuffer);
+
+  // Aktualisiere den Client-Namen mit MAC-Adresse für eindeutige Identifizierung
+  String macFormatted = Tools::replaceChars(WiFi.macAddress(), ':', '-');
+  Tools::formatToBuffer(clientNameBuffer, CLIENT_NAME_MAX_SIZE, "GardenController-%s", macFormatted.c_str());
+  Trace::log("Client-Name gesetzt: " + String(clientNameBuffer));
 
   // Setup MQTT
-  mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName.c_str());
-  mqttManager.addIrrigationZone(&irrigationZone1);
+  mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientNameBuffer);
+
+  // Setup aller 8 Bewässerungszonen
+  Trace::log("Initialisiere 8 Bewässerungszonen...");
+  
+  // Zone 1
+  addIrrigationZone(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, "Rasen vorne");
+  
+  Trace::log("Bewässerungszonen initialisiert: " + String(activeZones) + " Zonen");
 
   // Initialize the watchdog timer
   esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
@@ -66,30 +101,35 @@ void setup()
 void loop() 
 {
   unsigned long currentMillis = millis();
+  
+  // Reset the watchdog timer in each loop iteration
+  esp_task_wdt_reset();
+  
+  // Haupt-Timer-basierte Ereignisse
   if (currentMillis - previousMillis >= LOOP_INTERVAL) 
   {
     previousMillis = currentMillis;
 
-    // Perform periodic tasks
-    Trace::log("Loop start: " + String(millis()));
+    // Periodische Aufgaben ausführen (mit reduziertem Logging)
+    #if DEBUG_MODE
+    Trace::log("Loop: " + String(millis()));
+    #endif
 
-    // Reset the watchdog timer in each loop iteration
-    esp_task_wdt_reset();
-    
-    // Wifi management
-    wifiManager.loop();
-
-    // MQTT management
-    mqttManager.loop();
-
-    // Mqtt publishing
+    // MQTT-Daten veröffentlichen (nur periodisch notwendig)
     mqttManager.publishAllIrrigationZones();
-    
-    Trace::log("Loop end");
   }
-  
-  // Handle other tasks without blocking
-  // Irrigation zone 1 management
-  irrigationZone1.loop();
 
+  // Diese Funktionen sollten in jedem Durchlauf aufgerufen werden (ohne Verzögerung)
+  
+  // WiFi-Status überprüfen und verwalten
+  wifiManager.loop();
+  
+  // MQTT-Nachrichten verarbeiten
+  mqttManager.loop();
+  
+  // Bewässerungszonen aktualisieren
+  for (int i = 0; i < activeZones; i++) 
+  {
+    irrigationZones[i].loop();
+  }
 }
