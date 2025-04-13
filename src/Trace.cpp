@@ -1,5 +1,7 @@
 #include "Trace.h"
 
+//#define TRACE
+
 void Trace::log(String message)
 {
   #ifdef TRACE

@@ -1,5 +1,3 @@
-#define TRACE
-
 #ifdef USE_PRIVATE_SECRET
 #include "../../_secrets/WifiSecret.h"
 #include "../../_configs/MqttConfig.h"
@@ -12,14 +10,12 @@
 
 #include "globaldefines.h"
 
-#include <WiFi.h>
-#include <PubSubClient.h>
 #include <WiFiClient.h>
 #include "irrigationZone.h"
+#include "mqttmanager.h"
 
 #include "esp_task_wdt.h"
 #include "esp_system.h"
-
 
 // ================ Constants ================
 int loopDelay = 1000;
@@ -45,41 +41,10 @@ unsigned long wifiConnectStartTime = 0;
 int reconnectAttempt = 0;
 
 // ================ MQTT ================
-WiFiClient wifiClient;
-PubSubClient pubSubClient(wifiClient);
-
-// MQTT state management
-enum MqttState 
-{
-  _MQTT_DISCONNECTED,
-  _MQTT_CONNECTING,
-  _MQTT_CONNECTED
-};
-MqttState mqttState = _MQTT_DISCONNECTED;
-unsigned long lastMqttAttemptMillis = 0;
-const unsigned long mqttRetryInterval = 5000; // Wait 5 seconds between connection attempts
-int mqttReconnectAttempts = 0;
-const int maxMqttReconnectAttempts = 5;
+MqttManager mqttManager;
 
 // ================ Irrigation zones ================
 IrrigationZone irrigationZone1;
-
-// Callback function to handle incoming MQTT messages
-void mqttCallback(char* topic, byte* payload, unsigned int length)
-{
-  Trace::log("Message arrived [" + String(topic) + "]");
-    String message = "";
-    for (int i = 0; i < length; i++) 
-    {
-      message += (char)payload[i];
-    }
-    Trace::log("Message: " + message);
-
-    if (String(topic).startsWith(irrigationZone1.getMqttTopicForSwButton()))
-    {
-      irrigationZone1.synchronizeButtonStates(message == "true");
-    }
-}
 
 bool checkDnsResolution() 
 {
@@ -92,87 +57,6 @@ bool checkDnsResolution()
   Trace::log("Resolved MQTT server to: " + resolvedIP.toString());
   return true;
 }
-
-void reconnectMqtt() 
-{
-  // Single connection attempt instead of blocking loop
-  Trace::log("Attempting MQTT connection...");
-  if (pubSubClient.connect(clientName.c_str(), MQTT_USER, MQTT_PWD)) 
-  {
-    Trace::log("MQTT connected");
-    mqttState = _MQTT_CONNECTED;
-    mqttReconnectAttempts = 0;
-    
-    // Subscribe to topics
-    //pubSubClient.subscribe((clientName + "/swBtn1").c_str());
-    pubSubClient.subscribe(irrigationZone1.getMqttTopicForSwButton().c_str());
-  } 
-  else 
-  {
-    mqttReconnectAttempts++;
-    Trace::log("MQTT connection failed, rc=" + String(pubSubClient.state()) + 
-               ", attempts: " + String(mqttReconnectAttempts));
-    mqttState = _MQTT_DISCONNECTED;
-    
-    if (mqttReconnectAttempts >= maxMqttReconnectAttempts) {
-      Trace::log("Maximum MQTT reconnection attempts reached, will try again later");
-      mqttReconnectAttempts = 0;
-    }
-  }
-}
-
-void manageMqttConnection() 
-{
-  Trace::log("Managing MQTT connection");
-  
-  if (WiFi.status() != WL_CONNECTED) 
-  {
-    Trace::log("Cannot connect to MQTT - WiFi is disconnected");
-    mqttState = _MQTT_DISCONNECTED;
-    return; // Can't connect to MQTT without WiFi
-  }
-
-  // DNS check before attempting connection
-  if (mqttState == _MQTT_DISCONNECTED && !checkDnsResolution()) 
-  {
-    return;  // Skip connection attempt if DNS resolution fails
-  }
-  
-  switch (mqttState) 
-  {
-    case _MQTT_DISCONNECTED:
-      Trace::log("Mqtt is disconnected");
-      reconnectMqtt();
-      lastMqttAttemptMillis = millis();
-      break;
-      
-    case _MQTT_CONNECTED:
-      if (!pubSubClient.connected()) 
-      {
-        Trace::log("MQTT connection lost");
-        mqttState = _MQTT_DISCONNECTED;
-      } 
-      else 
-      {
-        Trace::log("MQTT loop");
-        pubSubClient.loop(); // Process incoming messages and maintain connection
-      }
-      break;
-  }
-}
-
-void publishMqtt(String topic, String payload) 
-{
-  if (mqttState == _MQTT_CONNECTED) 
-  {
-    pubSubClient.publish(topic.c_str(), payload.c_str());
-  }
-  else 
-  {
-    Trace::log("Cannot publish to MQTT - not connected");
-  }
-}
-
 
 // ================ Wifi Functions ================
 void TraceWifiState()
@@ -275,20 +159,6 @@ void nonBlockingWifiManagement()
   }
 }
 
-void nonBlockingMqttManagement()
-{
-  unsigned long currentMillis = millis();
-  if (mqttState == _MQTT_DISCONNECTED && 
-    currentMillis - lastMqttAttemptMillis >= mqttRetryInterval) 
-  {
-    manageMqttConnection();
-  }
-  else if (mqttState == _MQTT_CONNECTED) 
-  {
-    pubSubClient.loop(); // Process incoming messages
-  }
-}
-
 // ================ Main ================
 
 void setup() 
@@ -301,11 +171,11 @@ void setup()
   WiFi.onEvent(WiFiEvent);
   manageWifiConnection();
 
-  // Setup MQTT
-  pubSubClient.setServer(MQTT_SERVER_IP, MQTT_SERVER_PORT);
-  pubSubClient.setCallback(mqttCallback);
-  
   irrigationZone1.setup(23, 22, clientName + "/irrigationZone1"); // GPIO 23 for button, GPIO 22 for relay
+
+  // Setup MQTT
+  mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName.c_str());
+  mqttManager.addIrrigationZone(&irrigationZone1);
 
   // Initialize the watchdog timer
   esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
@@ -324,19 +194,24 @@ void loop()
   // Non-blocking WiFi management
   nonBlockingWifiManagement();
 
-  // Non-blocking MQTT management
-  nonBlockingMqttManagement();
-
   // ============ Irrigation zone loop ============
   irrigationZone1.loop();
 
+
+  // Non-blocking MQTT management
+  mqttManager.loop();
+
+  
   // ============ MQTT update ============
-  if (mqttState == _MQTT_CONNECTED) 
+  if (mqttManager.isConnected()) 
   {
     // Irrigation zone 1
-    publishMqtt(irrigationZone1.getMqttTopicForRelay(), irrigationZone1.getRelayState() ? "true" : "false");
-    publishMqtt(irrigationZone1.getMqttTopicForRemainingTime(), String(irrigationZone1.getRemainingTime()));
-    publishMqtt(irrigationZone1.getMqttTopicForSwButton(), irrigationZone1.getBtnState() ? "true" : "false");
+    mqttManager.publish(irrigationZone1.getMqttTopicForRelay().c_str(), 
+                        irrigationZone1.getRelayState() ? "true" : "false");
+    mqttManager.publish(irrigationZone1.getMqttTopicForRemainingTime().c_str(), 
+                        String(irrigationZone1.getRemainingTime()).c_str());
+    mqttManager.publish(irrigationZone1.getMqttTopicForSwButton().c_str(),
+                        irrigationZone1.getBtnState() ? "true" : "false");
 
     // Publish other topics as needed
   }
