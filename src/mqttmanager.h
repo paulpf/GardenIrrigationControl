@@ -52,7 +52,6 @@ private:
     const int _maxMqttReconnectAttempts = 5;
 
     // Array of irrigation zones
-    static const int MAX_IRRIGATION_ZONES = 8; // Maximum number of irrigation zones
     IrrigationZone* _irrigationZones[MAX_IRRIGATION_ZONES];
     int _numIrrigationZones = 0; // Number of irrigation zones
 };

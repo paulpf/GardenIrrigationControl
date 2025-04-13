@@ -9,22 +9,20 @@
 #endif
 
 #include "globaldefines.h"
+#include "config.h"
 
 #include "wifimanager.h"
-#include "irrigationZone.h"
 #include "mqttmanager.h"
+#include "irrigationZone.h"
+#include "helper.h"
 
 #include "esp_task_wdt.h"
 #include "esp_system.h"
 
-// ================ Constants ================
-const long LOOP_INTERVAL = 500;
-const int WATCHDOG_TIMEOUT = 60000;
-const int ZONE1_BUTTON_PIN = 23;
-const int ZONE1_RELAY_PIN = 22;
-
-// Name is used for the hostname. It is combined with the MAC address to create a unique name.
-String clientName = "GardenController-" + Tools::replaceChars(WiFi.macAddress(), ':', '-');
+// ================ Variables ================
+// Name is used for the hostname. This will be updated after WiFi init with actual MAC
+const int CLIENT_NAME_MAX_SIZE = 50;  // Maximum size for the client name
+char clientName[CLIENT_NAME_MAX_SIZE]; // Buffer for clientName
 
 // ================ WiFi ================
 WifiManager wifiManager;
@@ -33,7 +31,9 @@ WifiManager wifiManager;
 MqttManager mqttManager;
 
 // ================ Irrigation zones ================
-IrrigationZone irrigationZone1;
+// Using an array for better scalability with 8 zones
+IrrigationZone irrigationZones[MAX_IRRIGATION_ZONES];
+int activeZones = 0; // Will be increased in setup
 
 // ================ Timing ================
 unsigned long previousMillis = 0;
@@ -46,15 +46,28 @@ void setup()
   Serial.begin(115200);
   Trace::log("Setup begin");
 
-  // Setup WiFi - use the WiFiManager class now
+  // Set initial client name (will be updated later)
+  strncpy(clientName, "GardenController-Init", CLIENT_NAME_MAX_SIZE - 1);
+  clientName[CLIENT_NAME_MAX_SIZE - 1] = '\0';
+
+  // Setup WiFi
   wifiManager.setup(WIFI_SSID, WIFI_PWD, clientName);
 
-  // Setup Irrigation zones
-  irrigationZone1.setup(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, clientName + "/irrigationZone1"); // GPIO 23 for button, GPIO 22 for relay
+  // Update client name with MAC address for unique identification
+  String macFormatted = Helper::replaceChars(WiFi.macAddress(), ':', '-');
+  Helper::formatToBuffer(clientName, CLIENT_NAME_MAX_SIZE, "GardenController-%s", macFormatted.c_str());
+  Trace::log("Client name set: " + String(clientName));
 
   // Setup MQTT
-  mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName.c_str());
-  mqttManager.addIrrigationZone(&irrigationZone1);
+  mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName);
+
+  // Setup all 8 irrigation zones
+  Trace::log("Initializing 8 irrigation zones...");
+  
+  // Zone 1
+  Helper::addIrrigationZone(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
+  
+  Trace::log("Irrigation zones initialized: " + String(activeZones) + " zones");
 
   // Initialize the watchdog timer
   esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
@@ -66,30 +79,35 @@ void setup()
 void loop() 
 {
   unsigned long currentMillis = millis();
+  
+  // Reset the watchdog timer in each loop iteration
+  esp_task_wdt_reset();
+  
+  // Main timer-based events
   if (currentMillis - previousMillis >= LOOP_INTERVAL) 
   {
     previousMillis = currentMillis;
 
-    // Perform periodic tasks
-    Trace::log("Loop start: " + String(millis()));
+    // Execute periodic tasks (with reduced logging)
+    #if DEBUG_MODE
+    Trace::log("Loop: " + String(millis()));
+    #endif
 
-    // Reset the watchdog timer in each loop iteration
-    esp_task_wdt_reset();
-    
-    // Wifi management
-    wifiManager.loop();
-
-    // MQTT management
-    mqttManager.loop();
-
-    // Mqtt publishing
+    // Publish MQTT data (only needed periodically)
     mqttManager.publishAllIrrigationZones();
-    
-    Trace::log("Loop end");
   }
-  
-  // Handle other tasks without blocking
-  // Irrigation zone 1 management
-  irrigationZone1.loop();
 
+  // These functions should be called in every iteration (without delay)
+  
+  // Check and manage WiFi status
+  wifiManager.loop();
+  
+  // Process MQTT messages
+  mqttManager.loop();
+  
+  // Update irrigation zones
+  for (int i = 0; i < activeZones; i++) 
+  {
+    irrigationZones[i].loop();
+  }
 }
