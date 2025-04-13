@@ -15,6 +15,7 @@ public:
     String getMqttTopicForSwButton() { return _mqttTopicForZone + "/swBtn"; } // Get the MQTT topic for the software button
     String getMqttTopicForRelay() { return _mqttTopicForZone + "/relayState"; } // Get the MQTT topic for the relay state
     String getMqttTopicForRemainingTime() { return _mqttTopicForZone + "/remainingTime"; } // Get the MQTT topic for the remaining time
+    String getMqttTopicForDurationTime() { return _mqttTopicForZone + "/durationTime"; } // Get the MQTT topic for the duration time
     
     void synchronizeButtonStates(bool newState);
     bool getBtnState() { return _hwBtnState; } // Get the hardware button state

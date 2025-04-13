@@ -36,7 +36,8 @@ IrrigationZone irrigationZones[MAX_IRRIGATION_ZONES];
 int activeZones = 0; // Will be increased in setup
 
 // ================ Timing ================
-unsigned long previousMillis = 0;
+unsigned long previousMillisLoop1 = 0;
+unsigned long previousMillisLoop2 = 0;
 
 // ================ Main ================
 
@@ -79,35 +80,36 @@ void setup()
 void loop() 
 {
   unsigned long currentMillis = millis();
+  // Execute periodic tasks (with reduced logging)
   
   // Reset the watchdog timer in each loop iteration
   esp_task_wdt_reset();
   
   // Main timer-based events
-  if (currentMillis - previousMillis >= LOOP_INTERVAL) 
+  if (currentMillis - previousMillisLoop1 >= LOOP_INTERVAL) 
   {
-    previousMillis = currentMillis;
-
-    // Execute periodic tasks (with reduced logging)
-    #if DEBUG_MODE
-    Trace::log("Loop: " + String(millis()));
-    #endif
+    previousMillisLoop1 = currentMillis;
 
     // Publish MQTT data (only needed periodically)
     mqttManager.publishAllIrrigationZones();
   }
 
   // These functions should be called in every iteration (without delay)
-  
-  // Check and manage WiFi status
-  wifiManager.loop();
-  
-  // Process MQTT messages
-  mqttManager.loop();
-  
-  // Update irrigation zones
-  for (int i = 0; i < activeZones; i++) 
+  #if DEBUG_MODE
+  if (currentMillis - previousMillisLoop2 >= LOOP_INTERVAL)
+  #endif
   {
-    irrigationZones[i].loop();
+    previousMillisLoop2 = currentMillis;
+    // Check and manage WiFi status
+    wifiManager.loop();
+    
+    // Process MQTT messages
+    mqttManager.loop();
+    
+    // Update irrigation zones
+    for (int i = 0; i < activeZones; i++) 
+    {
+      irrigationZones[i].loop();
+    }
   }
 }

@@ -35,13 +35,14 @@
 #define ZONE8_RELAY_PIN 26
 
 // Irrigation timing defaults
-#define DEFAULT_DURATION_TIME 300 // Default duration in seconds (5 minutes)
-#define MAX_DURATION_TIME 1800    // Maximum duration in seconds (30 minutes)
+#define DEFAULT_DURATION_TIME 5000 // Default duration
+#define MAX_DURATION_TIME 100000    // Maximum duration
 
 // System configuration
 #define WATCHDOG_TIMEOUT 60000   // Watchdog timeout in milliseconds
 #define LOOP_INTERVAL 500        // Main loop interval in milliseconds
 #define DEBUG_MODE true          // Enable/disable verbose logging
+#define TRACE_ENABLED true      // Enable/disable trace logging
 
 // Maximum number of irrigation zones supported
 #define MAX_IRRIGATION_ZONES 8
