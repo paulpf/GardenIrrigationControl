@@ -18,8 +18,10 @@
 #include "esp_system.h"
 
 // ================ Constants ================
-int loopDelay = 1000;
+const long LOOP_INTERVAL = 500;
 const int WATCHDOG_TIMEOUT = 60000;
+const int ZONE1_BUTTON_PIN = 23;
+const int ZONE1_RELAY_PIN = 22;
 
 // Name is used for the hostname. It is combined with the MAC address to create a unique name.
 String clientName = "GardenController-" + Tools::replaceChars(WiFi.macAddress(), ':', '-');
@@ -33,6 +35,8 @@ MqttManager mqttManager;
 // ================ Irrigation zones ================
 IrrigationZone irrigationZone1;
 
+// ================ Timing ================
+unsigned long previousMillis = 0;
 
 // ================ Main ================
 
@@ -46,7 +50,7 @@ void setup()
   wifiManager.setup(WIFI_SSID, WIFI_PWD, clientName);
 
   // Setup Irrigation zones
-  irrigationZone1.setup(23, 22, clientName + "/irrigationZone1"); // GPIO 23 for button, GPIO 22 for relay
+  irrigationZone1.setup(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, clientName + "/irrigationZone1"); // GPIO 23 for button, GPIO 22 for relay
 
   // Setup MQTT
   mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName.c_str());
@@ -61,23 +65,31 @@ void setup()
 
 void loop() 
 {
-  Trace::log("Loop start: " + String(millis()));
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= LOOP_INTERVAL) 
+  {
+    previousMillis = currentMillis;
 
-  // Reset the watchdog timer in each loop iteration
-  esp_task_wdt_reset();
+    // Perform periodic tasks
+    Trace::log("Loop start: " + String(millis()));
+
+    // Reset the watchdog timer in each loop iteration
+    esp_task_wdt_reset();
+    
+    // Wifi management
+    wifiManager.loop();
+
+    // MQTT management
+    mqttManager.loop();
+
+    // Mqtt publishing
+    mqttManager.publishAllIrrigationZones();
+    
+    Trace::log("Loop end");
+  }
   
-  // Wifi management
-  wifiManager.loop();
-
+  // Handle other tasks without blocking
   // Irrigation zone 1 management
   irrigationZone1.loop();
 
-  // MQTT management
-  mqttManager.loop();
-
-  // Mqtt publishing
-  mqttManager.publishAllIrrigationZones();
-  
-  delay(loopDelay);
-  Trace::log("Loop end");
 }
