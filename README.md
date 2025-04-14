@@ -57,5 +57,5 @@ The system should:
 ## Circuit Diagram
 
 
-<img src="_assets/_images/circuit.drawio.svg" width="500" alt="Circuit Diagram">
+<img src="_assets/_images/IrrigationCircuit_Steckplatine.png" width="1000" alt="Circuit Diagram">
 
