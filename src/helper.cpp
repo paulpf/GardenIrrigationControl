@@ -48,12 +48,12 @@ bool Helper::addIrrigationZone(int buttonPin, int relayPin, IrrigationZone* irri
       irrigationZones[activeZones].setup(buttonPin, relayPin, topicBuffer);
       mqttManager->addIrrigationZone(&irrigationZones[activeZones]);
       activeZones++;
-      Trace::log("New irrigation zone added: " + String(topicBuffer) + " (Zone " + String(activeZones) + ")");
+      Trace::log(TraceLevel::DEBUG, "New irrigation zone added: " + String(topicBuffer) + " (Zone " + String(activeZones) + ")");
       return true;
     } 
     else 
     {
-      Trace::log("Maximum number of irrigation zones reached!");
+      Trace::log(TraceLevel::DEBUG, "Maximum number of irrigation zones reached!");
       return false;
     }
 }

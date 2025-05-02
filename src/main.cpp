@@ -37,8 +37,8 @@ IrrigationZone irrigationZones[MAX_IRRIGATION_ZONES];
 int activeZones = 0; // Will be increased in setup
 
 // ================ Timing ================
-unsigned long previousMillisLoop1 = 0;
-unsigned long previousMillisLoop2 = 0;
+unsigned long previousMillisLongLoop = 0;
+unsigned long previousMillisShortLoop = 0;
 
 // ================ Main ================
 
@@ -46,11 +46,11 @@ void setup()
 {
   // Setup console
   Serial.begin(115200);
-  Trace::log("Setup begin");
+  Trace::log(TraceLevel::INFO, "Setup begin");
 
   // Initialize storage manager first
   StorageManager::getInstance().begin();
-  Trace::log("StorageManager initialized");
+  Trace::log(TraceLevel::DEBUG, "StorageManager initialized");
 
   // Set initial client name (will be updated later)
   strncpy(clientName, "GardenController-Init", CLIENT_NAME_MAX_SIZE - 1);
@@ -62,16 +62,33 @@ void setup()
   // Update client name with MAC address for unique identification
   String macFormatted = Helper::replaceChars(WiFi.macAddress(), ':', '-');
   Helper::formatToBuffer(clientName, CLIENT_NAME_MAX_SIZE, "GardenController-%s", macFormatted.c_str());
-  Trace::log("Client name set: " + String(clientName));
+  Trace::log(TraceLevel::DEBUG, "Client name set: " + String(clientName));
 
   // Setup MQTT
   mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName);
 
   // Setup all irrigation zones
-  Trace::log("Initializing irrigation zones...");
+  Trace::log(TraceLevel::DEBUG, "Initializing irrigation zones...");
   
-  // Zone 1
+    // Zone 1
   Helper::addIrrigationZone(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
+  // Zone 2
+  Helper::addIrrigationZone(ZONE2_BUTTON_PIN, ZONE2_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
+  // Zone 3
+  Helper::addIrrigationZone(ZONE3_BUTTON_PIN, ZONE3_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
+  // Zone 4
+  Helper::addIrrigationZone(ZONE4_BUTTON_PIN, ZONE4_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
+  // Zone 5
+  Helper::addIrrigationZone(ZONE5_BUTTON_PIN, ZONE5_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
+  // Zone 6
+  Helper::addIrrigationZone(ZONE6_BUTTON_PIN, ZONE6_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
+  // Zone 7
+  Helper::addIrrigationZone(ZONE7_BUTTON_PIN, ZONE7_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
+  // Zone 8
+  Helper::addIrrigationZone(ZONE8_BUTTON_PIN, ZONE8_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
+
+  // Drainage zone (if needed)
+  Helper::addIrrigationZone(DRAINAGE_BUTTON_PIN, DRAINAGE_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
   
   // Load saved settings for each zone from storage
   for (int i = 0; i < activeZones; i++) 
@@ -79,41 +96,40 @@ void setup()
     irrigationZones[i].loadSettingsFromStorage(i);
   }
   
-  Trace::log("Irrigation zones initialized: " + String(activeZones) + " zones");
+  Trace::log(TraceLevel::DEBUG, "Irrigation zones initialized: " + String(activeZones) + " zones");
 
   // Initialize the watchdog timer
   esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
   esp_task_wdt_add(NULL); // Add current thread to WDT watch
 
-  Trace::log("Setup end");
+  Trace::log(TraceLevel::INFO, "Setup end");
 }
 
 void loop() 
 {
-  unsigned long currentMillis = millis();
-  // Execute periodic tasks (with reduced logging)
-  
   // Reset the watchdog timer in each loop iteration
   esp_task_wdt_reset();
   
+  unsigned long currentMillis = millis();
+  // Execute periodic tasks (with reduced logging)
+
   // Main timer-based events
-  if (currentMillis - previousMillisLoop1 >= LOOP_INTERVAL) 
+  if (currentMillis - previousMillisLongLoop >= LONG_INTERVAL) 
   {
-    previousMillisLoop1 = currentMillis;
+    previousMillisLongLoop = currentMillis;
+
+    // Check and manage WiFi status
+    wifiManager.loop();
 
     // Publish MQTT data (only needed periodically)
     mqttManager.publishAllIrrigationZones();
   }
 
   // These functions should be called in every iteration (without delay)
-  #if DEBUG_MODE
-  if (currentMillis - previousMillisLoop2 >= LOOP_INTERVAL)
-  #endif
+  if (currentMillis - previousMillisShortLoop >= SHORT_INTERVAL)
   {
-    previousMillisLoop2 = currentMillis;
-    // Check and manage WiFi status
-    wifiManager.loop();
-    
+    previousMillisShortLoop = currentMillis;
+
     // Process MQTT messages
     mqttManager.loop();
     

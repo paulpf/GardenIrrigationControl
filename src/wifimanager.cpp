@@ -20,7 +20,7 @@ void WifiManager::setup(String ssid, String password, String clientName)
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(clientName.c_str());
     WiFi.onEvent(staticWifiEventHandler);
-    Trace::log("WiFi setup complete.");
+    Trace::log(TraceLevel::INFO, "WiFi setup complete.");
 }
 
 // Static WiFi event handler
@@ -38,17 +38,17 @@ void WifiManager::wifiEvent(WiFiEvent_t event)
     switch(event) 
     {
         case SYSTEM_EVENT_STA_START:
-            Trace::log("WiFi started, attempting to connect...");
+            Trace::log(TraceLevel::INFO, "WiFi started, attempting to connect...");
             WiFi.begin(_ssid.c_str(), _password.c_str());
             _wifiConnectStartTime = millis();
             _wifiState = WIFI_CONNECTING;
             break;
         case SYSTEM_EVENT_STA_GOT_IP:
-            Trace::log("WiFi connected, IP: " + WiFi.localIP().toString());
+            Trace::log(TraceLevel::INFO, "WiFi connected, IP: " + WiFi.localIP().toString());
             _wifiState = WIFI_CONNECTED;
             break;
         case SYSTEM_EVENT_STA_DISCONNECTED:
-            Trace::log("WiFi disconnected, attempting to reconnect...");
+            Trace::log(TraceLevel::INFO, "WiFi disconnected, attempting to reconnect...");
             _wifiState = WIFI_DISCONNECTED;
             manageConnection();
             break;
@@ -62,13 +62,13 @@ void WifiManager::loop()
     // Check WiFi connection status
     if (_wifiState == WIFI_CONNECTING && WiFi.status() == WL_CONNECTED) 
     {
-        Trace::log("WiFi connected after connection attempt " + String(_reconnectAttempt));
+        Trace::log(TraceLevel::INFO, "WiFi connected after connection attempt " + String(_reconnectAttempt));
         _wifiState = WIFI_CONNECTED;
         _reconnectAttempt = 0;
     } 
     else if (_wifiState == WIFI_DISCONNECTED && millis() - _wifiConnectStartTime > WIFI_CONNECTION_TIMEOUT) 
     {
-        Trace::log("WiFi connection timeout, attempting to reconnect...");
+        Trace::log(TraceLevel::INFO, "WiFi connection timeout, attempting to reconnect...");
         manageConnection();
     }
 }
@@ -77,7 +77,7 @@ void WifiManager::manageConnection()
 {
     if (_reconnectAttempt < _maximumCountToTryReconnect) 
     {
-        Trace::log("Attempting to reconnect to WiFi...");
+        Trace::log(TraceLevel::INFO, "Attempting to reconnect to WiFi...");
         WiFi.disconnect();
         WiFi.begin(_ssid, _password);
         _wifiConnectStartTime = millis();
@@ -85,7 +85,7 @@ void WifiManager::manageConnection()
     } 
     else 
     {
-        Trace::log("Max reconnection attempts reached, restarting...");
+        Trace::log(TraceLevel::INFO, "Max reconnection attempts reached, restarting...");
         delay(1000);
         ESP.restart();
     }

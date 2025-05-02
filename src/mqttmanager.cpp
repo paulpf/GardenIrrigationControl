@@ -22,7 +22,7 @@ void MqttManager::setup(const char* mqttServer, int mqttPort, const char* mqttUs
     _pubSubClient.setServer(_mqttServer, _mqttPort);
     _pubSubClient.setCallback(staticMqttCallback);
     reconnect(); // Attempt to connect to MQTT broker
-    Trace::log("MqttManager setup complete.");
+    Trace::log(TraceLevel::DEBUG, "MqttManager setup complete.");
 }
 
 // Static callback that will be called by PubSubClient
@@ -38,13 +38,13 @@ void MqttManager::staticMqttCallback(char* topic, byte* payload, unsigned int le
 // Instance callback that processes the actual MQTT message
 void MqttManager::instanceMqttCallback(char* topic, byte* payload, unsigned int length)
 {
-    Trace::log("Message arrived [" + String(topic) + "]");
+    Trace::log(TraceLevel::DEBUG, "Message arrived [" + String(topic) + "]");
     String message = "";
     for (int i = 0; i < length; i++) 
     {
         message += (char)payload[i];
     }
-    Trace::log("Message: " + message);
+    Trace::log(TraceLevel::DEBUG, "Message: " + message);
 
     // Check if the message is for the software button of any irrigation zone
     for (int i = 0; i < _numIrrigationZones; i++) 
@@ -63,13 +63,13 @@ void MqttManager::instanceMqttCallback(char* topic, byte* payload, unsigned int 
             {
                 // Update to use new method with zone index for storage
                 _irrigationZones[i]->setDurationTime(durationTime, i);
-                Trace::log("Updated duration time for zone " + String(i) + ": " + String(durationTime));
+                Trace::log(TraceLevel::DEBUG, "Updated duration time for zone " + String(i) + ": " + String(durationTime));
             } 
             else 
             {
                 // Invalid duration time, reset to default
                 _irrigationZones[i]->setDurationTime(DEFAULT_DURATION_TIME, i);
-                Trace::log("Invalid duration time received for zone " + String(i) + ": " + String(durationTime));
+                Trace::log(TraceLevel::DEBUG, "Invalid duration time received for zone " + String(i) + ": " + String(durationTime));
             }
             _blockPublish = false; // Reset block to false after processing
             break; // Exit the loop after processing the message
@@ -99,7 +99,7 @@ void MqttManager::loop()
         case MQTT_CONNECTED_STATE:
             if (!_pubSubClient.connected()) 
             {
-                Trace::log("MQTT connection lost");
+                Trace::log(TraceLevel::DEBUG, "MQTT connection lost");
                 _mqttState = MQTT_DISCONNECTED_STATE;
             } 
             else 
@@ -113,10 +113,10 @@ void MqttManager::loop()
 void MqttManager::reconnect() 
 {
     // Single connection attempt
-    Trace::log("Attempting MQTT connection...");
+    Trace::log(TraceLevel::DEBUG, "Attempting MQTT connection...");
     if (_pubSubClient.connect(_clientName, _mqttUser, _mqttPassword)) 
     {
-        Trace::log("MQTT connected");
+        Trace::log(TraceLevel::DEBUG, "MQTT connected");
         _mqttState = MQTT_CONNECTED_STATE;
         _mqttReconnectAttempts = 0;
         
@@ -128,13 +128,13 @@ void MqttManager::reconnect()
     else 
     {
         _mqttReconnectAttempts++;
-        Trace::log("MQTT connection failed, rc=" + String(_pubSubClient.state()) + 
+        Trace::log(TraceLevel::DEBUG, "MQTT connection failed, rc=" + String(_pubSubClient.state()) + 
                 ", attempts: " + String(_mqttReconnectAttempts));
         _mqttState = MQTT_DISCONNECTED_STATE;
         
         if (_mqttReconnectAttempts >= _maxMqttReconnectAttempts) 
         {
-            Trace::log("Maximum MQTT reconnection attempts reached, will try again later");
+            Trace::log(TraceLevel::DEBUG, "Maximum MQTT reconnection attempts reached, will try again later");
             _mqttReconnectAttempts = 0;
         }
     }
@@ -148,7 +148,7 @@ void MqttManager::publish(const char* topic, const char* payload)
     }
     else 
     {
-        Trace::log("Cannot publish to MQTT - not connected");
+        Trace::log(TraceLevel::DEBUG, "Cannot publish to MQTT - not connected");
     }
 }
 
@@ -169,11 +169,11 @@ void MqttManager::subscribe(const char* topic)
     if (_mqttState == MQTT_CONNECTED_STATE) 
     {
         _pubSubClient.subscribe(topic);
-        Trace::log("Subscribed to: " + String(topic));
+        Trace::log(TraceLevel::DEBUG, "Subscribed to: " + String(topic));
     }
     else 
     {
-        Trace::log("Cannot subscribe to MQTT - not connected");
+        Trace::log(TraceLevel::DEBUG, "Cannot subscribe to MQTT - not connected");
     }
 }
 
@@ -183,11 +183,11 @@ void MqttManager::addIrrigationZone(IrrigationZone* zone)
     {
         _irrigationZones[_numIrrigationZones] = zone;
         _numIrrigationZones++;
-        Trace::log("Added irrigation zone: " + zone->getMqttTopicForZone());
+        Trace::log(TraceLevel::DEBUG, "Added irrigation zone: " + zone->getMqttTopicForZone());
     } 
     else 
     {
-        Trace::log("Maximum number of irrigation zones reached.");
+        Trace::log(TraceLevel::DEBUG, "Maximum number of irrigation zones reached.");
     }
 }
 
@@ -212,7 +212,7 @@ void MqttManager::publishAllIrrigationZones()
     } 
     else 
     {
-        Trace::log("Cannot publish to MQTT - not connected");
+        Trace::log(TraceLevel::DEBUG, "Cannot publish to MQTT - not connected");
     }
 }
 

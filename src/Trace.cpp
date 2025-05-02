@@ -1,9 +1,27 @@
+// Implementation example for Trace.cpp
 #include "Trace.h"
 
-void Trace::log(String message)
+void Trace::log(TraceLevel level, String message) 
 {
-  #if TRACE_ENABLED
-  String timeStamp = String(millis());
-  Serial.println(timeStamp + " | " + message);
-  #endif
+  // Only log if the message level is >= the configured trace level
+  if (!shouldLog(level)) 
+  {
+    return;
+  }
+  
+  String prefix;
+  switch (level) 
+  {
+    case TraceLevel::INFO:
+      prefix = "[INFO] ";
+      break;
+    case TraceLevel::DEBUG:
+      prefix = "[DEBUG] ";
+      break;
+    case TraceLevel::ERROR:
+      prefix = "[ERROR] ";
+      break;
+  }
+  
+  Serial.println(prefix + message);
 }

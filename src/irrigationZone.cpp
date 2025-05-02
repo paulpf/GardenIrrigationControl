@@ -2,7 +2,7 @@
 
 IrrigationZone::IrrigationZone() 
 {
-  Trace::log("IrrigationZone constructor called.");
+  Trace::log(TraceLevel::DEBUG, "IrrigationZone constructor called.");
   _durationTime = DEFAULT_DURATION_TIME;
 }
 
@@ -17,7 +17,7 @@ void IrrigationZone::setup(int hwBtnGpioChannel, int relayGpioChannel, String mq
   _synchronizedBtnNewState = false;
   setupHwButton(_hwBtnGpioChannel);
   setupRelay(_relayGpioChannel);
-  Trace::log("IrrigationZone setup complete.");
+  Trace::log(TraceLevel::DEBUG, "IrrigationZone setup complete.");
 }
 
 void IrrigationZone::loadSettingsFromStorage(int zoneIndex) 
@@ -25,7 +25,7 @@ void IrrigationZone::loadSettingsFromStorage(int zoneIndex)
   _zoneIndex = zoneIndex;
   // Load duration time from storage
   _durationTime = StorageManager::getInstance().loadDurationTime(zoneIndex);
-  Trace::log("Loaded settings for zone " + String(zoneIndex) + " with duration time: " + String(_durationTime));
+  Trace::log(TraceLevel::DEBUG, "Loaded settings for zone " + String(zoneIndex) + " with duration time: " + String(_durationTime));
 }
 
 void IrrigationZone::setupHwButton(int hwBtnGpioChannel)
@@ -42,7 +42,7 @@ void IrrigationZone::setupHwButton(int hwBtnGpioChannel)
 
 void IRAM_ATTR IrrigationZone::onHwBtnPressed() 
 {
-  Trace::log("Hardware button pressed.");
+  Trace::log(TraceLevel::INFO, "Hardware button of irrigation zone " + String(_zoneIndex + 1) + " pressed.");
   unsigned long now = millis();
   if (now - _lastDebounceTime > _debounceDelay) 
   {
@@ -55,6 +55,7 @@ void IRAM_ATTR IrrigationZone::onHwBtnPressed()
 
 void IrrigationZone::synchronizeButtonStates(bool newState) 
 {
+  Trace::log(TraceLevel::INFO, "Synchronizing of irrigation zone " + String(_zoneIndex + 1) + " button states to " + String(newState));
   _synchronizedBtnNewState = _swBtnState = _hwBtnState = newState;
   // We could save button state here, but it's usually transient
   // Uncomment below if you want to persist button states
@@ -63,6 +64,13 @@ void IrrigationZone::synchronizeButtonStates(bool newState)
 
 void IrrigationZone::setupRelay(int relayGpioChannel) 
 {
+  // Setup code for the relay
+  // This is a workaround to avoid flickering of the relay when the ESP32 boots up
+  // by setting the pin to LOW (active) and then to HIGH (off) after setup
+  // This is a common practice to ensure the relay is in a known state
+  // before the actual control logic starts
+  pinMode(relayGpioChannel, INPUT);
+  digitalWrite(relayGpioChannel, LOW); // Set relay to LOW (active) to avoid flickering  
   pinMode(relayGpioChannel, OUTPUT);
   digitalWrite(relayGpioChannel, HIGH); // Set relay to HIGH (off) by default
 }
@@ -77,12 +85,12 @@ void IrrigationZone::switchRelay(bool state)
 {
   if (state)
   {
-    Trace::log("Switching relay ON");
+    Trace::log(TraceLevel::DEBUG, "Switching relay ON");
     digitalWrite(_relayGpioChannel, LOW);
   }
   else
   {
-    Trace::log("Switching relay OFF");
+    Trace::log(TraceLevel::DEBUG, "Switching relay OFF");
     digitalWrite(_relayGpioChannel, HIGH);
   }
 }
@@ -112,13 +120,13 @@ void IrrigationZone::setDurationTime(int durationTime, int zoneIndex) {
   _zoneIndex = zoneIndex;
   // Save duration time to permanent storage
   StorageManager::getInstance().saveDurationTime(zoneIndex, durationTime);
-  Trace::log("Duration time for zone " + String(zoneIndex) + " set and saved to storage: " + String(durationTime));
+  Trace::log(TraceLevel::DEBUG, "Duration time for zone " + String(zoneIndex) + " set and saved to storage: " + String(durationTime));
 }
 
 void IrrigationZone::loop() 
 {
   // Loop code for the irrigation zone
-  Trace::log("IrrigationZone loop running.");
+  Trace::log(TraceLevel::DEBUG, "IrrigationZone " + String(_zoneIndex) + " loop running.");
 
   if (getRelayState() == false && getBtnState() == true)
   {
@@ -137,10 +145,10 @@ void IrrigationZone::loop()
   if (getRelayState())
   {
     int remainingTime = getRemainingTime();
-    Trace::log("Remaining time for relais1: " + String(remainingTime));
+    Trace::log(TraceLevel::DEBUG, "Remaining time for relais " + String(_zoneIndex) + ": " + String(remainingTime));
     if (remainingTime <= 0)
     {
-      Trace::log("Relais1 timer expired");
+      Trace::log(TraceLevel::DEBUG, "Relais timer " + String(_zoneIndex) + " expired");
       resetTimer();
       setRelayState(false);
       synchronizeButtonStates(false);

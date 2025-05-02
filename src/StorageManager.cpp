@@ -3,21 +3,21 @@
 void StorageManager::begin() 
 {
     _preferences.begin(_namespace, false); // false = read/write mode
-    Trace::log("StorageManager initialized");
+    Trace::log(TraceLevel::DEBUG, "StorageManager initialized");
 }
 
 void StorageManager::saveDurationTime(int zoneIndex, int durationTime) 
 {
     String key = getKey("duration", zoneIndex);
     _preferences.putInt(key.c_str(), durationTime);
-    Trace::log("Saved duration time for zone " + String(zoneIndex) + ": " + String(durationTime));
+    Trace::log(TraceLevel::DEBUG, "Saved duration time for zone " + String(zoneIndex) + ": " + String(durationTime));
 }
 
 int StorageManager::loadDurationTime(int zoneIndex) 
 {
     String key = getKey("duration", zoneIndex);
     int durationTime = _preferences.getInt(key.c_str(), DEFAULT_DURATION_TIME);
-    Trace::log("Loaded duration time for zone " + String(zoneIndex) + ": " + String(durationTime));
+    Trace::log(TraceLevel::DEBUG, "Loaded duration time for zone " + String(zoneIndex) + ": " + String(durationTime));
     return durationTime;
 }
 
@@ -48,7 +48,7 @@ bool StorageManager::loadRelayState(int zoneIndex)
 void StorageManager::clearAllSettings() 
 {
     _preferences.clear();
-    Trace::log("All stored settings cleared");
+    Trace::log(TraceLevel::DEBUG, "All stored settings cleared");
 }
 
 String StorageManager::getKey(const char* prefix, int zoneIndex) 
