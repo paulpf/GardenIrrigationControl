@@ -42,15 +42,14 @@ void IrrigationZone::setupHwButton(int hwBtnGpioChannel)
 
 void IRAM_ATTR IrrigationZone::onHwBtnPressed() 
 {
-  Trace::log(TraceLevel::INFO, "Hardware button of irrigation zone " + String(_zoneIndex + 1) + " pressed.");
+  //Trace::log(TraceLevel::INFO, "Hardware button of irrigation zone " + String(_zoneIndex + 1) + " pressed.");
   unsigned long now = millis();
-  if (now - _lastDebounceTime > _debounceDelay) 
+  if (now - _lastDebounceTime > BUTTON_DEBOUNCE_TIME) 
   {
     _lastDebounceTime = now;
-    _hwBtnState = !_hwBtnState;
-    // synchronize the new state with the software state
-    synchronizeButtonStates(_hwBtnState);
-  }  
+    _buttonEventPending = true;
+    // Don't toggle state in ISR, just mark event for processing in main loop
+  }   
 }
 
 void IrrigationZone::synchronizeButtonStates(bool newState) 
@@ -127,6 +126,14 @@ void IrrigationZone::loop()
 {
   // Loop code for the irrigation zone
   Trace::log(TraceLevel::DEBUG, "IrrigationZone " + String(_zoneIndex) + " loop running.");
+
+  if (_buttonEventPending) 
+  {
+    _buttonEventPending = false;
+    _hwBtnState = !_hwBtnState; // Toggle here instead of in ISR
+    Trace::log(TraceLevel::INFO, "Hardware button of irrigation zone " + String(_zoneIndex + 1) + " pressed.");
+    synchronizeButtonStates(_hwBtnState);
+  }
 
   if (getRelayState() == false && getBtnState() == true)
   {

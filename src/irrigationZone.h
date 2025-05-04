@@ -20,7 +20,7 @@ public:
     String getMqttTopicForDurationTime() { return _mqttTopicForZone + "/durationTime"; } // Get the MQTT topic for the duration time
     
     void synchronizeButtonStates(bool newState);
-    bool getBtnState() { return _hwBtnState; } // Get the hardware button state
+    bool getBtnState() { return _synchronizedBtnNewState; } // Get the synchronized button state
     void switchRelay(bool state);
     bool getRelayState() { return _relaisState; } // Get the relay state
     void setRelayState(bool state); // Set the relay state
@@ -39,9 +39,9 @@ private:
     // ================ Hardware button ================
     int _hwBtnGpioChannel;
     bool _hwBtnState = false;
-    unsigned long _lastDebounceTime;
-    const int _debounceDelay = 500; // debounce time in milliseconds
-    bool _synchronizedBtnNewState = false;
+    volatile unsigned long _lastDebounceTime;
+    volatile bool _synchronizedBtnNewState = false;
+    volatile bool _buttonEventPending = false; // Flag to indicate if button event is pending
     //bool _synconizedBtnOldState = false;
 
     void setupHwButton(int hwBtnGpioChannel);

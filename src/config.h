@@ -54,7 +54,9 @@
 // System configuration
 #define WATCHDOG_TIMEOUT 60000   // Watchdog timeout in milliseconds
 #define LONG_INTERVAL 1000        // Main loop interval in milliseconds
-#define SHORT_INTERVAL 100        // Main loop interval in milliseconds
+#define SHORT_INTERVAL 10        // Main loop interval in milliseconds
+#define BUTTON_DEBOUNCE_TIME 200 // Button debounce time in milliseconds
+
 #define DEBUG_MODE true          // Enable/disable verbose logging
 #define TRACE_LEVEL TraceLevel::INFO       // Enable/disable trace logging
 

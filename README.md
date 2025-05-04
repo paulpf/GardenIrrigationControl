@@ -14,7 +14,7 @@
     - [ESP-32 Dev Kit C V4](#esp-32-dev-kit-c-v4)
       - [Pinout](#pinout)
     - [Relais module](#relais-module)
-    - [Debugger ESP-Prog](#debugger-esp-prog)
+    - [Ventil Hunter PGV-101](#ventil-hunter-pgv-101)
   - [Circuit Diagram](#circuit-diagram)
 - [ESP32 GPIO Assignment for 9 Inputs with Internal Pull-down Resistors and 9 SSR Outputs](#esp32-gpio-assignment-for-9-inputs-with-internal-pull-down-resistors-and-9-ssr-outputs)
   - [Selected GPIOs for Your Application](#selected-gpios-for-your-application)
@@ -59,10 +59,10 @@ Source: [ESP32 Pinout](https://www.cnx-software.com/wp-content/uploads/2022/09/E
 - Product name: 8 Kanal Solid State Relais 5V DC Low Level
 - Seller: AZ-Delivery
 
+### Ventil Hunter PGV-101
 
-### Debugger ESP-Prog
 
-<img src="_assets/_images/espprog.png" width="500" alt="ESP-Prog module">
+
 
 ## Circuit Diagram
 
@@ -78,15 +78,15 @@ Source: [ESP32 Pinout](https://www.cnx-software.com/wp-content/uploads/2022/09/E
 | Function | Description | GPIO | Board Label | Internal Pull-down | Notes |
 |----------|-------------|------|------------|-----------|-------|
 | **Inputs (with Internal Pull-down)** |
-| Input 1 | Digital Input | GPIO13 | D13 | ✓ | Internal pull-down ~45kΩ |
-| Input 2 | Digital Input | GPIO14 | D14 | ✓ | Internal pull-down ~45kΩ |
-| Input 3 | Digital Input | GPIO15 | D15 | ✓ | Internal pull-down ~45kΩ |
-| Input 4 | Digital Input | GPIO16 | D16 | ✓ | Internal pull-down ~45kΩ |
-| Input 5 | Digital Input | GPIO17 | D17 | ✓ | Internal pull-down ~45kΩ |
-| Input 6 | Digital Input | GPIO18 | D18 | ✓ | Internal pull-down ~45kΩ |
-| Input 7 | Digital Input | GPIO34 | D34 | ✓ | Internal pull-down ~45kΩ |
-| Input 8 | Digital Input | GPIO35 | D35 | ✓ | Internal pull-down ~45kΩ |
-| Drainage Input | Digital Input | GPIO36 | D36 | ✓ | Internal pull-down ~45kΩ |
+| Input 1 | Digital Input | GPIO39 | D39 | ✓ | Internal pull-down ~45kΩ |
+| Input 2 | Digital Input | GPIO34 | D34 | ✓ | Internal pull-down ~45kΩ |
+| Input 3 | Digital Input | GPIO35 | D35 | ✓ | Internal pull-down ~45kΩ |
+| Input 4 | Digital Input | GPIO32 | D32 | ✓ | Internal pull-down ~45kΩ |
+| Input 5 | Digital Input | GPIO33 | D33 | ✓ | Internal pull-down ~45kΩ |
+| Input 6 | Digital Input | GPIO25 | D25 | ✓ | Internal pull-down ~45kΩ |
+| Input 7 | Digital Input | GPIO26 | D26 | ✓ | Internal pull-down ~45kΩ |
+| Input 8 | Digital Input | GPIO27 | D27 | ✓ | Internal pull-down ~45kΩ |
+| Drainage Input | Digital Input | GPIO14 | D14 | ✓ | Internal pull-down ~45kΩ |
 | **Outputs (for SSR modules with Low-Level-Trigger)** |
 | Relay 1 | Low-Level-Trigger | GPIO23 | D23 | - | Activation by LOW signal. During booting, this GPIO set the output for < = 1 second to LOW. |
 | Relay 2 | Low-Level-Trigger | GPIO25 | D25 | - | Activation by LOW signal |
