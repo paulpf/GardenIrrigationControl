@@ -63,6 +63,9 @@ private:
     
     // ================ Storage ================
     int _zoneIndex; // To track which zone index this is for storage
+
+    // ================ Debugging ================
+    unsigned long _loopStartTime; // Start time of the loop for debugging purposes
 };
 
 #endif // IRRIGATION_ZONE_H

@@ -55,8 +55,8 @@
 
 // System configuration
 #define WATCHDOG_TIMEOUT 60000   // Watchdog timeout in milliseconds
-#define LONG_INTERVAL 1000        // Main loop interval in milliseconds
-#define SHORT_INTERVAL 10        // Main loop interval in milliseconds
+#define LONG_INTERVAL 60 * 1000        // Main loop interval in milliseconds
+#define SHORT_INTERVAL 100        // Main loop interval in milliseconds
 #define BUTTON_DEBOUNCE_TIME 500 // Button debounce time in milliseconds
 
 #define DEBUG_MODE true          // Enable/disable verbose logging
@@ -66,7 +66,8 @@
 #define MAX_IRRIGATION_ZONES 9
 
 // Serial plotting configuration
-//#define ENABLE_ZONE_PLOTTING 
+#define ENABLE_ZONE_PLOTTING
+#define ENABLE_LOOP_TIME_PLOTTING // Enable loop time plotting for debugging
 #define TELEPLOT_INTERVAL 1000  // Plotting-Intervall in ms
 
 #endif // CONFIG_H

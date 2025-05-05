@@ -39,6 +39,7 @@ int activeZones = 0; // Will be increased in setup
 // ================ Timing ================
 unsigned long previousMillisLongLoop = 0;
 unsigned long previousMillisShortLoop = 0;
+unsigned long _mainLoopStartTime = 0; // For loop time plotting
 
 // ================ Main ================
 
@@ -109,6 +110,11 @@ void loop()
 {
   // Reset the watchdog timer in each loop iteration
   esp_task_wdt_reset();
+
+  #ifdef ENABLE_LOOP_TIME_PLOTTING
+  Trace::plotLoopTime("Mainloop", 0, millis() - _mainLoopStartTime);
+  _mainLoopStartTime = millis(); // Reset loop start time for next iteration
+  #endif
   
   unsigned long currentMillis = millis();
   // Execute periodic tasks (with reduced logging)
@@ -120,15 +126,15 @@ void loop()
 
     // Check and manage WiFi status
     wifiManager.loop();
-
-    // Publish MQTT data (only needed periodically)
-    mqttManager.publishAllIrrigationZones();
   }
 
   // These functions should be called in every iteration (without delay)
   if (currentMillis - previousMillisShortLoop >= SHORT_INTERVAL)
   {
     previousMillisShortLoop = currentMillis;
+
+    // Publish MQTT data (only needed periodically)
+    mqttManager.publishAllIrrigationZones();
 
     // Process MQTT messages
     mqttManager.loop();
@@ -146,7 +152,11 @@ void loop()
   if (currentMillis - lastPlotTime >= TELEPLOT_INTERVAL) 
   {
     lastPlotTime = currentMillis;
-    Helper::plotZoneStates(irrigationZones, activeZones);
+    for (int i = 0; i < activeZones; i++) 
+    {
+      Trace::plotBoolState("Btn" + String(i + 1), irrigationZones[i].getBtnState(), 1);
+      Trace::plotBoolState("Relay" + String(i + 1), irrigationZones[i].getRelayState(), -1);
+    }
   }
   #endif
 }

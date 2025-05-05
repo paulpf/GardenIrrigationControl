@@ -12,9 +12,7 @@ void IrrigationZone::setup(int hwBtnGpioChannel, int relayGpioChannel, String mq
   _hwBtnGpioChannel = hwBtnGpioChannel;
   _relayGpioChannel = relayGpioChannel;
   _mqttTopicForZone = mqttTopicForZone;
-  _hwBtnState = false;
-  _swBtnState = false;
-  _synchronizedBtnNewState = false;
+  synchronizeButtonStates(false); // Initialize button states to false
   setupHwButton(_hwBtnGpioChannel);
   setupRelay(_relayGpioChannel);
   Trace::log(TraceLevel::DEBUG, "IrrigationZone setup complete.");
@@ -126,6 +124,11 @@ void IrrigationZone::loop()
 {
   // Loop code for the irrigation zone
   Trace::log(TraceLevel::DEBUG, "IrrigationZone " + String(_zoneIndex) + " loop running.");
+
+  #ifdef ENABLE_LOOP_TIME_PLOTTING
+  Trace::plotLoopTime("IrrigationZone", _zoneIndex, millis() - _loopStartTime);
+  _loopStartTime = millis(); // Reset loop start time for next iteration
+  #endif
 
   if (_buttonEventPending) 
   {

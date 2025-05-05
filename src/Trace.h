@@ -3,6 +3,7 @@
 
 #include "globaldefines.h"
 #include "config.h"
+#include "irrigationZone.h"
 
 /**
  * Represents different trace levels for logging
@@ -23,6 +24,10 @@ public:
   static void info(String message) { log(TraceLevel::INFO, message); }
   static void debug(String message) { log(TraceLevel::DEBUG, message); }
   static void error(String message) { log(TraceLevel::ERROR, message); }
+
+  // Method for Serial Plotter visualization
+  static void plotBoolState(String stateName, bool stateValue, int valueToPlotForTrue);
+  static void plotLoopTime(String loopName, int loopNameindex, unsigned long loopTime);
   
 private:
   // Check if the message should be logged based on the configured level
