@@ -105,7 +105,7 @@ Source: [ESP32 Pinout](https://www.cnx-software.com/wp-content/uploads/2022/09/E
    - GPIO0, GPIO1, GPIO3: These were avoided as they are used for booting and serial communication (debugging).
    - GPIO6-11: These are connected to the SPI flash and not available.
    - GPIO12: Avoided due to potential boot issues.
-   - GPIO34, GPIO35, GPIO36, GPIO39: These are input-only and were not considered for outputs.
+   - GPIO34, GPIO35, GPIO36, GPIO39: These are input-only and are not support pull-up or pull-down resistors.
 
 2. **Special Considerations:**
    - GPIO2 (SSR 9): Connected to the onboard LED. When activating the SSR (LOW signal), the LED will light up.
