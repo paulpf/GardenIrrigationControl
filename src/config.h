@@ -3,9 +3,11 @@
 
 // Pins configuration for ESP32
 
-// GPIO 0 - usually used for boot mode selection
+// GPIO 0 - usually used for boot mode selection, should not be used for other purposes
 // GPIO 2 - usually used for boot mode selection, but can be used for other purposes
 // GPIO 5 - usually used for SPI flash, but can be used for other purposes
+// GPIO 34, 35, 36, 39 - input only pins, but they will not be used in this project
+// because they are not have internal pull-down resistors
 
 
 // Hardware configuration for 8 irrigation zones
@@ -34,16 +36,16 @@
 #define ZONE6_RELAY_PIN 33
 
 // Pins for Zone 7
-#define ZONE7_BUTTON_PIN 34
+#define ZONE7_BUTTON_PIN 4
 #define ZONE7_RELAY_PIN 21
 
 // Pins for Zone 8
-#define ZONE8_BUTTON_PIN 35
+#define ZONE8_BUTTON_PIN 2
 #define ZONE8_RELAY_PIN 22
 
 // Hardware configuration for special pins
 // Pin for drainage
-#define DRAINAGE_BUTTON_PIN 36
+#define DRAINAGE_BUTTON_PIN 5
 #define DRAINAGE_RELAY_PIN 19
 
 
@@ -55,7 +57,7 @@
 #define WATCHDOG_TIMEOUT 60000   // Watchdog timeout in milliseconds
 #define LONG_INTERVAL 1000        // Main loop interval in milliseconds
 #define SHORT_INTERVAL 10        // Main loop interval in milliseconds
-#define BUTTON_DEBOUNCE_TIME 200 // Button debounce time in milliseconds
+#define BUTTON_DEBOUNCE_TIME 500 // Button debounce time in milliseconds
 
 #define DEBUG_MODE true          // Enable/disable verbose logging
 #define TRACE_LEVEL TraceLevel::INFO       // Enable/disable trace logging
