@@ -196,7 +196,7 @@ bool MqttManager::isConnected()
     return _mqttState == MQTT_CONNECTED_STATE;
 }
 
-void MqttManager::publishAllIrrigationZones() 
+bool MqttManager::publishAllIrrigationZones() 
 {
     if(isConnected()) 
     {
@@ -209,10 +209,12 @@ void MqttManager::publishAllIrrigationZones()
             publish(_irrigationZones[i]->getMqttTopicForSwButton().c_str(),
                 _irrigationZones[i]->getBtnState() ? "true" : "false");
         }
+        return true; // Successfully published all zones
     } 
     else 
     {
         Trace::log(TraceLevel::DEBUG, "Cannot publish to MQTT - not connected");
+        return false; // Failed to publish because not connected
     }
 }
 

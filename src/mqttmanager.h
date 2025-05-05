@@ -18,7 +18,7 @@ public:
     void addIrrigationZone(IrrigationZone *zone);
     void subscribeIrrigationZones();
     bool isConnected();
-    void publishAllIrrigationZones();
+    bool publishAllIrrigationZones();
 
     // Make this public and static so it can be used as a callback
     static void staticMqttCallback(char* topic, byte* payload, unsigned int length);

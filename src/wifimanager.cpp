@@ -57,7 +57,7 @@ void WifiManager::wifiEvent(WiFiEvent_t event)
     }
 }
 
-void WifiManager::loop()
+bool WifiManager::loop()
 {
     // Check WiFi connection status
     if (_wifiState == WIFI_CONNECTING && WiFi.status() == WL_CONNECTED) 
@@ -71,6 +71,9 @@ void WifiManager::loop()
         Trace::log(TraceLevel::INFO, "WiFi connection timeout, attempting to reconnect...");
         manageConnection();
     }
+    
+    // Return connection status: true if connected, false otherwise
+    return _wifiState == WIFI_CONNECTED;
 }
 
 void WifiManager::manageConnection()

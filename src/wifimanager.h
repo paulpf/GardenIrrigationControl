@@ -9,7 +9,7 @@ class WifiManager
 public:
   WifiManager(/* args */);
   void setup(String ssid, String password, String clientName);
-  void loop();
+  bool loop();
   void manageConnection();
   bool checkDnsResolution();
   
