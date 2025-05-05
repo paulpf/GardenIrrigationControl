@@ -54,7 +54,7 @@ void IRAM_ATTR IrrigationZone::onHwBtnPressed()
 
 void IrrigationZone::synchronizeButtonStates(bool newState) 
 {
-  Trace::log(TraceLevel::INFO, "Synchronizing of irrigation zone " + String(_zoneIndex + 1) + " button states to " + String(newState));
+  Trace::log(TraceLevel::DEBUG, "Synchronizing of irrigation zone " + String(_zoneIndex + 1) + " button states to " + String(newState));
   _synchronizedBtnNewState = _swBtnState = _hwBtnState = newState;
   // We could save button state here, but it's usually transient
   // Uncomment below if you want to persist button states
@@ -131,7 +131,7 @@ void IrrigationZone::loop()
   {
     _buttonEventPending = false;
     _hwBtnState = !_hwBtnState; // Toggle here instead of in ISR
-    Trace::log(TraceLevel::INFO, "Hardware button of irrigation zone " + String(_zoneIndex + 1) + " pressed.");
+    Trace::log(TraceLevel::DEBUG, "Hardware button of irrigation zone " + String(_zoneIndex + 1) + " pressed.");
     synchronizeButtonStates(_hwBtnState);
   }
 

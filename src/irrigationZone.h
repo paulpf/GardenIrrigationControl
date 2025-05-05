@@ -22,7 +22,7 @@ public:
     void synchronizeButtonStates(bool newState);
     bool getBtnState() { return _synchronizedBtnNewState; } // Get the synchronized button state
     void switchRelay(bool state);
-    bool getRelayState() { return _relaisState; } // Get the relay state
+    bool getRelayState() const { return _relaisState; } // Get the relay state
     void setRelayState(bool state); // Set the relay state
     void startTimer(); // Set the relay start time
     unsigned long getStartTime() { return _startTime; } // Get the relay start time

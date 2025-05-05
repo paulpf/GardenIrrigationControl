@@ -57,3 +57,35 @@ bool Helper::addIrrigationZone(int buttonPin, int relayPin, IrrigationZone* irri
       return false;
     }
 }
+
+// Plotting function for debugging purposes
+// This function will print the state of each zone to the Serial Monitor
+// It is only enabled if ENABLE_ZONE_PLOTTING is defined
+// Visualizing with the Serial Plotter in Arduino IDE or PlatformIO
+void Helper::plotZoneStates(IrrigationZone* zones, int numZones) 
+{
+    #ifdef ENABLE_ZONE_PLOTTING
+    unsigned long currentMillis = millis();
+    
+    for (int i = 0; i < numZones; i++) 
+    {
+        // Output button state on its own line
+        String zoneBtn = "Zone" + String(i+1) + "_Btn";
+        Serial.print(">");
+        Serial.print(zoneBtn);
+        Serial.print(":");
+        Serial.print(currentMillis);
+        Serial.print(":");
+        Serial.println(zones[i].getBtnState() ? "1" : "0");
+        
+        // Output relay state on its own line
+        String zoneRelay = "Zone" + String(i+1) + "_Relay";
+        Serial.print(">");
+        Serial.print(zoneRelay);
+        Serial.print(":");
+        Serial.print(currentMillis);
+        Serial.print(":");
+        Serial.println(zones[i].getRelayState() ? "-1" : "0");
+    }
+    #endif
+}

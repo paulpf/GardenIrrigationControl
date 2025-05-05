@@ -65,4 +65,8 @@
 // Maximum number of irrigation zones supported
 #define MAX_IRRIGATION_ZONES 9
 
+// Serial plotting configuration
+//#define ENABLE_ZONE_PLOTTING 
+#define TELEPLOT_INTERVAL 1000  // Plotting-Intervall in ms
+
 #endif // CONFIG_H

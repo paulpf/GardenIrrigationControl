@@ -139,4 +139,14 @@ void loop()
       irrigationZones[i].loop();
     }
   }
+
+  #ifdef ENABLE_ZONE_PLOTTING
+  // Plot zone states at defined interval for Teleplot
+  static unsigned long lastPlotTime = 0;
+  if (currentMillis - lastPlotTime >= TELEPLOT_INTERVAL) 
+  {
+    lastPlotTime = currentMillis;
+    Helper::plotZoneStates(irrigationZones, activeZones);
+  }
+  #endif
 }
