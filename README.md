@@ -98,23 +98,15 @@ Source: [ESP32 Pinout](https://www.cnx-software.com/wp-content/uploads/2022/09/E
 | Relay 8 | Low-Level-Trigger | GPIO22 | D22 | - | Activation by LOW signal |
 | Drainage Relay | Low-Level-Trigger | GPIO19 | D19 | - | Activation by LOW signal |
 
-
 ## Important Notes
 
 1. **Avoided GPIOs:**
-   - GPIO0, GPIO1, GPIO3: These were avoided as they are used for booting and serial communication (debugging).
-   - GPIO6-11: These are connected to the SPI flash and not available.
    - GPIO12: Avoided due to potential boot issues.
    - GPIO34, GPIO35, GPIO36, GPIO39: These are input-only and are not support pull-up or pull-down resistors.
 
 2. **Special Considerations:**
-   - GPIO2 (SSR 9): Connected to the onboard LED. When activating the SSR (LOW signal), the LED will light up.
    - Internal Pull-down Resistors: The ESP32 has built-in programmable pull-down resistors (approximately 45kΩ) that can be enabled via software, eliminating the need for external pull-down resistors.
 
 3. **Low-Level-Trigger SSRs:**
    - Since SSR modules with Low-Level-Trigger are used, a LOW signal is needed to activate and a HIGH signal to deactivate.
    - Initially, all SSR outputs should be set to HIGH to avoid unintended activation.
-
-4. **External Circuitry:**
-   - When connecting SSR modules to the GPIOs, it may be advisable to use external protection circuits (such as optocouplers) to protect the ESP32 from reverse currents.
-   - Check the specifications of your SSR modules to ensure they are directly compatible with the 3.3V logic levels of the ESP32.

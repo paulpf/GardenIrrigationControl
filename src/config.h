@@ -12,41 +12,41 @@
 
 // Hardware configuration for 8 irrigation zones
 // Pins for Zone 1
-#define ZONE1_BUTTON_PIN 13
-#define ZONE1_RELAY_PIN 23
+#define ZONE1_BUTTON_PIN 14
+#define ZONE1_RELAY_PIN 27
 
 // Pins for Zone 2
-#define ZONE2_BUTTON_PIN 14
-#define ZONE2_RELAY_PIN 25
+#define ZONE2_BUTTON_PIN 13
+#define ZONE2_RELAY_PIN 26
 
 // Pins for Zone 3
 #define ZONE3_BUTTON_PIN 15
-#define ZONE3_RELAY_PIN 26
+#define ZONE3_RELAY_PIN 25
 
 // Pins for Zone 4
-#define ZONE4_BUTTON_PIN 16
-#define ZONE4_RELAY_PIN 27
+#define ZONE4_BUTTON_PIN 2
+#define ZONE4_RELAY_PIN 33
 
 // Pins for Zone 5
-#define ZONE5_BUTTON_PIN 17
-#define ZONE5_RELAY_PIN 32
+#define ZONE5_BUTTON_PIN 4
+#define ZONE5_RELAY_PIN 32  
 
 // Pins for Zone 6
-#define ZONE6_BUTTON_PIN 18
-#define ZONE6_RELAY_PIN 33
+#define ZONE6_BUTTON_PIN 16
+#define ZONE6_RELAY_PIN 23
 
 // Pins for Zone 7
-#define ZONE7_BUTTON_PIN 4
-#define ZONE7_RELAY_PIN 21
+#define ZONE7_BUTTON_PIN 17
+#define ZONE7_RELAY_PIN 22
 
 // Pins for Zone 8
-#define ZONE8_BUTTON_PIN 2
-#define ZONE8_RELAY_PIN 22
+#define ZONE8_BUTTON_PIN 5
+#define ZONE8_RELAY_PIN 21
 
 // Hardware configuration for special pins
 // Pin for drainage
-#define DRAINAGE_BUTTON_PIN 5
-#define DRAINAGE_RELAY_PIN 19
+#define DRAINAGE_BUTTON_PIN 18
+#define DRAINAGE_RELAY_PIN 19  
 
 
 // Irrigation timing defaults
