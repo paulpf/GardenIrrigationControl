@@ -60,7 +60,7 @@
 #define BUTTON_DEBOUNCE_TIME 500 // Button debounce time in milliseconds
 
 #define DEBUG_MODE true          // Enable/disable verbose logging
-#define TRACE_LEVEL TraceLevel::INFO       // Enable/disable trace logging
+#define TRACE_LEVEL TraceLevel::ERROR       // Enable/disable trace logging
 
 // Maximum number of irrigation zones supported
 #define MAX_IRRIGATION_ZONES 9

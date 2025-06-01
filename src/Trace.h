@@ -10,9 +10,10 @@
  */
 enum class TraceLevel 
 {
-  DEBUG,  // Debug information for development
   INFO,   // Regular informational messages (lowest priority)  
-  ERROR   // Error messages (highest priority)
+  ERROR,  // Error messages
+  DEBUG,  // Debug information for development
+  TRACE  // Detailed trace information (highest priority)
 };
 
 class Trace
@@ -21,9 +22,10 @@ public:
   static void log(TraceLevel level, String message);
   
   // Helper methods for specific levels
-  static void info(String message) { log(TraceLevel::INFO, message); }
-  static void debug(String message) { log(TraceLevel::DEBUG, message); }
+  static void info(String message) { log(TraceLevel::INFO, message); }  
   static void error(String message) { log(TraceLevel::ERROR, message); }
+  static void debug(String message) { log(TraceLevel::DEBUG, message); }
+  static void trace(String message) { log(TraceLevel::TRACE, message); }
 
   // Method for Serial Plotter visualization
   static void plotBoolState(String stateName, bool stateValue, int valueToPlotForTrue);

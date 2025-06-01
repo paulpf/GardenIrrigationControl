@@ -78,25 +78,25 @@ Source: [ESP32 Pinout](https://www.cnx-software.com/wp-content/uploads/2022/09/E
 | Function | Description | GPIO | Board Label | Internal Pull-down | Notes |
 |----------|-------------|------|------------|-----------|-------|
 | **Inputs (with Internal Pull-down)** |
-| Input 1 | Digital Input | GPIO39 | D39 | ✓ | Internal pull-down ~45kΩ |
-| Input 2 | Digital Input | GPIO34 | D34 | ✓ | Internal pull-down ~45kΩ |
-| Input 3 | Digital Input | GPIO35 | D35 | ✓ | Internal pull-down ~45kΩ |
-| Input 4 | Digital Input | GPIO32 | D32 | ✓ | Internal pull-down ~45kΩ |
-| Input 5 | Digital Input | GPIO33 | D33 | ✓ | Internal pull-down ~45kΩ |
-| Input 6 | Digital Input | GPIO25 | D25 | ✓ | Internal pull-down ~45kΩ |
-| Input 7 | Digital Input | GPIO26 | D26 | ✓ | Internal pull-down ~45kΩ |
-| Input 8 | Digital Input | GPIO27 | D27 | ✓ | Internal pull-down ~45kΩ |
-| Drainage Input | Digital Input | GPIO14 | D14 | ✓ | Internal pull-down ~45kΩ |
+| Input 1 | Digital Input | GPIO14 | 14 | ✓ | Internal pull-down ~45kΩ |
+| Input 2 | Digital Input | GPIO13 | 13 | ✓ | Internal pull-down ~45kΩ |
+| Input 3 | Digital Input | GPIO15 | 15 | ✓ | Internal pull-down ~45kΩ |
+| Input 4 | Digital Input | GPIO2 | 2 | ✓ | Internal pull-down ~45kΩ |
+| Input 5 | Digital Input | GPIO4 | 4 | ✓ | Internal pull-down ~45kΩ |
+| Input 6 | Digital Input | GPIO16 | 16 | ✓ | Internal pull-down ~45kΩ |
+| Input 7 | Digital Input | GPIO17 | 17 | ✓ | Internal pull-down ~45kΩ |
+| Input 8 | Digital Input | GPIO5 | 5 | ✓ | Internal pull-down ~45kΩ |
+| Input 9 | Digital Input | GPIO18 | 18 | ✓ | Internal pull-down ~45kΩ |
 | **Outputs (for SSR modules with Low-Level-Trigger)** |
-| Relay 1 | Low-Level-Trigger | GPIO23 | D23 | - | Activation by LOW signal. During booting, this GPIO set the output for < = 1 second to LOW. |
-| Relay 2 | Low-Level-Trigger | GPIO25 | D25 | - | Activation by LOW signal |
-| Relay 3 | Low-Level-Trigger | GPIO26 | D26 | - | Activation by LOW signal |
-| Relay 4 | Low-Level-Trigger | GPIO27 | D27 | - | Activation by LOW signal |
-| Relay 5 | Low-Level-Trigger | GPIO32 | D32 | - | Activation by LOW signal. During booting, this GPIO set the output for < = 1 second to LOW. |
-| Relay 6 | Low-Level-Trigger | GPIO33 | D33 | - | Activation by LOW signal |
-| Relay 7 | Low-Level-Trigger | GPIO21 | D21 | - | Activation by LOW signal |
-| Relay 8 | Low-Level-Trigger | GPIO22 | D22 | - | Activation by LOW signal |
-| Drainage Relay | Low-Level-Trigger | GPIO19 | D19 | - | Activation by LOW signal |
+| Relay 1 | Low-Level-Trigger | GPIO27 | 27 | - | Activation by LOW signal. During booting, this GPIO set the output for < = 1 second to LOW. |
+| Relay 2 | Low-Level-Trigger | GPIO26 | 26 | - | Activation by LOW signal |
+| Relay 3 | Low-Level-Trigger | GPIO25 | 25 | - | Activation by LOW signal |
+| Relay 4 | Low-Level-Trigger | GPIO33 | 33 | - | Activation by LOW signal |
+| Relay 5 | Low-Level-Trigger | GPIO32 | 32 | - | Activation by LOW signal. During booting, this GPIO set the output for < = 1 second to LOW. |
+| Relay 6 | Low-Level-Trigger | GPIO23 | 23 | - | Activation by LOW signal |
+| Relay 7 | Low-Level-Trigger | GPIO22 | 22 | - | Activation by LOW signal |
+| Relay 8 | Low-Level-Trigger | GPIO21 | 21 | - | Activation by LOW signal |
+| Relay 9 | Low-Level-Trigger | GPIO19 | 19 | - | Activation by LOW signal |
 
 ## Important Notes
 

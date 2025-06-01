@@ -20,7 +20,7 @@ void WifiManager::setup(String ssid, String password, String clientName)
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(clientName.c_str());
     WiFi.onEvent(staticWifiEventHandler);
-    Trace::log(TraceLevel::INFO, "WiFi setup complete.");
+    Trace::log(TraceLevel::DEBUG, "WiFi setup complete.");
 }
 
 // Static WiFi event handler
@@ -38,7 +38,7 @@ void WifiManager::wifiEvent(WiFiEvent_t event)
     switch(event) 
     {
         case SYSTEM_EVENT_STA_START:
-            Trace::log(TraceLevel::INFO, "WiFi started, attempting to connect...");
+            Trace::log(TraceLevel::DEBUG, "WiFi started, attempting to connect...");
             WiFi.begin(_ssid.c_str(), _password.c_str());
             _wifiConnectStartTime = millis();
             _wifiState = WIFI_CONNECTING;
@@ -62,7 +62,7 @@ bool WifiManager::loop()
     // Check WiFi connection status
     if (_wifiState == WIFI_CONNECTING && WiFi.status() == WL_CONNECTED) 
     {
-        Trace::log(TraceLevel::INFO, "WiFi connected after connection attempt " + String(_reconnectAttempt));
+        Trace::log(TraceLevel::DEBUG, "WiFi connected after connection attempt " + String(_reconnectAttempt));
         _wifiState = WIFI_CONNECTED;
         _reconnectAttempt = 0;
     } 
@@ -80,7 +80,7 @@ void WifiManager::manageConnection()
 {
     if (_reconnectAttempt < _maximumCountToTryReconnect) 
     {
-        Trace::log(TraceLevel::INFO, "Attempting to reconnect to WiFi...");
+        Trace::log(TraceLevel::DEBUG, "Attempting to reconnect to WiFi...");
         WiFi.disconnect();
         WiFi.begin(_ssid, _password);
         _wifiConnectStartTime = millis();
