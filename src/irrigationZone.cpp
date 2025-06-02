@@ -101,6 +101,31 @@ int IrrigationZone::getRemainingTime()
   return _durationTime - (millis() - _startTime);
 }
 
+/// @brief Method to get the remaining time as a formatted string in "MM:SS" format.
+/// @return A string representing the remaining time in minutes and seconds.
+String IrrigationZone::getRemainingTimeAsString()
+{
+  int remainingTime = getRemainingTime();
+  if (remainingTime <= 0) 
+  {
+    return "00:00"; // Timer expired
+  }
+  
+  int minutes = remainingTime / 60000; // Convert milliseconds to minutes
+  int seconds = (remainingTime % 60000) / 1000; // Get remaining seconds
+  
+  // Format as MM:SS
+  String formattedTime = String(minutes) + ":" + String(seconds);
+  
+  // Ensure two digits for seconds
+  if (seconds < 10) 
+  {
+    formattedTime += "0";
+  }
+  
+  return formattedTime;
+}
+
 void IrrigationZone::startTimer() 
 {
   _timerIsActive = true;

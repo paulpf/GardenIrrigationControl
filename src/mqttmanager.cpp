@@ -205,7 +205,7 @@ bool MqttManager::publishAllIrrigationZones()
             publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(), 
                 _irrigationZones[i]->getRelayState() ? "true" : "false");
             publish(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str(), 
-                String(_irrigationZones[i]->getRemainingTime()).c_str());
+                String(_irrigationZones[i]->getRemainingTimeAsString()).c_str());
             publish(_irrigationZones[i]->getMqttTopicForSwButton().c_str(),
                 _irrigationZones[i]->getBtnState() ? "true" : "false");
         }
