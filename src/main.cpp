@@ -2,10 +2,12 @@
 #include "../../_secrets/WifiSecret.h"
 #include "../../_configs/MqttConfig.h"
 #include "../../_secrets/MqttSecret.h"
+#include "../../_secrets/OtaSecret.h"
 #else
 #include "./_secrets/WifiSecret.h"
 #include "./_config/MqttConfig.h"
 #include "./_secrets/MqttSecret.h"
+#include "./_secrets/OtaSecret.h"
 #endif
 
 #include "globaldefines.h"
@@ -13,6 +15,7 @@
 
 #include "wifimanager.h"
 #include "mqttmanager.h"
+#include "otamanager.h"
 #include "irrigationZone.h"
 #include "helper.h"
 #include "StorageManager.h"
@@ -30,6 +33,9 @@ WifiManager wifiManager;
 
 // ================ MQTT ================
 MqttManager mqttManager;
+
+// ================ OTA ================
+OtaManager otaManager;
 
 // ================ Irrigation zones ================
 // Using an array for better scalability with 8 zones
@@ -95,10 +101,17 @@ void setup()
     // Update client name with MAC address for unique identification
     String macFormatted = Helper::replaceChars(WiFi.macAddress(), ':', '-');
     Helper::formatToBuffer(clientName, CLIENT_NAME_MAX_SIZE, "GardenController-%s", macFormatted.c_str());
-    Trace::log(TraceLevel::DEBUG, "Client name set: " + String(clientName));
-
-    // Setup MQTT
+    Trace::log(TraceLevel::DEBUG, "Client name set: " + String(clientName));    // Setup MQTT
     mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName);
+
+    // Setup OTA (Over-The-Air updates)
+    #if ENABLE_OTA
+    Trace::log(TraceLevel::DEBUG, "Setting up OTA...");
+    otaManager.setup(clientName, OTA_PASSWORD);
+    #else
+    Trace::log(TraceLevel::DEBUG, "OTA disabled in configuration");
+    otaManager.setEnabled(false);
+    #endif
 
     // Initialize irrigation zones using the new helper function
     Trace::log(TraceLevel::DEBUG, "Initializing irrigation zones...");
@@ -159,6 +172,17 @@ void loop()
 {
   esp_task_wdt_reset();
   currentMillis = millis();
+
+  // Handle OTA updates - this should be processed frequently
+  #if ENABLE_OTA
+  otaManager.loop();
+  
+  // If OTA update is in progress, skip other operations to ensure stability
+  if (otaManager.isUpdating()) 
+  {
+      return;
+  }
+  #endif
 
   #ifdef ENABLE_LOOP_TIME_PLOTTING
   Trace::plotLoopTime("Mainloop", 0, currentMillis - mainLoopStartTime);
