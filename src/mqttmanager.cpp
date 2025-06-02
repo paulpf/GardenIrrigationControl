@@ -1,4 +1,5 @@
 #include "mqttmanager.h"
+#include "dht11manager.h"
 
 // Initialize the static instance pointer
 MqttManager* MqttManager::_instance = nullptr;
@@ -10,6 +11,7 @@ MqttManager::MqttManager()
     _mqttState = MQTT_DISCONNECTED_STATE;
     _mqttReconnectAttempts = 0;
     _pubSubClient.setClient(_wifiClient);
+    _dht11Manager = nullptr; // Initialize DHT11 manager pointer
 }
 
 void MqttManager::setup(const char* mqttServer, int mqttPort, const char* mqttUser, const char* mqttPassword, const char* clientName) 
@@ -224,5 +226,40 @@ void MqttManager::initPublish()
     {
         publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
             String(_irrigationZones[i]->getDurationTime()).c_str());
+    }
+}
+
+void MqttManager::setDht11Manager(Dht11Manager* dht11Manager) 
+{
+    _dht11Manager = dht11Manager;
+    Trace::log(TraceLevel::DEBUG, "DHT11 manager assigned to MQTT manager");
+}
+
+bool MqttManager::publishDht11Data() 
+{
+    if (!isConnected() || _dht11Manager == nullptr) {
+        return false;
+    }
+    
+    if (_dht11Manager->isDataValid()) {
+        // Publish temperature
+        String tempStr = String(_dht11Manager->getTemperature(), 1);
+        publish(_dht11Manager->getMqttTopicForTemperature().c_str(), tempStr.c_str());
+        
+        // Publish humidity
+        String humStr = String(_dht11Manager->getHumidity(), 1);
+        publish(_dht11Manager->getMqttTopicForHumidity().c_str(), humStr.c_str());
+        
+        // Publish heat index
+        String heatIndexStr = String(_dht11Manager->getHeatIndex(), 1);
+        publish(_dht11Manager->getMqttTopicForHeatIndex().c_str(), heatIndexStr.c_str());
+          // Publish sensor status
+        publish(_dht11Manager->getMqttTopicForStatus().c_str(), "online");
+        
+        return true;
+    } else {
+        // Publish offline status if sensor data is invalid
+        publish(_dht11Manager->getMqttTopicForStatus().c_str(), "offline");
+        return false;
     }
 }
