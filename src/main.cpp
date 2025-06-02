@@ -19,6 +19,7 @@
 #include "irrigationZone.h"
 #include "helper.h"
 #include "StorageManager.h"
+#include "dht11manager.h"
 
 #include "esp_task_wdt.h"
 #include "esp_system.h"
@@ -36,6 +37,9 @@ MqttManager mqttManager;
 
 // ================ OTA ================
 OtaManager otaManager;
+
+// ================ DHT11 Sensor ================
+Dht11Manager dht11Manager;
 
 // ================ Irrigation zones ================
 // Using an array for better scalability with 8 zones
@@ -111,12 +115,15 @@ void setup()
     #else
     Trace::log(TraceLevel::DEBUG, "OTA disabled in configuration");
     otaManager.setEnabled(false);
-    #endif
-
-    // Initialize irrigation zones using the new helper function
+    #endif    // Initialize irrigation zones using the new helper function
     Trace::log(TraceLevel::DEBUG, "Initializing irrigation zones...");
     initIrrigationZones();
 
+    // Initialize DHT11 sensor
+    Trace::log(TraceLevel::DEBUG, "Initializing DHT11 sensor...");
+    dht11Manager.setup(DHT11_PIN, DHT11_TYPE, clientName);
+    mqttManager.setDht11Manager(&dht11Manager);    
+    
     // Initialize the watchdog timer
     esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
     esp_task_wdt_add(NULL); // Add current thread to WDT watch
@@ -145,11 +152,18 @@ void plotZoneStates(unsigned long currentTime)
 
 void handleShortIntervalEvents() 
 {
-  // Publish MQTT data
+  // Publish MQTT messages for all irrigation zones
   bool mqttPublishStatus = mqttManager.publishAllIrrigationZones();
   if (!mqttPublishStatus) 
   {
       Trace::log(TraceLevel::ERROR, "MQTT publishing failed");
+  }
+
+  // Publish DHT11 sensor data
+  bool dht11PublishStatus = mqttManager.publishDht11Data();
+  if (!dht11PublishStatus) 
+  {
+      Trace::log(TraceLevel::DEBUG, "DHT11 MQTT publishing failed or sensor offline");
   }
 
   // Process MQTT messages
@@ -196,6 +210,10 @@ void loop()
       {
           Trace::log(TraceLevel::ERROR, "WiFi connection issue detected");
       }
+      
+      // Update DHT11 sensor readings
+      dht11Manager.loop();
+      
       yield();
   }
 
@@ -204,7 +222,7 @@ void loop()
       previousMillisShortLoop = currentMillis;
       handleShortIntervalEvents();
   }
-
+  
   #ifdef ENABLE_ZONE_PLOTTING
   plotZoneStates(currentMillis);
   #endif

@@ -6,6 +6,9 @@
 #include <PubSubClient.h>
 #include "irrigationZone.h"
 
+// Forward declaration to avoid circular dependency
+class Dht11Manager;
+
 class MqttManager {
 
 public:
@@ -14,11 +17,14 @@ public:
     void loop();
     void initPublish();
     void publish(const char* topic, const char* payload);
-    void subscribe(const char* topic);
-    void addIrrigationZone(IrrigationZone *zone);
+    void subscribe(const char* topic);    void addIrrigationZone(IrrigationZone *zone);
     void subscribeIrrigationZones();
     bool isConnected();
     bool publishAllIrrigationZones();
+    
+    // DHT11 sensor support
+    void setDht11Manager(Dht11Manager* dht11Manager);
+    bool publishDht11Data();
 
     // Make this public and static so it can be used as a callback
     static void staticMqttCallback(char* topic, byte* payload, unsigned int length);
@@ -55,10 +61,12 @@ private:
   const unsigned long _mqttRetryInterval = 5000; // Wait 5 seconds between connection attempts
   int _mqttReconnectAttempts = 0;
   const int _maxMqttReconnectAttempts = 5;
-
   // Array of irrigation zones
   IrrigationZone *_irrigationZones[MAX_IRRIGATION_ZONES];
   int _numIrrigationZones = 0; // Number of irrigation zones
+  
+  // DHT11 sensor manager
+  Dht11Manager* _dht11Manager;
 };
 
 #endif // MQTTMANAGER_H

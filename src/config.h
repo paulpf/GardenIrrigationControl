@@ -48,6 +48,9 @@
 #define DRAINAGE_BUTTON_PIN 18
 #define DRAINAGE_RELAY_PIN 19  
 
+// DHT11 Temperature and Humidity Sensor
+#define DHT11_PIN 12
+#define DHT11_TYPE 11  // DHT11 sensor type constant
 
 // Irrigation timing defaults
 #define DEFAULT_DURATION_TIME 5 * 60 * 1000 // Default duration time in milliseconds (5 minutes)
@@ -57,9 +60,11 @@
 #define WATCHDOG_TIMEOUT 60000   // Watchdog timeout in milliseconds
 #define LONG_INTERVAL 60 * 1000        // Main loop interval in milliseconds
 #define SHORT_INTERVAL 100        // Main loop interval in milliseconds
+#define DHT11_READ_INTERVAL 30 * 1000  // DHT11 sensor reading interval in milliseconds (30 seconds)
 #define BUTTON_DEBOUNCE_TIME 500 // Button debounce time in milliseconds
 
 #define DEBUG_MODE true          // Enable/disable verbose logging
+#define VALIDATE_DHT11_ON_STARTUP true // Enable DHT11 validation during startup
 #define TRACE_LEVEL TraceLevel::ERROR       // Enable/disable trace logging
 
 // Maximum number of irrigation zones supported
@@ -70,8 +75,8 @@
 #define OTA_PORT 3232               // OTA port (default: 3232)
 
 // Serial plotting configuration
-#define ENABLE_ZONE_PLOTTING
-#define ENABLE_LOOP_TIME_PLOTTING // Enable loop time plotting for debugging
+//#define ENABLE_ZONE_PLOTTING
+//#define ENABLE_LOOP_TIME_PLOTTING // Enable loop time plotting for debugging
 #define TELEPLOT_INTERVAL 1000  // Plotting-Intervall in ms
 
 #endif // CONFIG_H
