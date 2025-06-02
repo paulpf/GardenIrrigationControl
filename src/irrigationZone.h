@@ -29,6 +29,7 @@ public:
     void setDurationTime(int durationTime, int zoneIndex); // Set the relay duration time
     int getDurationTime() { return _durationTime; } // Get the relay duration time
     int getRemainingTime(); // Get the remaining time for the relay
+    String getRemainingTimeAsString();
     void resetTimer();
 
 private:
