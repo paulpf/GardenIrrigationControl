@@ -1,24 +1,26 @@
-# GardenIrrigationControl
+# GardenIrrigationControl <!-- omit from toc -->
 
 > **Note:** This project is still under construction.
 
 <img src="_assets/_images/underconstruction.png" alt="alt text" width="500" style="height: 80;">
 
-## Table of Contents
-
-- [GardenIrrigationControl](#gardenirrigationcontrol)
-  - [Table of Contents](#table-of-contents)
-  - [Introduction](#introduction)
-  - [Requirements](#requirements)
-  - [Hardware](#hardware)
-    - [ESP-32 Dev Kit C V4](#esp-32-dev-kit-c-v4)
-      - [Pinout](#pinout)
-    - [Relais module](#relais-module)
-    - [Ventil Hunter PGV-101](#ventil-hunter-pgv-101)
+- [Introduction](#introduction)
+- [Requirements](#requirements)
+- [Hardware](#hardware)
+  - [ESP-32 Dev Kit C V4](#esp-32-dev-kit-c-v4)
+    - [Pinout](#pinout)
+  - [Relais module](#relais-module)
+  - [Ventil Hunter PGV-101](#ventil-hunter-pgv-101)
+- [Implementation](#implementation)
   - [Circuit Diagram](#circuit-diagram)
-- [ESP32 GPIO Assignment for 9 Inputs with Internal Pull-down Resistors and 9 SSR Outputs](#esp32-gpio-assignment-for-9-inputs-with-internal-pull-down-resistors-and-9-ssr-outputs)
+  - [ESP32 GPIO Assignment for 9 Inputs with Internal Pull-down Resistors and 9 SSR Outputs](#esp32-gpio-assignment-for-9-inputs-with-internal-pull-down-resistors-and-9-ssr-outputs)
   - [Selected GPIOs for Your Application](#selected-gpios-for-your-application)
   - [Important Notes](#important-notes)
+  - [Over-The-Air (OTA) Updates](#over-the-air-ota-updates)
+    - [OTA Configuration](#ota-configuration)
+    - [Using OTA Updates](#using-ota-updates)
+    - [Timeout Issues](#timeout-issues)
+    - [OTA Status Monitoring](#ota-status-monitoring)
 
 ## Introduction
 
@@ -61,19 +63,15 @@ Source: [ESP32 Pinout](https://www.cnx-software.com/wp-content/uploads/2022/09/E
 
 ### Ventil Hunter PGV-101
 
+## Implementation
 
-
-
-## Circuit Diagram
-
+### Circuit Diagram
 
 <img src="_assets/_images/IrrigationCircuit_Steckplatine.png" width="1000" alt="Circuit Diagram">
 
+### ESP32 GPIO Assignment for 9 Inputs with Internal Pull-down Resistors and 9 SSR Outputs
 
-
-# ESP32 GPIO Assignment for 9 Inputs with Internal Pull-down Resistors and 9 SSR Outputs
-
-## Selected GPIOs for Your Application
+### Selected GPIOs for Your Application
 
 | Function | Description | GPIO | Board Label | Internal Pull-down | Notes |
 |----------|-------------|------|------------|-----------|-------|
@@ -98,7 +96,7 @@ Source: [ESP32 Pinout](https://www.cnx-software.com/wp-content/uploads/2022/09/E
 | Relay 8 | Low-Level-Trigger | GPIO21 | 21 | - | Activation by LOW signal |
 | Relay 9 | Low-Level-Trigger | GPIO19 | 19 | - | Activation by LOW signal |
 
-## Important Notes
+### Important Notes
 
 1. **Avoided GPIOs:**
    - GPIO12: Avoided due to potential boot issues.
@@ -110,3 +108,52 @@ Source: [ESP32 Pinout](https://www.cnx-software.com/wp-content/uploads/2022/09/E
 3. **Low-Level-Trigger SSRs:**
    - Since SSR modules with Low-Level-Trigger are used, a LOW signal is needed to activate and a HIGH signal to deactivate.
    - Initially, all SSR outputs should be set to HIGH to avoid unintended activation.
+
+### Over-The-Air (OTA) Updates
+
+This project supports OTA (Over-The-Air) updates, allowing you to upload new firmware wirelessly without physical access to the ESP32.
+
+#### OTA Configuration
+
+#### Using OTA Updates
+
+1. Find your ESP32's IP address (check your router or serial monitor)
+
+2. Update `platformio.ini` in the `[env:esp32dev-ota]` section:
+
+   ```ini
+   upload_port = 192.168.x.x  ; Replace with your ESP32's IP
+   ```
+
+3. In OtaSecret.h , set your OTA password:
+
+   ```cpp
+   #define OTA_PASSWORD "YourSecurePassword123"
+   ```
+
+4. Upload the firmware:
+
+   ```bash
+   pio run -e esp32dev-ota -t upload
+   ```
+
+#### Timeout Issues
+
+If you encounter timeout issues during OTA updates, try to ncrease timeout values in platformio.ini:
+
+   ```ini
+   upload_flags = 
+     --port=3232
+     --timeout=30
+   ```
+
+#### OTA Status Monitoring
+
+The system provides detailed OTA status logging:
+
+- **Setup**: Logs when OTA is initialized
+- **Progress**: Shows upload progress percentage
+- **Errors**: Detailed error messages for troubleshooting
+- **Completion**: Confirms successful updates
+
+When an OTA update is in progress, all irrigation operations are paused to ensure update stability.

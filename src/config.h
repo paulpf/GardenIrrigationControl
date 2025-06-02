@@ -65,6 +65,10 @@
 // Maximum number of irrigation zones supported
 #define MAX_IRRIGATION_ZONES 9
 
+// OTA (Over-The-Air) Update configuration
+#define ENABLE_OTA true              // Enable/disable OTA functionality
+#define OTA_PORT 3232               // OTA port (default: 3232)
+
 // Serial plotting configuration
 #define ENABLE_ZONE_PLOTTING
 #define ENABLE_LOOP_TIME_PLOTTING // Enable loop time plotting for debugging
