@@ -38,7 +38,7 @@ void WifiManager::wifiEvent(WiFiEvent_t event)
     switch(event) 
     {
         case SYSTEM_EVENT_STA_START:
-            Trace::log(TraceLevel::DEBUG, "WiFi started, attempting to connect...");
+            Trace::log(TraceLevel::INFO, "WiFi started, attempting to connect...");
             WiFi.begin(_ssid.c_str(), _password.c_str());
             _wifiConnectStartTime = millis();
             _wifiState = WIFI_CONNECTING;
@@ -80,7 +80,7 @@ void WifiManager::manageConnection()
 {
     if (_reconnectAttempt < _maximumCountToTryReconnect) 
     {
-        Trace::log(TraceLevel::DEBUG, "Attempting to reconnect to WiFi...");
+        Trace::log(TraceLevel::INFO, "Attempting to reconnect to WiFi...");
         WiFi.disconnect();
         WiFi.begin(_ssid, _password);
         _wifiConnectStartTime = millis();

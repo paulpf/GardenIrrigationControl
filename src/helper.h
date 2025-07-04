@@ -16,7 +16,7 @@ public:
   static char* createCharArray(const String &str);
   static void concatToBuffer(char* buffer, size_t bufferSize, const char* str1, const char* str2);
   static void formatToBuffer(char* buffer, size_t bufferSize, const char* format, ...);
-  static bool addIrrigationZone(int buttonPin, int relayPin, IrrigationZone* irrigationZones, MqttManager* mqttManager, int &activeZones, const char* clientNameBuffer);
+  static void addIrrigationZone(int buttonPin, int relayPin, IrrigationZone* irrigationZones, MqttManager* mqttManager, int index, const char* clientNameBuffer);
 };
 
 #endif

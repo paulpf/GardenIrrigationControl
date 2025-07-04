@@ -45,8 +45,8 @@
 
 // Hardware configuration for special pins
 // Pin for drainage
-#define DRAINAGE_BUTTON_PIN 18
-#define DRAINAGE_RELAY_PIN 19  
+#define ZONE9_BUTTON_PIN 18
+#define ZONE9_RELAY_PIN 19  
 
 // DHT11 Temperature and Humidity Sensor
 #define DHT11_PIN 12
@@ -63,9 +63,8 @@
 #define DHT11_READ_INTERVAL 30 * 1000  // DHT11 sensor reading interval in milliseconds (30 seconds)
 #define BUTTON_DEBOUNCE_TIME 500 // Button debounce time in milliseconds
 
-#define DEBUG_MODE true          // Enable/disable verbose logging
 #define VALIDATE_DHT11_ON_STARTUP true // Enable DHT11 validation during startup
-#define TRACE_LEVEL TraceLevel::ERROR       // Enable/disable trace logging
+#define TRACE_LEVEL TraceLevel::INFO       // Enable/disable trace logging
 
 // Maximum number of irrigation zones supported
 #define MAX_IRRIGATION_ZONES 9
@@ -78,5 +77,8 @@
 //#define ENABLE_ZONE_PLOTTING
 //#define ENABLE_LOOP_TIME_PLOTTING // Enable loop time plotting for debugging
 #define TELEPLOT_INTERVAL 1000  // Plotting-Intervall in ms
+
+// WiFi configuration
+#define WIFI_CONNECTION_TIMEOUT 10000 // WiFi connection timeout in milliseconds (10 seconds)
 
 #endif // CONFIG_H

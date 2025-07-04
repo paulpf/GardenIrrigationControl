@@ -23,6 +23,7 @@ public:
     String getMqttTopicForHumidity() const { return _mqttTopicBase + "/humidity"; }
     String getMqttTopicForHeatIndex() const { return _mqttTopicBase + "/heatIndex"; }
     String getMqttTopicForStatus() const { return _mqttTopicBase + "/status"; }
+    String getTimeStamp() const { return String(_lastReadTime); }
 
 private:
     DHT* _dht;

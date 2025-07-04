@@ -10,10 +10,11 @@
  */
 enum class TraceLevel 
 {
-  INFO,   // Regular informational messages (lowest priority)  
-  ERROR,  // Error messages
-  DEBUG,  // Debug information for development
-  TRACE  // Detailed trace information (highest priority)
+  TRACE, // Detailed trace information
+  DEBUG, // Debug information for development
+  INFO, // General information messages
+  ERROR, // Error messages indicating issues
+  NONE // No logging
 };
 
 class Trace

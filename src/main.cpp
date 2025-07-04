@@ -39,12 +39,11 @@ MqttManager mqttManager;
 OtaManager otaManager;
 
 // ================ DHT11 Sensor ================
-Dht11Manager dht11Manager;
+//Dht11Manager dht11Manager;
 
 // ================ Irrigation zones ================
 // Using an array for better scalability with 8 zones
 IrrigationZone irrigationZones[MAX_IRRIGATION_ZONES];
-int activeZones = 0; // Will be increased in setup
 
 // ================ Timing ================
 unsigned long currentMillis = 0; // Current time in milliseconds
@@ -57,32 +56,20 @@ unsigned long mainLoopStartTime = 0; // For loop time plotting
 // New function to initialize irrigation zones
 void initIrrigationZones() 
 {
-  // Zone configuration arrays for standard zones
-  const int zoneButtons[] = {ZONE1_BUTTON_PIN, ZONE2_BUTTON_PIN, ZONE3_BUTTON_PIN, ZONE4_BUTTON_PIN,
-                              ZONE5_BUTTON_PIN, ZONE6_BUTTON_PIN, ZONE7_BUTTON_PIN, ZONE8_BUTTON_PIN};
-  const int zoneRelays[]  = {ZONE1_RELAY_PIN,  ZONE2_RELAY_PIN,  ZONE3_RELAY_PIN,  ZONE4_RELAY_PIN,
-                              ZONE5_RELAY_PIN,  ZONE6_RELAY_PIN,  ZONE7_RELAY_PIN,  ZONE8_RELAY_PIN};
-  const int numZones = sizeof(zoneButtons) / sizeof(zoneButtons[0]);
+    Trace::log(TraceLevel::INFO, "Initializing irrigation zones...");
 
-  // Initialize the standard zones
-  for (int i = 0; i < numZones && activeZones < MAX_IRRIGATION_ZONES; i++) 
-  {
-      Helper::addIrrigationZone(zoneButtons[i], zoneRelays[i], irrigationZones, &mqttManager, activeZones, clientName);
-  }
-  
-  // Optionally add the drainage zone if capacity allows
-  if (activeZones < MAX_IRRIGATION_ZONES) 
-  {
-      Helper::addIrrigationZone(DRAINAGE_BUTTON_PIN, DRAINAGE_RELAY_PIN, irrigationZones, &mqttManager, activeZones, clientName);
-  }
+    // Zone configuration arrays
+    const int zoneButtons[] = {ZONE1_BUTTON_PIN, ZONE2_BUTTON_PIN, ZONE3_BUTTON_PIN, ZONE4_BUTTON_PIN,
+                                ZONE5_BUTTON_PIN, ZONE6_BUTTON_PIN, ZONE7_BUTTON_PIN, ZONE8_BUTTON_PIN, ZONE9_BUTTON_PIN};
+    const int zoneRelays[]  = {ZONE1_RELAY_PIN,  ZONE2_RELAY_PIN,  ZONE3_RELAY_PIN,  ZONE4_RELAY_PIN,
+                                ZONE5_RELAY_PIN,  ZONE6_RELAY_PIN,  ZONE7_RELAY_PIN,  ZONE8_RELAY_PIN, ZONE9_RELAY_PIN};
 
-  // Load saved settings for each zone from storage
-  for (int i = 0; i < activeZones; i++) 
-  {
-      irrigationZones[i].loadSettingsFromStorage(i);
-  }
-
-  Trace::log(TraceLevel::DEBUG, "Irrigation zones initialized: " + String(activeZones) + " zones");
+    // Initialize zones
+    for (int i = 0; i < MAX_IRRIGATION_ZONES; i++) 
+    {
+        Helper::addIrrigationZone(zoneButtons[i], zoneRelays[i], irrigationZones, &mqttManager, i, clientName);
+        irrigationZones[i].loadSettingsFromStorage(i);
+    }
 }
 
 void setup() 
@@ -93,7 +80,7 @@ void setup()
 
     // Initialize storage manager first
     StorageManager::getInstance().begin();
-    Trace::log(TraceLevel::DEBUG, "StorageManager initialized");
+    Trace::log(TraceLevel::INFO, "StorageManager initialized");
 
     // Set initial client name (will be updated later)
     strncpy(clientName, "GardenController-Init", CLIENT_NAME_MAX_SIZE - 1);
@@ -102,30 +89,44 @@ void setup()
     // Setup WiFi
     wifiManager.setup(WIFI_SSID, WIFI_PWD, clientName);
 
+    // Wait for WiFi connection
+    Trace::log(TraceLevel::INFO, "Waiting for WiFi connection...");
+    unsigned long wifiConnectStart = millis();
+    while (!wifiManager.isConnected()) 
+    {
+        if (millis() - wifiConnectStart > WIFI_CONNECTION_TIMEOUT) 
+        {
+            Trace::log(TraceLevel::ERROR, "WiFi connection timeout");
+            break; // Exit if connection takes too long
+        }
+        delay(100); // Polling delay
+    }
+
     // Update client name with MAC address for unique identification
     String macFormatted = Helper::replaceChars(WiFi.macAddress(), ':', '-');
     Helper::formatToBuffer(clientName, CLIENT_NAME_MAX_SIZE, "GardenController-%s", macFormatted.c_str());
-    Trace::log(TraceLevel::DEBUG, "Client name set: " + String(clientName));    // Setup MQTT
+    Trace::log(TraceLevel::INFO, "Client name set: " + String(clientName));    // Setup MQTT
     mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName);
 
     // Setup OTA (Over-The-Air updates)
     #if ENABLE_OTA
-    Trace::log(TraceLevel::DEBUG, "Setting up OTA...");
+    Trace::log(TraceLevel::INFO, "Setting up OTA...");
     otaManager.setup(clientName, OTA_PASSWORD);
     #else
-    Trace::log(TraceLevel::DEBUG, "OTA disabled in configuration");
+    Trace::log(TraceLevel::INFO, "OTA disabled in configuration");
     otaManager.setEnabled(false);
-    #endif    // Initialize irrigation zones using the new helper function
-    Trace::log(TraceLevel::DEBUG, "Initializing irrigation zones...");
+    #endif    
+    
+    // Initialize irrigation zones using the new helper function
     initIrrigationZones();
 
     // Initialize DHT11 sensor
-    Trace::log(TraceLevel::DEBUG, "Initializing DHT11 sensor...");
-    dht11Manager.setup(DHT11_PIN, DHT11_TYPE, clientName);
-    mqttManager.setDht11Manager(&dht11Manager);    
+    //Trace::log(TraceLevel::DEBUG, "Initializing DHT11 sensor...");
+    //dht11Manager.setup(DHT11_PIN, DHT11_TYPE, clientName);
+    //mqttManager.setDht11Manager(&dht11Manager);    
     
     // Initialize the watchdog timer
-    esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000, true); // Convert milliseconds to seconds
+    esp_task_wdt_init(WATCHDOG_TIMEOUT / 5000, true); // Convert milliseconds to seconds
     esp_task_wdt_add(NULL); // Add current thread to WDT watch
 
     Trace::log(TraceLevel::INFO, "Setup end");
@@ -139,7 +140,7 @@ void plotZoneStates(unsigned long currentTime)
   {
     lastPlotTime = currentTime;
     char bufferName[20]; // Buffer for name string
-    for (int i = 0; i < activeZones; i++) 
+    for (int i = 0; i < MAX_IRRIGATION_ZONES; i++) 
     {
       snprintf(bufferName, sizeof(bufferName), "Btn%d", i + 1);
       Trace::plotBoolState(bufferName, irrigationZones[i].getBtnState(), 1);
@@ -153,24 +154,16 @@ void plotZoneStates(unsigned long currentTime)
 void handleShortIntervalEvents() 
 {
   // Publish MQTT messages for all irrigation zones
-  bool mqttPublishStatus = mqttManager.publishAllIrrigationZones();
-  if (!mqttPublishStatus) 
-  {
-      Trace::log(TraceLevel::ERROR, "MQTT publishing failed");
-  }
-
+  mqttManager.publishAllIrrigationZones();
+  
   // Publish DHT11 sensor data
-  bool dht11PublishStatus = mqttManager.publishDht11Data();
-  if (!dht11PublishStatus) 
-  {
-      Trace::log(TraceLevel::DEBUG, "DHT11 MQTT publishing failed or sensor offline");
-  }
+  mqttManager.publishDht11Data();
 
   // Process MQTT messages
   mqttManager.loop();
   
   // Update irrigation zones
-  for (int i = 0; i < activeZones; i++) 
+  for (int i = 0; i < MAX_IRRIGATION_ZONES; i++) 
   {
       irrigationZones[i].loop();
       
@@ -212,7 +205,7 @@ void loop()
       }
       
       // Update DHT11 sensor readings
-      dht11Manager.loop();
+      //dht11Manager.loop();
       
       yield();
   }

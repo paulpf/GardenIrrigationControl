@@ -17,14 +17,15 @@ public:
     void loop();
     void initPublish();
     void publish(const char* topic, const char* payload);
-    void subscribe(const char* topic);    void addIrrigationZone(IrrigationZone *zone);
+    void subscribe(const char* topic);
+    void addIrrigationZone(IrrigationZone *zone);
     void subscribeIrrigationZones();
     bool isConnected();
-    bool publishAllIrrigationZones();
+    void publishAllIrrigationZones();
     
     // DHT11 sensor support
     void setDht11Manager(Dht11Manager* dht11Manager);
-    bool publishDht11Data();
+    void publishDht11Data();
 
     // Make this public and static so it can be used as a callback
     static void staticMqttCallback(char* topic, byte* payload, unsigned int length);

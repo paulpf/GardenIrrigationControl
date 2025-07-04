@@ -12,6 +12,7 @@ public:
   bool loop();
   void manageConnection();
   bool checkDnsResolution();
+  bool isConnected() const { return _wifiState == WIFI_CONNECTED; }
   
   // Static WiFi event handler that will be used with WiFi.onEvent
   static void staticWifiEventHandler(WiFiEvent_t event);
@@ -26,7 +27,6 @@ private:
   String _ssid;
   String _password;
   String _clientName;
-  const int WIFI_CONNECTION_TIMEOUT = 10000; // 10 seconds
   int _countToTryReconnect = 0;
   int _maximumCountToTryReconnect = 10;
   unsigned long _lastWifiCheckMillis = 0;
