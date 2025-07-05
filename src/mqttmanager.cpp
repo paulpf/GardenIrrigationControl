@@ -61,18 +61,19 @@ void MqttManager::instanceMqttCallback(char* topic, byte* payload, unsigned int 
         if(String(topic).startsWith(_irrigationZones[i]->getMqttTopicForDurationTime())) 
         {
             _blockPublish = true; // Set block to true to prevent further processing
-            int durationTime = message.toInt();
-            if (durationTime > 0 && durationTime <= MAX_DURATION_TIME) 
+            int durationTimeMinutes = message.toInt();
+            int durationTimeMs = durationTimeMinutes * 60 * 1000; // Convert minutes to milliseconds
+            if (durationTimeMs > 0 && durationTimeMs <= MAX_DURATION_TIME) 
             {
                 // Update to use new method with zone index for storage
-                _irrigationZones[i]->setDurationTime(durationTime, i);
-                Trace::log(TraceLevel::DEBUG, "Updated duration time for zone " + String(i) + ": " + String(durationTime));
+                _irrigationZones[i]->setDurationTime(durationTimeMs, i);
+                Trace::log(TraceLevel::DEBUG, "Updated duration time for zone " + String(i) + ": " + String(durationTimeMinutes) + " minutes (" + String(durationTimeMs) + " ms)");
             } 
             else 
             {
                 // Invalid duration time, reset to default
                 _irrigationZones[i]->setDurationTime(DEFAULT_DURATION_TIME, i);
-                Trace::log(TraceLevel::ERROR, "Invalid duration time received for zone " + String(i) + ": " + String(durationTime));
+                Trace::log(TraceLevel::ERROR, "Invalid duration time received for zone " + String(i) + ": " + String(durationTimeMinutes) + " minutes");
             }
             _blockPublish = false; // Reset block to false after processing
             break; // Exit the loop after processing the message
@@ -220,8 +221,10 @@ void MqttManager::initPublish()
 {
     for (int i = 0; i < MAX_IRRIGATION_ZONES; i++) 
     {
-        publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
-            String(_irrigationZones[i]->getDurationTime()).c_str());
+        // Convert milliseconds to minutes for MQTT publishing
+        int durationTimeMs = _irrigationZones[i]->getDurationTime();
+        int durationTimeMinutes = durationTimeMs / (60 * 1000);
+        publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(), String(durationTimeMinutes).c_str());
     }
 }
 
