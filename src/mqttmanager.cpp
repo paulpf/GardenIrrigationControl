@@ -27,6 +27,22 @@ void MqttManager::setup(const char* mqttServer, int mqttPort, const char* mqttUs
     Trace::log(TraceLevel::INFO, "MqttManager setup complete.");
 }
 
+void MqttManager::initPublish()
+{
+    for (int i = 0; i < MAX_IRRIGATION_ZONES; i++) 
+    {
+        // Set initial state on mqtt for relay as false
+        // This is necessary to ensure the relay state is known on startup
+        // and to avoid false positives in the UI        
+        publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(), "false");
+
+        // Convert milliseconds to minutes for MQTT publishing
+        int durationTimeMs = _irrigationZones[i]->getDurationTime();
+        int durationTimeMinutes = durationTimeMs / (60 * 1000);
+        publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(), String(durationTimeMinutes).c_str());       
+    }
+}
+
 // Static callback that will be called by PubSubClient
 void MqttManager::staticMqttCallback(char* topic, byte* payload, unsigned int length) 
 {
@@ -54,6 +70,7 @@ void MqttManager::instanceMqttCallback(char* topic, byte* payload, unsigned int 
     {
         if (String(topic).startsWith(_irrigationZones[i]->getMqttTopicForSwButton())) 
         {
+            Trace::log(TraceLevel::INFO, "Processing software button message for zone " + String(i) + ": " + message);
             _irrigationZones[i]->synchronizeButtonStates(message == "true");
             break; // Exit the loop after processing the message
         }
@@ -124,10 +141,11 @@ void MqttManager::reconnect()
         _mqttState = MQTT_CONNECTED_STATE;
         _mqttReconnectAttempts = 0;
         
-        // Resubscribe to all topics for irrigation zones
-        subscribeIrrigationZones();
         // Publish initial state of all irrigation zones
         initPublish();
+
+        // Resubscribe to all topics for irrigation zones
+        subscribeIrrigationZones();
     } 
     else 
     {
@@ -215,17 +233,6 @@ void MqttManager::publishAllIrrigationZones()
                 _irrigationZones[i]->getBtnState() ? "true" : "false");
         }
     } 
-}
-
-void MqttManager::initPublish()
-{
-    for (int i = 0; i < MAX_IRRIGATION_ZONES; i++) 
-    {
-        // Convert milliseconds to minutes for MQTT publishing
-        int durationTimeMs = _irrigationZones[i]->getDurationTime();
-        int durationTimeMinutes = durationTimeMs / (60 * 1000);
-        publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(), String(durationTimeMinutes).c_str());
-    }
 }
 
 void MqttManager::setDht11Manager(Dht11Manager* dht11Manager) 

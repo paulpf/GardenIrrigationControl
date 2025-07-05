@@ -22,7 +22,7 @@ public:
     void subscribeIrrigationZones();
     bool isConnected();
     void publishAllIrrigationZones();
-    
+
     // DHT11 sensor support
     void setDht11Manager(Dht11Manager* dht11Manager);
     void publishDht11Data();

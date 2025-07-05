@@ -12,6 +12,7 @@ void IrrigationZone::setup(int hwBtnGpioChannel, int relayGpioChannel, String mq
   _hwBtnGpioChannel = hwBtnGpioChannel;
   _relayGpioChannel = relayGpioChannel;
   _mqttTopicForZone = mqttTopicForZone;
+  resetTimer(); // Reset timer to ensure clean state
   synchronizeButtonStates(false); // Initialize button states to false
   setupHwButton(_hwBtnGpioChannel);
   setupRelay(_relayGpioChannel);
@@ -40,7 +41,6 @@ void IrrigationZone::setupHwButton(int hwBtnGpioChannel)
 
 void IRAM_ATTR IrrigationZone::onHwBtnPressed() 
 {
-  //Trace::log(TraceLevel::INFO, "Hardware button of irrigation zone " + String(_zoneIndex + 1) + " pressed.");
   unsigned long now = millis();
   if (now - _lastDebounceTime > BUTTON_DEBOUNCE_TIME) 
   {
@@ -52,7 +52,7 @@ void IRAM_ATTR IrrigationZone::onHwBtnPressed()
 
 void IrrigationZone::synchronizeButtonStates(bool newState) 
 {
-  Trace::log(TraceLevel::DEBUG, "Synchronizing of irrigation zone " + String(_zoneIndex + 1) + " button states to " + String(newState));
+  Trace::log(TraceLevel::INFO, "Synchronizing of irrigation zone " + String(_zoneIndex + 1) + " button states to " + String(newState));
   _synchronizedBtnNewState = _swBtnState = _hwBtnState = newState;
   // We could save button state here, but it's usually transient
   // Uncomment below if you want to persist button states
@@ -72,14 +72,10 @@ void IrrigationZone::setupRelay(int relayGpioChannel)
   digitalWrite(relayGpioChannel, HIGH); // Set relay to HIGH (off) by default
 }
 
-void IrrigationZone::setRelayState(bool state) {
-  _relaisState = state;
-  // Save relay state to storage
-  StorageManager::getInstance().saveRelayState(_zoneIndex, state);
-}
-
 void IrrigationZone::switchRelay(bool state)
 {
+  _relaisState = state;
+
   if (state)
   {
     Trace::log(TraceLevel::DEBUG, "Switching relay ON");
@@ -159,13 +155,13 @@ void IrrigationZone::loop()
   {
     _buttonEventPending = false;
     _hwBtnState = !_hwBtnState; // Toggle here instead of in ISR
-    Trace::log(TraceLevel::DEBUG, "Hardware button of irrigation zone " + String(_zoneIndex + 1) + " pressed.");
+    Trace::log(TraceLevel::INFO, "Hardware button of irrigation zone " + String(_zoneIndex + 1) + " pressed.");
     synchronizeButtonStates(_hwBtnState);
   }
 
   if (getRelayState() == false && getBtnState() == true)
   {
-    setRelayState(true);
+    switchRelay(true);
 
     // Start timer
     startTimer();
@@ -173,7 +169,7 @@ void IrrigationZone::loop()
   // if btn1 is inactive, relais 1 should be inactive
   else if(getRelayState() == true && getBtnState() == false)
   {
-    setRelayState(false);
+    switchRelay(false);
     resetTimer();
   }
 
@@ -185,10 +181,8 @@ void IrrigationZone::loop()
     {
       Trace::log(TraceLevel::DEBUG, "Relais timer " + String(_zoneIndex) + " expired");
       resetTimer();
-      setRelayState(false);
+      switchRelay(false);
       synchronizeButtonStates(false);
     }
   }
-
-  switchRelay(getRelayState());
 }
