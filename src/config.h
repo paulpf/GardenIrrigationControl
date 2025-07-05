@@ -59,7 +59,8 @@
 // System configuration
 #define WATCHDOG_TIMEOUT 60000   // Watchdog timeout in milliseconds
 #define LONG_INTERVAL 60 * 1000        // Main loop interval in milliseconds
-#define SHORT_INTERVAL 100        // Main loop interval in milliseconds
+#define MIDDLE_INTERVAL 1 * 1000        // Main loop interval in milliseconds
+#define SHORT_INTERVAL 50        // Main loop interval in milliseconds
 #define DHT11_READ_INTERVAL 30 * 1000  // DHT11 sensor reading interval in milliseconds (30 seconds)
 #define BUTTON_DEBOUNCE_TIME 500 // Button debounce time in milliseconds
 

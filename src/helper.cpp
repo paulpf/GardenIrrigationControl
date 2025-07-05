@@ -48,3 +48,35 @@ void Helper::addIrrigationZone(int buttonPin, int relayPin, IrrigationZone* irri
     irrigationZones[index].setup(buttonPin, relayPin, topicBuffer);
     mqttManager->addIrrigationZone(&irrigationZones[index]);
 }
+
+// Format uptime from milliseconds to "Xd Yh Zm" format
+String Helper::formatUptime(unsigned long uptimeMillis) 
+{
+    unsigned long uptimeSeconds = uptimeMillis / 1000;
+    
+    unsigned long days = uptimeSeconds / 86400;  // 86400 seconds in a day
+    uptimeSeconds %= 86400;
+    
+    unsigned long hours = uptimeSeconds / 3600;  // 3600 seconds in an hour
+    uptimeSeconds %= 3600;
+    
+    unsigned long minutes = uptimeSeconds / 60;
+    
+    String result = "";
+    if (days > 0) {
+        result += String(days) + " d ";
+    }
+    if (hours > 0 || days > 0) {
+        result += String(hours) + " h ";
+    }
+    result += String(minutes) + " m"; // Always show minutes, even if less than an hour
+    
+    return result;
+}
+
+// Format memory from bytes to KB format (without "KB" string)
+String Helper::formatMemory(unsigned long bytes) 
+{
+    float kb = bytes / 1024.0;
+    return String(kb, 1);
+}

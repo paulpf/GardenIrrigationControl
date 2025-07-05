@@ -27,6 +27,10 @@ public:
     void setDht11Manager(Dht11Manager* dht11Manager);
     void publishDht11Data();
 
+    // System status and heartbeat functionality
+    void publishSystemStatus();
+    void disconnect();
+
     // Make this public and static so it can be used as a callback
     static void staticMqttCallback(char* topic, byte* payload, unsigned int length);
 
@@ -68,6 +72,13 @@ private:
   
   // DHT11 sensor manager
   Dht11Manager* _dht11Manager;
+
+  // Combine name for system topic with _clientName after setup
+  String GetStatusTopic() const { return _clientName + String("/system/status"); }
+  String GetFreeMemoryTopic() const { return _clientName + String("/system/freeMemory"); }
+  String GetUptimeTopic() const { return _clientName + String("/system/uptime"); }
+  String GetWifiSignalStrengthTopic() const { return _clientName + String("/system/wifiSignalStrength"); }
+  String GetHeartbeatTopic() const { return _clientName + String("/system/heartbeat"); }
 };
 
 #endif // MQTTMANAGER_H

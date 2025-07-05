@@ -47,8 +47,9 @@ IrrigationZone irrigationZones[MAX_IRRIGATION_ZONES];
 
 // ================ Timing ================
 unsigned long currentMillis = 0; // Current time in milliseconds
-unsigned long previousMillisLongLoop = 0;
-unsigned long previousMillisShortLoop = 0;
+unsigned long previousMillisLongLoop = 0; // For long loop timing
+unsigned long previousMillisMiddleLoop = 0; // For middle loop timing
+unsigned long previousMillisShortLoop = 0; // For short loop timing
 unsigned long mainLoopStartTime = 0; // For loop time plotting
 
 // ================ Main ================
@@ -151,7 +152,7 @@ void plotZoneStates(unsigned long currentTime)
   }
 }
 
-void handleShortIntervalEvents() 
+void handleShortIntervalTasks() 
 {
   // Publish MQTT messages for all irrigation zones
   mqttManager.publishAllIrrigationZones();
@@ -175,6 +176,23 @@ void handleShortIntervalEvents()
   }
 }
 
+void handleMiddleIntervalEvents() 
+{
+    // Publish detailed system status periodically (every minute)
+    mqttManager.publishSystemStatus();
+}
+
+void handleLongIntervalTasks() 
+{
+    if (!wifiManager.loop()) 
+    {
+        Trace::log(TraceLevel::ERROR, "WiFi connection issue detected");
+    }
+
+    // Update DHT11 sensor readings
+    //dht11Manager.loop();
+}
+
 void loop() 
 {
   esp_task_wdt_reset();
@@ -196,25 +214,33 @@ void loop()
   mainLoopStartTime = currentMillis;
   #endif
 
-  if ((unsigned long)(currentMillis - previousMillisLongLoop) >= LONG_INTERVAL) 
-  {
-      previousMillisLongLoop = currentMillis;
-      if (!wifiManager.loop()) 
-      {
-          Trace::log(TraceLevel::ERROR, "WiFi connection issue detected");
-      }
-      
-      // Update DHT11 sensor readings
-      //dht11Manager.loop();
-      
-      yield();
-  }
-
   if ((unsigned long)(currentMillis - previousMillisShortLoop) >= SHORT_INTERVAL) 
   {
       previousMillisShortLoop = currentMillis;
-      handleShortIntervalEvents();
+      
+      handleShortIntervalTasks();
   }
+
+    // Handle middle loop events (e.g., WiFi management)
+    if ((unsigned long)(currentMillis - previousMillisMiddleLoop) >= MIDDLE_INTERVAL)
+    {
+        previousMillisMiddleLoop = currentMillis;
+
+        handleMiddleIntervalEvents();
+        
+        // Yield to allow other tasks to run
+        yield();
+    }
+
+    // Handle long loop events (e.g., WiFi connection management)
+    if ((unsigned long)(currentMillis - previousMillisLongLoop) >= LONG_INTERVAL) 
+    {
+        previousMillisLongLoop = currentMillis;
+
+        handleLongIntervalTasks();
+    }
+
+  
   
   #ifdef ENABLE_ZONE_PLOTTING
   plotZoneStates(currentMillis);

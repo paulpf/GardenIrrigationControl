@@ -1,5 +1,6 @@
 #include "mqttmanager.h"
 #include "dht11manager.h"
+#include "helper.h"
 
 // Initialize the static instance pointer
 MqttManager* MqttManager::_instance = nullptr;
@@ -23,6 +24,7 @@ void MqttManager::setup(const char* mqttServer, int mqttPort, const char* mqttUs
     _clientName = clientName;
     _pubSubClient.setServer(_mqttServer, _mqttPort);
     _pubSubClient.setCallback(staticMqttCallback);
+    
     //reconnect(); // Attempt to connect to MQTT broker
     Trace::log(TraceLevel::INFO, "MqttManager setup complete.");
 }
@@ -272,5 +274,52 @@ void MqttManager::publishDht11Data()
     {
         // Publish offline status if sensor data is invalid
         publish(_dht11Manager->getMqttTopicForStatus().c_str(), "offline");
+    }
+}
+
+void MqttManager::publishSystemStatus() 
+{
+    if (!isConnected()) 
+    {
+        return;
+    }
+    
+    // Publish online status
+    publish(GetStatusTopic().c_str(), "online");
+    
+    // Publish system information
+    String freeHeap = Helper::formatMemory(ESP.getFreeHeap());
+    publish(GetFreeMemoryTopic().c_str(), freeHeap.c_str());
+
+    // Publish WiFi signal strength
+    String rssi = String(WiFi.RSSI());
+    publish(GetWifiSignalStrengthTopic().c_str(), rssi.c_str());
+
+    // Publish heartbeat timestamp
+    String timestamp = String(millis());
+    publish(GetHeartbeatTopic().c_str(), timestamp.c_str());
+    
+    // Also update uptime
+    String uptime = Helper::formatUptime(millis()); // Uptime in "Xd Yh Zm" format
+    publish(GetUptimeTopic().c_str(), uptime.c_str());
+    
+    Trace::log(TraceLevel::INFO, "System status published");
+}
+
+void MqttManager::disconnect() 
+{
+    if (isConnected()) 
+    {
+        // Publish offline status before disconnecting
+        publish(GetStatusTopic().c_str(), "offline");
+        
+        // Give a moment for the message to be sent
+        delay(100);
+        
+        // Disconnect from MQTT broker
+        _pubSubClient.disconnect();
+        _mqttState = MQTT_DISCONNECTED_STATE;
+        
+        Trace::log(TraceLevel::INFO, "MQTT disconnected gracefully");
     }
 }
