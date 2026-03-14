@@ -1,14 +1,7 @@
-#ifdef USE_PRIVATE_SECRET
 #include "../../_secrets/WifiSecret.h"
 #include "../../_configs/MqttConfig.h"
 #include "../../_secrets/MqttSecret.h"
 #include "../../_secrets/OtaSecret.h"
-#else
-#include "./_secrets/WifiSecret.h"
-#include "./_config/MqttConfig.h"
-#include "./_secrets/MqttSecret.h"
-#include "./_secrets/OtaSecret.h"
-#endif
 
 #include "globaldefines.h"
 #include "config.h"
