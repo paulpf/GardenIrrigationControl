@@ -45,7 +45,7 @@ public:
   bool getRelayState() const
   {
     return _relaisState;
-  }                  // Get the relay state
+  } // Get the relay state
   void startTimer(); // Set the relay start time
   unsigned long getStartTime()
   {
@@ -56,7 +56,7 @@ public:
   int getDurationTime()
   {
     return _durationTime;
-  }                       // Get the relay duration time
+  } // Get the relay duration time
   int getRemainingTime(); // Get the remaining time for the relay
   String getRemainingTimeAsString();
   void getRemainingTimeAsString(

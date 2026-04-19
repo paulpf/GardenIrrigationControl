@@ -139,9 +139,8 @@ void readAndPublishWaterLevel()
   {
     waterLevelLockoutActive = true;
     IrrigationZone::setGlobalStartInhibit(true);
-    Trace::log(TraceLevel::ERROR,
-               "Low water lockout ACTIVATED: " +
-                   String(waterLevelPercent, 1) + "%");
+    Trace::log(TraceLevel::ERROR, "Low water lockout ACTIVATED: " +
+                                      String(waterLevelPercent, 1) + "%");
     if (mqttManager.isConnected())
     {
       mqttManager.publish(waterLevelLockoutTopic.c_str(), "true");
@@ -152,9 +151,8 @@ void readAndPublishWaterLevel()
   {
     waterLevelLockoutActive = false;
     IrrigationZone::setGlobalStartInhibit(false);
-    Trace::log(TraceLevel::INFO,
-               "Low water lockout DEACTIVATED: " +
-                   String(waterLevelPercent, 1) + "%");
+    Trace::log(TraceLevel::INFO, "Low water lockout DEACTIVATED: " +
+                                     String(waterLevelPercent, 1) + "%");
     if (mqttManager.isConnected())
     {
       mqttManager.publish(waterLevelLockoutTopic.c_str(), "false");
