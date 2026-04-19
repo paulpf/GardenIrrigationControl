@@ -1,0 +1,72 @@
+﻿<mxfile host="app.diagrams.net" modified="2026-03-15T11:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="verdrahtung-9v-10t-clean" name="Verdrahtung">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="GardenIrrigationControl&#xa;&lt;font style=&quot;font-size:14px;&quot;&gt;Verdrahtung: 9 Ventile + 10 Tasten, davon Taste 10 als Funktionstaste&lt;/font&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=26;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="900" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="supply" value="Versorgung&#xa;&#xa;5V / VIN&#xa;3.3V&#xa;GND" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff7ed;strokeColor=#c2410c;fontSize=18;fontStyle=1;spacingTop=10;" vertex="1" parent="1"><mxGeometry x="40" y="120" width="180" height="140" as="geometry"/></mxCell>
+        <mxCell id="line5v" value="5V" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fecaca;strokeColor=#dc2626;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="250" y="130" width="1420" height="30" as="geometry"/></mxCell>
+        <mxCell id="line33" value="3.3V" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fed7aa;strokeColor=#ea580c;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="250" y="180" width="980" height="28" as="geometry"/></mxCell>
+        <mxCell id="linegnd" value="GND" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e5e7eb;strokeColor=#111827;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="250" y="230" width="1420" height="28" as="geometry"/></mxCell>
+
+        <mxCell id="esp" value="ESP32 DevKit C V4&#xa;&#xa;Ventilausgaenge&#xa;V1 GPIO16&#xa;V2 GPIO17&#xa;V3 GPIO18&#xa;V4 GPIO19&#xa;V5 GPIO21&#xa;V6 GPIO22&#xa;V7 GPIO23&#xa;V8 GPIO25&#xa;V9 GPIO26&#xa;&#xa;Tastereingaenge&#xa;T1 GPIO4&#xa;T2 GPIO13&#xa;T3 GPIO14&#xa;T4 GPIO27&#xa;T5 GPIO32&#xa;T6 GPIO33&#xa;T7 GPIO34&#xa;T8 GPIO35&#xa;T9 GPIO36 / VP&#xa;T10 GPIO39 / VN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#1d4ed8;fontSize=16;fontStyle=1;spacingTop=10;" vertex="1" parent="1"><mxGeometry x="300" y="300" width="280" height="660" as="geometry"/></mxCell>
+
+        <mxCell id="ssr8" value="8-Kanal SSR-Modul&#xa;&#xa;IN1 V1&#xa;IN2 V2&#xa;IN3 V3&#xa;IN4 V4&#xa;IN5 V5&#xa;IN6 V6&#xa;IN7 V7&#xa;IN8 V8&#xa;&#xa;Low-Level-Trigger" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#b91c1c;fontSize=16;fontStyle=1;spacingTop=10;" vertex="1" parent="1"><mxGeometry x="760" y="300" width="220" height="400" as="geometry"/></mxCell>
+        <mxCell id="ssr1" value="1-Kanal SSR&#xa;&#xa;IN9 V9" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fde68a;strokeColor=#b45309;fontSize=16;fontStyle=1;spacingTop=10;" vertex="1" parent="1"><mxGeometry x="760" y="740" width="220" height="110" as="geometry"/></mxCell>
+
+        <mxCell id="valvesPanel" value="Ventile" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fdf4;strokeColor=#15803d;fontSize=18;fontStyle=1;spacingTop=10;" vertex="1" parent="1"><mxGeometry x="1120" y="300" width="550" height="360" as="geometry"/></mxCell>
+        <mxCell id="v1" value="Ventil 1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;fontSize=15;" vertex="1" parent="1"><mxGeometry x="1150" y="350" width="110" height="36" as="geometry"/></mxCell>
+        <mxCell id="v2" value="Ventil 2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;fontSize=15;" vertex="1" parent="1"><mxGeometry x="1280" y="350" width="110" height="36" as="geometry"/></mxCell>
+        <mxCell id="v3" value="Ventil 3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;fontSize=15;" vertex="1" parent="1"><mxGeometry x="1410" y="350" width="110" height="36" as="geometry"/></mxCell>
+        <mxCell id="v4" value="Ventil 4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;fontSize=15;" vertex="1" parent="1"><mxGeometry x="1540" y="350" width="110" height="36" as="geometry"/></mxCell>
+        <mxCell id="v5" value="Ventil 5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;fontSize=15;" vertex="1" parent="1"><mxGeometry x="1150" y="420" width="110" height="36" as="geometry"/></mxCell>
+        <mxCell id="v6" value="Ventil 6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;fontSize=15;" vertex="1" parent="1"><mxGeometry x="1280" y="420" width="110" height="36" as="geometry"/></mxCell>
+        <mxCell id="v7" value="Ventil 7" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;fontSize=15;" vertex="1" parent="1"><mxGeometry x="1410" y="420" width="110" height="36" as="geometry"/></mxCell>
+        <mxCell id="v8" value="Ventil 8" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#15803d;fontSize=15;" vertex="1" parent="1"><mxGeometry x="1540" y="420" width="110" height="36" as="geometry"/></mxCell>
+        <mxCell id="v9" value="Ventil 9 Zusatz" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbf7d0;strokeColor=#15803d;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1355" y="510" width="130" height="42" as="geometry"/></mxCell>
+        <mxCell id="valveNote" value="Ventile 1-8 = Beregnung&#xa;Ventil 9 = Zusatzkanal" style="text;html=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1150" y="580" width="220" height="45" as="geometry"/></mxCell>
+
+        <mxCell id="buttonsPanel" value="Taster" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#faf5ff;strokeColor=#6d28d9;fontSize=18;fontStyle=1;spacingTop=10;" vertex="1" parent="1"><mxGeometry x="40" y="300" width="210" height="500" as="geometry"/></mxCell>
+        <mxCell id="b1" value="T1 / GPIO4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#6d28d9;fontSize=14;" vertex="1" parent="1"><mxGeometry x="65" y="350" width="160" height="30" as="geometry"/></mxCell>
+        <mxCell id="b2" value="T2 / GPIO13" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#6d28d9;fontSize=14;" vertex="1" parent="1"><mxGeometry x="65" y="390" width="160" height="30" as="geometry"/></mxCell>
+        <mxCell id="b3" value="T3 / GPIO14" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#6d28d9;fontSize=14;" vertex="1" parent="1"><mxGeometry x="65" y="430" width="160" height="30" as="geometry"/></mxCell>
+        <mxCell id="b4" value="T4 / GPIO27" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#6d28d9;fontSize=14;" vertex="1" parent="1"><mxGeometry x="65" y="470" width="160" height="30" as="geometry"/></mxCell>
+        <mxCell id="b5" value="T5 / GPIO32" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#6d28d9;fontSize=14;" vertex="1" parent="1"><mxGeometry x="65" y="510" width="160" height="30" as="geometry"/></mxCell>
+        <mxCell id="b6" value="T6 / GPIO33" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#6d28d9;fontSize=14;" vertex="1" parent="1"><mxGeometry x="65" y="550" width="160" height="30" as="geometry"/></mxCell>
+        <mxCell id="b7" value="T7 / GPIO34" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e8ff;strokeColor=#7c3aed;fontSize=14;" vertex="1" parent="1"><mxGeometry x="65" y="600" width="160" height="30" as="geometry"/></mxCell>
+        <mxCell id="b8" value="T8 / GPIO35" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e8ff;strokeColor=#7c3aed;fontSize=14;" vertex="1" parent="1"><mxGeometry x="65" y="640" width="160" height="30" as="geometry"/></mxCell>
+        <mxCell id="b9" value="T9 / GPIO36 / VP" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e8ff;strokeColor=#7c3aed;fontSize=14;" vertex="1" parent="1"><mxGeometry x="65" y="680" width="160" height="30" as="geometry"/></mxCell>
+        <mxCell id="b10" value="T10 / GPIO39 / VN&#xa;Funktion: Abort / Alles aus" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ddd6fe;strokeColor=#5b21b6;fontSize=14;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="65" y="725" width="160" height="52" as="geometry"/></mxCell>
+
+        <mxCell id="pullpanel" value="Externer Pull-down fuer T7-T10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff7ed;strokeColor=#c2410c;fontSize=18;fontStyle=1;spacingTop=10;" vertex="1" parent="1"><mxGeometry x="1080" y="760" width="590" height="290" as="geometry"/></mxCell>
+        <mxCell id="pulltext" value="Empfehlung: 10k Ohm&#xa;&#xa;Verwende Pull-down, damit alle Taster gleich arbeiten:&#xa;ungedrueckt = LOW&#xa;gedrueckt = HIGH&#xa;&#xa;T7 GPIO34&#xa;T8 GPIO35&#xa;T9 GPIO36 / VP&#xa;T10 GPIO39 / VN" style="text;html=1;strokeColor=none;fillColor=none;fontSize=16;align=left;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="1110" y="810" width="260" height="180" as="geometry"/></mxCell>
+        <mxCell id="sketch33" value="3.3V" style="text;html=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1430" y="805" width="50" height="20" as="geometry"/></mxCell>
+        <mxCell id="sketchBtn" value="Taster" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#6d28d9;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1410" y="850" width="90" height="34" as="geometry"/></mxCell>
+        <mxCell id="sketchGpio" value="GPIO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#1d4ed8;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1545" y="850" width="75" height="34" as="geometry"/></mxCell>
+        <mxCell id="sketchRes" value="10k" style="shape=mxgraph.electrical.resistors.resistor_1;html=1;strokeColor=#c2410c;fillColor=#fff7ed;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1562" y="915" width="38" height="60" as="geometry"/></mxCell>
+        <mxCell id="sketchGnd" value="GND" style="text;html=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1555" y="995" width="50" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="e_5v_esp" value="" style="endArrow=none;strokeWidth=3;strokeColor=#dc2626;" edge="1" parent="1" source="line5v" target="esp"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_5v_ssr8" value="" style="endArrow=none;strokeWidth=3;strokeColor=#dc2626;" edge="1" parent="1" source="line5v" target="ssr8"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_5v_ssr1" value="" style="endArrow=none;strokeWidth=3;strokeColor=#dc2626;" edge="1" parent="1" source="line5v" target="ssr1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_33_btn" value="" style="endArrow=none;strokeWidth=3;strokeColor=#ea580c;" edge="1" parent="1" source="line33" target="buttonsPanel"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_gnd_esp" value="" style="endArrow=none;strokeWidth=3;strokeColor=#111827;" edge="1" parent="1" source="linegnd" target="esp"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_gnd_ssr8" value="" style="endArrow=none;strokeWidth=3;strokeColor=#111827;" edge="1" parent="1" source="linegnd" target="ssr8"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e_gnd_ssr1" value="" style="endArrow=none;strokeWidth=3;strokeColor=#111827;" edge="1" parent="1" source="linegnd" target="ssr1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="e1" value="GPIO16-25" style="endArrow=none;strokeWidth=3;strokeColor=#2563eb;" edge="1" parent="1" source="esp" target="ssr8"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" value="GPIO26" style="endArrow=none;strokeWidth=3;strokeColor=#2563eb;" edge="1" parent="1" source="esp" target="ssr1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="SSR zu Ventilen" style="endArrow=none;strokeWidth=3;strokeColor=#2563eb;" edge="1" parent="1" source="ssr8" target="valvesPanel"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="SSR zu V9" style="endArrow=none;strokeWidth=3;strokeColor=#2563eb;" edge="1" parent="1" source="ssr1" target="v9"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="s33a" value="" style="endArrow=none;strokeWidth=3;strokeColor=#ea580c;" edge="1" parent="1" source="sketch33" target="sketchBtn"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="s33b" value="" style="endArrow=none;strokeWidth=3;strokeColor=#2563eb;" edge="1" parent="1" source="sketchBtn" target="sketchGpio"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="s33c" value="" style="endArrow=none;strokeWidth=3;strokeColor=#111827;" edge="1" parent="1" source="sketchGpio" target="sketchRes"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="s33d" value="" style="endArrow=none;strokeWidth=3;strokeColor=#111827;" edge="1" parent="1" source="sketchRes" target="sketchGnd"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

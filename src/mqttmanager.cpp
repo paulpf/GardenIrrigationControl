@@ -121,14 +121,14 @@ void MqttManager::loop()
   if (WiFi.status() != WL_CONNECTED)
   {
     // Can't connect to MQTT without WiFi
-    _sessionManager.forceDisconnect();
+    forceDisconnect();
     return;
   }
 
   switch (_sessionManager.state())
   {
   case MqttSessionManager::MQTT_DISCONNECTED_STATE:
-    if (_sessionManager.shouldAttemptConnect(millis()))
+    if (_connectRequested && _sessionManager.shouldAttemptConnect(millis()))
     {
       reconnect();
     }
@@ -346,10 +346,30 @@ void MqttManager::disconnect()
     // Give a moment for the message to be sent
     delay(100);
 
-    // Disconnect from MQTT broker
-    _pubSubClient.disconnect();
-    _sessionManager.forceDisconnect();
-
-    Trace::log(TraceLevel::INFO, "MQTT disconnected gracefully");
+    Trace::log(TraceLevel::INFO, "MQTT disconnect requested gracefully");
   }
+
+  forceDisconnect();
+}
+
+void MqttManager::requestConnect()
+{
+  if (!_connectRequested)
+  {
+    Trace::log(TraceLevel::INFO, "MQTT connect requested");
+  }
+
+  _connectRequested = true;
+}
+
+void MqttManager::forceDisconnect()
+{
+  _connectRequested = false;
+
+  if (_pubSubClient.connected())
+  {
+    _pubSubClient.disconnect();
+  }
+
+  _sessionManager.forceDisconnect();
 }

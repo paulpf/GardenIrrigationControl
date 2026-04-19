@@ -12,18 +12,23 @@ public:
   bool loop();
   void manageConnection();
   bool checkDnsResolution();
-  bool isConnected() const { return _wifiState == WIFI_CONNECTED; }
-  
+  bool isConnected() const
+  {
+    return _wifiState == WIFI_CONNECTED;
+  }
+  bool consumeConnectedEvent();
+  bool consumeDisconnectedEvent();
+
   // Static WiFi event handler that will be used with WiFi.onEvent
   static void staticWifiEventHandler(WiFiEvent_t event);
 
 private:
   // Static pointer to the instance (similar to MqttManager's implementation)
-  static WifiManager* _instance;
-  
+  static WifiManager *_instance;
+
   // Instance method to handle WiFi events
   void wifiEvent(WiFiEvent_t event);
-  
+
   String _ssid;
   String _password;
   String _clientName;
@@ -31,15 +36,17 @@ private:
   int _maximumCountToTryReconnect = 10;
   unsigned long _lastWifiCheckMillis = 0;
   const unsigned long _wifiCheckInterval = 30000; // Check every 30 seconds
-  enum WifiState 
+  enum WifiState
   {
     WIFI_DISCONNECTED,
     WIFI_CONNECTING,
-    WIFI_CONNECTED 
+    WIFI_CONNECTED
   };
   WifiState _wifiState = WIFI_DISCONNECTED;
   unsigned long _wifiConnectStartTime = 0;
   int _reconnectAttempt = 0;
+  bool _connectedEventPending = false;
+  bool _disconnectedEventPending = false;
 };
 
 #endif // WIFIMANAGER_H

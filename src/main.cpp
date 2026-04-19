@@ -1,25 +1,26 @@
-#include "../../_secrets/WifiSecret.h"
 #include "../../_configs/MqttConfig.h"
 #include "../../_secrets/MqttSecret.h"
 #include "../../_secrets/OtaSecret.h"
+#include "../../_secrets/WifiSecret.h"
 
-#include "globaldefines.h"
 #include "config.h"
+#include "globaldefines.h"
 
-#include "wifimanager.h"
-#include "mqttmanager.h"
-#include "otamanager.h"
-#include "irrigationZone.h"
-#include "helper.h"
 #include "StorageManager.h"
 #include "dht11manager.h"
+#include "helper.h"
+#include "irrigationZone.h"
+#include "mqttmanager.h"
+#include "otamanager.h"
+#include "wifimanager.h"
 
-#include "esp_task_wdt.h"
 #include "esp_system.h"
+#include "esp_task_wdt.h"
 
 // ================ Variables ================
-// Name is used for the hostname. This will be updated after WiFi init with actual MAC
-const int CLIENT_NAME_MAX_SIZE = 50;  // Maximum size for the client name
+// Name is used for the hostname. This will be updated after WiFi init with
+// actual MAC
+const int CLIENT_NAME_MAX_SIZE = 50;   // Maximum size for the client name
 char clientName[CLIENT_NAME_MAX_SIZE]; // Buffer for clientName
 
 // ================ WiFi ================
@@ -32,210 +33,240 @@ MqttManager mqttManager;
 OtaManager otaManager;
 
 // ================ DHT11 Sensor ================
-//Dht11Manager dht11Manager;
+// Dht11Manager dht11Manager;
 
 // ================ Irrigation zones ================
 // Using an array for better scalability with 8 zones
 IrrigationZone irrigationZones[MAX_IRRIGATION_ZONES];
 
 // ================ Timing ================
-unsigned long currentMillis = 0; // Current time in milliseconds
-unsigned long previousMillisLongLoop = 0; // For long loop timing
+unsigned long currentMillis = 0;            // Current time in milliseconds
+unsigned long previousMillisLongLoop = 0;   // For long loop timing
 unsigned long previousMillisMiddleLoop = 0; // For middle loop timing
-unsigned long previousMillisShortLoop = 0; // For short loop timing
-unsigned long mainLoopStartTime = 0; // For loop time plotting
+unsigned long previousMillisShortLoop = 0;  // For short loop timing
+unsigned long mainLoopStartTime = 0;        // For loop time plotting
+
+void handleConnectivityEvents()
+{
+  if (wifiManager.consumeDisconnectedEvent())
+  {
+    mqttManager.forceDisconnect();
+  }
+
+  if (wifiManager.consumeConnectedEvent())
+  {
+    mqttManager.requestConnect();
+  }
+}
 
 // ================ Main ================
 
 // New function to initialize irrigation zones
-void initIrrigationZones() 
+void initIrrigationZones()
 {
-    Trace::log(TraceLevel::INFO, "Initializing irrigation zones...");
+  Trace::log(TraceLevel::INFO, "Initializing irrigation zones...");
 
-    // Zone configuration arrays
-    const int zoneButtons[] = {ZONE1_BUTTON_PIN, ZONE2_BUTTON_PIN, ZONE3_BUTTON_PIN, ZONE4_BUTTON_PIN,
-                                ZONE5_BUTTON_PIN, ZONE6_BUTTON_PIN, ZONE7_BUTTON_PIN, ZONE8_BUTTON_PIN, ZONE9_BUTTON_PIN};
-    const int zoneRelays[]  = {ZONE1_RELAY_PIN,  ZONE2_RELAY_PIN,  ZONE3_RELAY_PIN,  ZONE4_RELAY_PIN,
-                                ZONE5_RELAY_PIN,  ZONE6_RELAY_PIN,  ZONE7_RELAY_PIN,  ZONE8_RELAY_PIN, ZONE9_RELAY_PIN};
+  // Zone configuration arrays
+  const int zoneButtons[] = {
+      ZONE1_BUTTON_PIN, ZONE2_BUTTON_PIN, ZONE3_BUTTON_PIN,
+      ZONE4_BUTTON_PIN, ZONE5_BUTTON_PIN, ZONE6_BUTTON_PIN,
+      ZONE7_BUTTON_PIN, ZONE8_BUTTON_PIN, ZONE9_BUTTON_PIN};
+  const int zoneRelays[] = {ZONE1_RELAY_PIN, ZONE2_RELAY_PIN, ZONE3_RELAY_PIN,
+                            ZONE4_RELAY_PIN, ZONE5_RELAY_PIN, ZONE6_RELAY_PIN,
+                            ZONE7_RELAY_PIN, ZONE8_RELAY_PIN, ZONE9_RELAY_PIN};
 
-    // Initialize zones
-    for (int i = 0; i < MAX_IRRIGATION_ZONES; i++) 
-    {
-        Helper::addIrrigationZone(zoneButtons[i], zoneRelays[i], irrigationZones, &mqttManager, i, clientName);
-        irrigationZones[i].loadSettingsFromStorage(i);
-    }
+  // Initialize zones
+  for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
+  {
+    Helper::addIrrigationZone(zoneButtons[i], zoneRelays[i], irrigationZones,
+                              &mqttManager, i, clientName);
+    irrigationZones[i].loadSettingsFromStorage(i);
+  }
 }
 
-void setup() 
+void setup()
 {
-    // Setup console
-    Serial.begin(115200);
-    Trace::log(TraceLevel::INFO, "Setup begin");
+  // Setup console
+  Serial.begin(115200);
+  Trace::log(TraceLevel::INFO, "Setup begin");
 
-    // Initialize storage manager first
-    StorageManager::getInstance().begin();
-    Trace::log(TraceLevel::INFO, "StorageManager initialized");
+  // Initialize storage manager first
+  StorageManager::getInstance().begin();
+  Trace::log(TraceLevel::INFO, "StorageManager initialized");
 
-    // Set initial client name (will be updated later)
-    strncpy(clientName, "GardenController-Init", CLIENT_NAME_MAX_SIZE - 1);
-    clientName[CLIENT_NAME_MAX_SIZE - 1] = '\0';
+  // Set initial client name (will be updated later)
+  strncpy(clientName, "GardenController-Init", CLIENT_NAME_MAX_SIZE - 1);
+  clientName[CLIENT_NAME_MAX_SIZE - 1] = '\0';
 
-    // Setup WiFi
-    wifiManager.setup(WIFI_SSID, WIFI_PWD, clientName);
+  // Setup WiFi
+  wifiManager.setup(WIFI_SSID, WIFI_PWD, clientName);
 
-    // Wait for WiFi connection
-    Trace::log(TraceLevel::INFO, "Waiting for WiFi connection...");
-    unsigned long wifiConnectStart = millis();
-    while (!wifiManager.isConnected()) 
+  // Wait for WiFi connection
+  Trace::log(TraceLevel::INFO, "Waiting for WiFi connection...");
+  unsigned long wifiConnectStart = millis();
+  while (!wifiManager.isConnected())
+  {
+    if (millis() - wifiConnectStart > WIFI_CONNECTION_TIMEOUT)
     {
-        if (millis() - wifiConnectStart > WIFI_CONNECTION_TIMEOUT) 
-        {
-            Trace::log(TraceLevel::ERROR, "WiFi connection timeout");
-            break; // Exit if connection takes too long
-        }
-        delay(100); // Polling delay
+      Trace::log(TraceLevel::ERROR, "WiFi connection timeout");
+      break; // Exit if connection takes too long
     }
+    delay(100); // Polling delay
+  }
 
-    // Update client name with MAC address for unique identification
-    String macFormatted = Helper::replaceChars(WiFi.macAddress(), ':', '-');
-    Helper::formatToBuffer(clientName, CLIENT_NAME_MAX_SIZE, "GardenController-%s", macFormatted.c_str());
-    Trace::log(TraceLevel::INFO, "Client name set: " + String(clientName));    // Setup MQTT
-    mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD, clientName);
+  // Update client name with MAC address for unique identification
+  String macFormatted = Helper::replaceChars(WiFi.macAddress(), ':', '-');
+  Helper::formatToBuffer(clientName, CLIENT_NAME_MAX_SIZE,
+                         "GardenController-%s", macFormatted.c_str());
+  Trace::log(TraceLevel::INFO,
+             "Client name set: " + String(clientName)); // Setup MQTT
+  mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD,
+                    clientName);
+  handleConnectivityEvents();
+  if (wifiManager.isConnected())
+  {
+    mqttManager.requestConnect();
+  }
 
-    // Setup OTA (Over-The-Air updates)
-    #if ENABLE_OTA
-    Trace::log(TraceLevel::INFO, "Setting up OTA...");
-    otaManager.setup(clientName, OTA_PASSWORD);
-    #else
-    Trace::log(TraceLevel::INFO, "OTA disabled in configuration");
-    otaManager.setEnabled(false);
-    #endif    
-    
-    // Initialize irrigation zones using the new helper function
-    initIrrigationZones();
+// Setup OTA (Over-The-Air updates)
+#if ENABLE_OTA
+  Trace::log(TraceLevel::INFO, "Setting up OTA...");
+  otaManager.setup(clientName, OTA_PASSWORD);
+#else
+  Trace::log(TraceLevel::INFO, "OTA disabled in configuration");
+  otaManager.setEnabled(false);
+#endif
 
-    // Initialize DHT11 sensor
-    //Trace::log(TraceLevel::DEBUG, "Initializing DHT11 sensor...");
-    //dht11Manager.setup(DHT11_PIN, DHT11_TYPE, clientName);
-    //mqttManager.setDht11Manager(&dht11Manager);    
-    
-    // Initialize the watchdog timer
-    esp_task_wdt_init(WATCHDOG_TIMEOUT / 5000, true); // Convert milliseconds to seconds
-    esp_task_wdt_add(NULL); // Add current thread to WDT watch
+  // Initialize irrigation zones using the new helper function
+  initIrrigationZones();
 
-    Trace::log(TraceLevel::INFO, "Setup end");
+  // Initialize DHT11 sensor
+  // Trace::log(TraceLevel::DEBUG, "Initializing DHT11 sensor...");
+  // dht11Manager.setup(DHT11_PIN, DHT11_TYPE, clientName);
+  // mqttManager.setDht11Manager(&dht11Manager);
+
+  // Initialize the watchdog timer
+  esp_task_wdt_init(WATCHDOG_TIMEOUT / 5000,
+                    true); // Convert milliseconds to seconds
+  esp_task_wdt_add(NULL);  // Add current thread to WDT watch
+
+  Trace::log(TraceLevel::INFO, "Setup end");
 }
 
 // Function to handle zone state plotting
-void plotZoneStates(unsigned long currentTime) 
+void plotZoneStates(unsigned long currentTime)
 {
   static unsigned long lastPlotTime = 0;
-  if ((unsigned long)(currentTime - lastPlotTime) >= TELEPLOT_INTERVAL) 
+  if ((unsigned long)(currentTime - lastPlotTime) >= TELEPLOT_INTERVAL)
   {
     lastPlotTime = currentTime;
     char bufferName[20]; // Buffer for name string
-    for (int i = 0; i < MAX_IRRIGATION_ZONES; i++) 
+    for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
     {
       snprintf(bufferName, sizeof(bufferName), "Btn%d", i + 1);
       Trace::plotBoolState(bufferName, irrigationZones[i].getBtnState(), 1);
-      
+
       snprintf(bufferName, sizeof(bufferName), "Relay%d", i + 1);
       Trace::plotBoolState(bufferName, irrigationZones[i].getRelayState(), -1);
     }
   }
 }
 
-void handleShortIntervalTasks() 
+void handleShortIntervalTasks()
 {
+  handleConnectivityEvents();
+
   // Publish MQTT messages for all irrigation zones
   mqttManager.publishAllIrrigationZones();
-  
+
   // Publish DHT11 sensor data
   mqttManager.publishDht11Data();
 
   // Process MQTT messages
   mqttManager.loop();
-  
+
   // Update irrigation zones
-  for (int i = 0; i < MAX_IRRIGATION_ZONES; i++) 
+  for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
   {
-      irrigationZones[i].loop();
-      
-      // Yield every third zone to prevent a long blocking loop
-      if (i % 3 == 0) 
-      {
-          yield();
-      }
+    irrigationZones[i].loop();
+
+    // Yield every third zone to prevent a long blocking loop
+    if (i % 3 == 0)
+    {
+      yield();
+    }
   }
 }
 
-void handleMiddleIntervalEvents() 
+void handleMiddleIntervalEvents()
 {
-    // Publish detailed system status periodically (every minute)
-    mqttManager.publishSystemStatus();
+  // Publish detailed system status periodically (every minute)
+  mqttManager.publishSystemStatus();
 }
 
-void handleLongIntervalTasks() 
+void handleLongIntervalTasks()
 {
-    if (!wifiManager.loop()) 
-    {
-        Trace::log(TraceLevel::ERROR, "WiFi connection issue detected");
-    }
+  if (!wifiManager.loop())
+  {
+    Trace::log(TraceLevel::ERROR, "WiFi connection issue detected");
+  }
 
-    // Update DHT11 sensor readings
-    //dht11Manager.loop();
+  handleConnectivityEvents();
+
+  // Update DHT11 sensor readings
+  // dht11Manager.loop();
 }
 
-void loop() 
+void loop()
 {
   esp_task_wdt_reset();
   currentMillis = millis();
 
-  // Handle OTA updates - this should be processed frequently
-  #if ENABLE_OTA
+// Handle OTA updates - this should be processed frequently
+#if ENABLE_OTA
   otaManager.loop();
-  
-  // If OTA update is in progress, skip other operations to ensure stability
-  if (otaManager.isUpdating()) 
-  {
-      return;
-  }
-  #endif
 
-  #ifdef ENABLE_LOOP_TIME_PLOTTING
+  // If OTA update is in progress, skip other operations to ensure stability
+  if (otaManager.isUpdating())
+  {
+    return;
+  }
+#endif
+
+#ifdef ENABLE_LOOP_TIME_PLOTTING
   Trace::plotLoopTime("Mainloop", 0, currentMillis - mainLoopStartTime);
   mainLoopStartTime = currentMillis;
-  #endif
+#endif
 
-  if ((unsigned long)(currentMillis - previousMillisShortLoop) >= SHORT_INTERVAL) 
+  if ((unsigned long)(currentMillis - previousMillisShortLoop) >=
+      SHORT_INTERVAL)
   {
-      previousMillisShortLoop = currentMillis;
-      
-      handleShortIntervalTasks();
+    previousMillisShortLoop = currentMillis;
+
+    handleShortIntervalTasks();
   }
 
-    // Handle middle loop events (e.g., WiFi management)
-    if ((unsigned long)(currentMillis - previousMillisMiddleLoop) >= MIDDLE_INTERVAL)
-    {
-        previousMillisMiddleLoop = currentMillis;
+  // Handle middle loop events (e.g., WiFi management)
+  if ((unsigned long)(currentMillis - previousMillisMiddleLoop) >=
+      MIDDLE_INTERVAL)
+  {
+    previousMillisMiddleLoop = currentMillis;
 
-        handleMiddleIntervalEvents();
-        
-        // Yield to allow other tasks to run
-        yield();
-    }
+    handleMiddleIntervalEvents();
 
-    // Handle long loop events (e.g., WiFi connection management)
-    if ((unsigned long)(currentMillis - previousMillisLongLoop) >= LONG_INTERVAL) 
-    {
-        previousMillisLongLoop = currentMillis;
+    // Yield to allow other tasks to run
+    yield();
+  }
 
-        handleLongIntervalTasks();
-    }
+  // Handle long loop events (e.g., WiFi connection management)
+  if ((unsigned long)(currentMillis - previousMillisLongLoop) >= LONG_INTERVAL)
+  {
+    previousMillisLongLoop = currentMillis;
 
-  
-  
-  #ifdef ENABLE_ZONE_PLOTTING
+    handleLongIntervalTasks();
+  }
+
+#ifdef ENABLE_ZONE_PLOTTING
   plotZoneStates(currentMillis);
-  #endif
+#endif
 }

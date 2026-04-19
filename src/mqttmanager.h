@@ -33,6 +33,8 @@ public:
   // System status and heartbeat functionality
   void publishSystemStatus();
   void disconnect();
+  void requestConnect();
+  void forceDisconnect();
 
   // Make this public and static so it can be used as a callback
   static void staticMqttCallback(char *topic, byte *payload,
@@ -55,6 +57,7 @@ private:
   const char *_mqttUser;
   const char *_mqttPassword;
   const char *_clientName;
+  bool _connectRequested = false;
 
   WiFiClient _wifiClient;
   PubSubClient _pubSubClient;

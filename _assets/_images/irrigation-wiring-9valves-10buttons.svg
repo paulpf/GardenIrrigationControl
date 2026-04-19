@@ -1,0 +1,142 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1220" viewBox="0 0 1800 1220" role="img" aria-labelledby="title desc">
+  <title id="title">GardenIrrigationControl Wiring Diagram 9 valves 10 buttons</title>
+  <desc id="desc">Wiring overview for an ESP32 controlling 9 valves and 10 buttons, including one function button.</desc>
+  <style>
+    .bg { fill: #f7f3ea; }
+    .panel { fill: #fffdf8; stroke: #3f3a33; stroke-width: 2; rx: 18; ry: 18; }
+    .esp { fill: #dbeafe; stroke: #1d4ed8; stroke-width: 2; rx: 18; ry: 18; }
+    .ssr8 { fill: #fee2e2; stroke: #b91c1c; stroke-width: 2; rx: 18; ry: 18; }
+    .ssr1 { fill: #fde68a; stroke: #b45309; stroke-width: 2; rx: 18; ry: 18; }
+    .valve { fill: #dcfce7; stroke: #15803d; stroke-width: 2; rx: 12; ry: 12; }
+    .btn { fill: #ede9fe; stroke: #6d28d9; stroke-width: 2; rx: 10; ry: 10; }
+    .warn { fill: #fff7ed; stroke: #c2410c; stroke-width: 2; rx: 10; ry: 10; }
+    .title { font: 700 30px 'Segoe UI', Arial, sans-serif; fill: #201a15; }
+    .subtitle { font: 500 16px 'Segoe UI', Arial, sans-serif; fill: #4b5563; }
+    .head { font: 700 20px 'Segoe UI', Arial, sans-serif; fill: #201a15; }
+    .text { font: 15px 'Segoe UI', Arial, sans-serif; fill: #201a15; }
+    .small { font: 13px 'Segoe UI', Arial, sans-serif; fill: #374151; }
+    .wire { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .sig { stroke: #2563eb; }
+    .pwr5 { stroke: #dc2626; }
+    .pwr33 { stroke: #ea580c; }
+    .gnd { stroke: #111827; }
+  </style>
+
+  <rect class="bg" x="0" y="0" width="1800" height="1220"/>
+  <text class="title" x="60" y="58">GardenIrrigationControl Verdrahtungsdiagramm</text>
+  <text class="subtitle" x="60" y="88">Zielaufbau: 9 Ventile und 10 Tasten, davon Taste 10 als Funktionstaste fuer Abort oder Alles aus.</text>
+
+  <rect class="panel" x="40" y="120" width="260" height="180"/>
+  <text class="head" x="65" y="155">Versorgung</text>
+  <text class="text" x="65" y="190">5V / VIN fuer ESP32</text>
+  <text class="text" x="65" y="220">5V fuer SSR-Module</text>
+  <text class="text" x="65" y="250">3.3V fuer Taster</text>
+  <text class="text" x="65" y="280">Gemeinsame Masse</text>
+
+  <rect class="esp" x="340" y="120" width="420" height="700"/>
+  <text class="head" x="370" y="160">ESP32 DevKit C V4</text>
+  <text class="small" x="370" y="195">Ventilausgaenge</text>
+  <text class="text" x="370" y="225">Ventil 1 - GPIO16</text>
+  <text class="text" x="370" y="255">Ventil 2 - GPIO17</text>
+  <text class="text" x="370" y="285">Ventil 3 - GPIO18</text>
+  <text class="text" x="370" y="315">Ventil 4 - GPIO19</text>
+  <text class="text" x="370" y="345">Ventil 5 - GPIO21</text>
+  <text class="text" x="370" y="375">Ventil 6 - GPIO22</text>
+  <text class="text" x="370" y="405">Ventil 7 - GPIO23</text>
+  <text class="text" x="370" y="435">Ventil 8 - GPIO25</text>
+  <text class="text" x="370" y="465">Ventil 9 - GPIO26</text>
+  <text class="small" x="370" y="520">Tastereingaenge</text>
+  <text class="text" x="370" y="550">Taste 1 - GPIO4</text>
+  <text class="text" x="370" y="580">Taste 2 - GPIO13</text>
+  <text class="text" x="370" y="610">Taste 3 - GPIO14</text>
+  <text class="text" x="370" y="640">Taste 4 - GPIO27</text>
+  <text class="text" x="370" y="670">Taste 5 - GPIO32</text>
+  <text class="text" x="370" y="700">Taste 6 - GPIO33</text>
+  <text class="text" x="370" y="730">Taste 7 - GPIO34</text>
+  <text class="text" x="370" y="760">Taste 8 - GPIO35</text>
+  <text class="text" x="560" y="550">Taste 9 - GPIO36</text>
+  <text class="text" x="560" y="580">Taste 10 - GPIO39</text>
+  <text class="small" x="560" y="610">Taste 10 = Funktionstaste</text>
+
+  <rect class="ssr8" x="840" y="130" width="330" height="500"/>
+  <text class="head" x="870" y="170">8-Kanal SSR-Modul</text>
+  <text class="small" x="870" y="200">Beregnungsventile 1 bis 8</text>
+  <text class="text" x="870" y="240">IN1 - Ventil 1</text>
+  <text class="text" x="870" y="275">IN2 - Ventil 2</text>
+  <text class="text" x="870" y="310">IN3 - Ventil 3</text>
+  <text class="text" x="870" y="345">IN4 - Ventil 4</text>
+  <text class="text" x="870" y="380">IN5 - Ventil 5</text>
+  <text class="text" x="870" y="415">IN6 - Ventil 6</text>
+  <text class="text" x="870" y="450">IN7 - Ventil 7</text>
+  <text class="text" x="870" y="485">IN8 - Ventil 8</text>
+  <text class="text" x="870" y="535">VCC - 5V</text>
+  <text class="text" x="870" y="570">GND - GND</text>
+
+  <rect class="ssr1" x="840" y="680" width="330" height="150"/>
+  <text class="head" x="870" y="720">Einzelkanal SSR</text>
+  <text class="small" x="870" y="748">Zusatzventil 9</text>
+  <text class="text" x="870" y="782">IN9 - Ventil 9 - GPIO26</text>
+
+  <rect class="panel" x="1260" y="110" width="470" height="640"/>
+  <text class="head" x="1290" y="150">Ventile</text>
+  <rect class="valve" x="1290" y="185" width="180" height="44"/><rect class="valve" x="1490" y="185" width="180" height="44"/>
+  <rect class="valve" x="1290" y="245" width="180" height="44"/><rect class="valve" x="1490" y="245" width="180" height="44"/>
+  <rect class="valve" x="1290" y="305" width="180" height="44"/><rect class="valve" x="1490" y="305" width="180" height="44"/>
+  <rect class="valve" x="1290" y="365" width="180" height="44"/><rect class="valve" x="1490" y="365" width="180" height="44"/>
+  <rect class="valve" x="1390" y="475" width="180" height="54"/>
+  <text class="text" x="1340" y="213">Ventil 1</text><text class="text" x="1540" y="213">Ventil 2</text>
+  <text class="text" x="1340" y="273">Ventil 3</text><text class="text" x="1540" y="273">Ventil 4</text>
+  <text class="text" x="1340" y="333">Ventil 5</text><text class="text" x="1540" y="333">Ventil 6</text>
+  <text class="text" x="1340" y="393">Ventil 7</text><text class="text" x="1540" y="393">Ventil 8</text>
+  <text class="text" x="1450" y="508">Ventil 9 Zusatz</text>
+  <text class="small" x="1290" y="440">Ventile 1 bis 8 = Beregnung</text>
+  <text class="small" x="1395" y="555">Ventil 9 = Zusatzventil</text>
+
+  <rect class="panel" x="40" y="340" width="260" height="700"/>
+  <text class="head" x="65" y="380">Taster</text>
+  <rect class="btn" x="65" y="410" width="95" height="34"/><rect class="btn" x="175" y="410" width="95" height="34"/>
+  <rect class="btn" x="65" y="458" width="95" height="34"/><rect class="btn" x="175" y="458" width="95" height="34"/>
+  <rect class="btn" x="65" y="506" width="95" height="34"/><rect class="btn" x="175" y="506" width="95" height="34"/>
+  <rect class="btn" x="65" y="554" width="95" height="34"/><rect class="btn" x="175" y="554" width="95" height="34"/>
+  <rect class="btn" x="65" y="602" width="95" height="34"/><rect class="btn" x="175" y="602" width="95" height="34"/>
+  <text class="small" x="95" y="433">T1 / G4</text><text class="small" x="202" y="433">T2 / G13</text>
+  <text class="small" x="95" y="481">T3 / G14</text><text class="small" x="205" y="481">T4 / G27</text>
+  <text class="small" x="95" y="529">T5 / G32</text><text class="small" x="205" y="529">T6 / G33</text>
+  <text class="small" x="95" y="577">T7 / G34</text><text class="small" x="205" y="577">T8 / G35</text>
+  <text class="small" x="95" y="625">T9 / G36</text><text class="small" x="198" y="625">T10 / G39</text>
+  <text class="small" x="65" y="675">T1 bis T9 = Ventiltaster</text>
+  <text class="small" x="65" y="702">T10 = Funktionstaste</text>
+  <rect class="warn" x="60" y="735" width="220" height="180"/>
+  <text class="small" x="75" y="765">GPIO34 / 35 / 36 / 39:</text>
+  <text class="small" x="75" y="790">nur Eingang</text>
+  <text class="small" x="75" y="815">kein interner Pull-down</text>
+  <text class="small" x="75" y="840">jeweils 10k Pull-down nach GND</text>
+  <text class="small" x="75" y="865">Taster jeweils gegen 3.3V</text>
+
+  <path class="wire pwr5" d="M300 190 C330 190, 330 190, 340 190"/>
+  <path class="wire pwr5" d="M300 220 C560 220, 650 220, 840 220"/>
+  <path class="wire pwr5" d="M300 220 C560 220, 670 750, 840 750"/>
+  <path class="wire gnd" d="M300 280 C570 280, 650 560, 840 570"/>
+  <path class="wire gnd" d="M300 280 C560 280, 670 800, 840 800"/>
+  <path class="wire pwr33" d="M300 250 C320 250, 320 420, 65 420"/>
+
+  <path class="wire sig" d="M760 225 C810 225, 810 240, 840 240"/>
+  <path class="wire sig" d="M760 255 C810 255, 810 275, 840 275"/>
+  <path class="wire sig" d="M760 285 C810 285, 810 310, 840 310"/>
+  <path class="wire sig" d="M760 315 C810 315, 810 345, 840 345"/>
+  <path class="wire sig" d="M760 345 C810 345, 810 380, 840 380"/>
+  <path class="wire sig" d="M760 375 C810 375, 810 415, 840 415"/>
+  <path class="wire sig" d="M760 405 C810 405, 810 450, 840 450"/>
+  <path class="wire sig" d="M760 435 C810 435, 810 485, 840 485"/>
+  <path class="wire sig" d="M760 465 C810 465, 810 782, 840 782"/>
+
+  <path class="wire sig" d="M1170 240 C1230 240, 1230 207, 1290 207"/>
+  <path class="wire sig" d="M1170 275 C1320 275, 1320 207, 1490 207"/>
+  <path class="wire sig" d="M1170 310 C1230 310, 1230 267, 1290 267"/>
+  <path class="wire sig" d="M1170 345 C1320 345, 1320 267, 1490 267"/>
+  <path class="wire sig" d="M1170 380 C1230 380, 1230 327, 1290 327"/>
+  <path class="wire sig" d="M1170 415 C1320 415, 1320 327, 1490 327"/>
+  <path class="wire sig" d="M1170 450 C1230 450, 1230 387, 1290 387"/>
+  <path class="wire sig" d="M1170 485 C1320 485, 1320 387, 1490 387"/>
+  <path class="wire sig" d="M1170 782 C1300 782, 1300 502, 1390 502"/>
+</svg>
