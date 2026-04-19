@@ -36,6 +36,9 @@ public:
   void requestConnect();
   void forceDisconnect();
 
+  // Last Will Testament (LWT) support - Phase 5.2
+  void publishOnlineStatus();
+
   // Make this public and static so it can be used as a callback
   static void staticMqttCallback(char *topic, byte *payload,
                                  unsigned int length);
@@ -44,6 +47,11 @@ private:
   // Instance callback that will be called by the static callback
   void instanceMqttCallback(char *topic, byte *payload, unsigned int length);
   void reconnect();
+
+  // LWT helper methods
+  const char *getLwtTopic() const;
+  const char *getLwtOnlinePayload() const;
+  const char *getLwtOfflinePayload() const;
 
   // Static pointer to the MqttManager instance
   static MqttManager *_instance;

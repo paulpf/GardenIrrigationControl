@@ -160,10 +160,16 @@ void MqttManager::reconnect()
              "MqttManager::reconnect | Attempting MQTT connection...");
   _sessionManager.onConnectAttemptStarted();
 
-  if (_pubSubClient.connect(_clientName, _mqttUser, _mqttPassword))
+  // Phase 5.2: Last Will Testament (LWT) support for system stability
+  // If device disconnects unexpectedly, broker will automatically publish "offline" to status topic
+  if (_pubSubClient.connect(_clientName, _mqttUser, _mqttPassword,
+                             getLwtTopic(), 1, true, getLwtOfflinePayload()))
   {
     Trace::log(TraceLevel::INFO, "MqttManager::reconnect | MQTT connected");
     _sessionManager.onConnectSuccess();
+
+    // Publish "online" status immediately after successful connection
+    publishOnlineStatus();
 
     // Publish initial state of all irrigation zones
     initPublish();
@@ -382,4 +388,41 @@ void MqttManager::forceDisconnect()
   }
 
   _sessionManager.forceDisconnect();
+
+// Phase 5.2: Last Will Testament (LWT) Support
+
+const char *MqttManager::getLwtTopic() const
+{
+  // Static buffer to hold the LWT topic string
+  // Format: "device_name/system/status"
+  static char lwtTopic[96];
+  
+  // Build the topic in the static buffer
+  snprintf(lwtTopic, sizeof(lwtTopic), "%s/system/status", _clientName);
+  
+  return lwtTopic;
+}
+
+const char *MqttManager::getLwtOnlinePayload() const
+{
+  return "online";
+}
+
+const char *MqttManager::getLwtOfflinePayload() const
+{
+  return "offline";
+}
+
+void MqttManager::publishOnlineStatus()
+{
+  // Immediately publish online status after successful MQTT connection
+  // This serves as a health check for Home Assistant and other MQTT clients
+  // If the device disconnects unexpectedly, the broker will publish "offline" 
+  // based on the LWT configuration in the connect() method
+  if (_sessionManager.isConnected())
+  {
+    Trace::log(TraceLevel::INFO, "Publishing online status to MQTT broker");
+    publish(getLwtTopic(), getLwtOnlinePayload());
+  }
+}
 }
