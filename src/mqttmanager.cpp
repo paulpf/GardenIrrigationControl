@@ -388,6 +388,7 @@ void MqttManager::forceDisconnect()
   }
 
   _sessionManager.forceDisconnect();
+}
 
 // Phase 5.2: Last Will Testament (LWT) Support
 
@@ -424,5 +425,4 @@ void MqttManager::publishOnlineStatus()
     Trace::log(TraceLevel::INFO, "Publishing online status to MQTT broker");
     publish(getLwtTopic(), getLwtOnlinePayload());
   }
-}
 }
