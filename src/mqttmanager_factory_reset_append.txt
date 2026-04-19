@@ -1,0 +1,17 @@
+
+
+// Phase 5.3: Factory Reset Support
+void MqttManager::triggerFactoryReset()
+{
+  Trace::log(TraceLevel::WARN, "!!! FACTORY RESET TRIGGERED VIA MQTT !!!");
+  
+  // Perform factory reset on storage (includes all zone defaults)
+  StorageManager::getInstance().factoryReset();
+  
+  // Notify MQTT subscribers about the reset completion
+  if (_sessionManager.isConnected())
+  {
+    publish(GetFactoryResetStatusTopic().c_str(), "complete");
+    Trace::log(TraceLevel::INFO, "Factory reset status published to MQTT");
+  }
+}

@@ -28,6 +28,10 @@ public:
     
     // Method to clear all saved settings (useful for testing or factory reset)
     void clearAllSettings();
+    
+    // Factory reset - restore all zones to default configuration
+    void factoryReset();
+
 
 private:
     StorageManager() {} // Private constructor for singleton

@@ -55,3 +55,21 @@ String StorageManager::getKey(const char* prefix, int zoneIndex)
 {
     return String(prefix) + String(zoneIndex);
 }
+void StorageManager::factoryReset()
+{
+    Trace::log(TraceLevel::ERROR, "!!! FACTORY RESET INITIATED !!!");
+    
+    // Clear all existing settings
+    clearAllSettings();
+    
+    // Restore all zones to default duration time
+    for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
+    {
+        saveDurationTime(i, DEFAULT_DURATION_TIME);
+        saveButtonState(i, false);
+        saveRelayState(i, false);
+    }
+    
+    delay(100);  // Ensure EEPROM writes complete
+    Trace::log(TraceLevel::INFO, "Factory reset complete");
+}

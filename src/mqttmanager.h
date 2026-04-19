@@ -37,6 +37,8 @@ public:
   void forceDisconnect();
 
   // Last Will Testament (LWT) support - Phase 5.2
+    // Factory Reset support - Phase 5.3
+    void triggerFactoryReset();
   void publishOnlineStatus();
 
   // Make this public and static so it can be used as a callback
@@ -49,6 +51,15 @@ private:
   void reconnect();
 
   // LWT helper methods
+    // Factory Reset topic and handling
+    String GetFactoryResetTopic() const
+    {
+      return _clientName + String("/system/factoryReset");
+    }
+    String GetFactoryResetStatusTopic() const
+    {
+      return _clientName + String("/system/factoryResetStatus");
+    }
   const char *getLwtTopic() const;
   const char *getLwtOnlinePayload() const;
   const char *getLwtOfflinePayload() const;
