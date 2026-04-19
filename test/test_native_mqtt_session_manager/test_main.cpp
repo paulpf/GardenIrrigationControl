@@ -163,7 +163,7 @@ void test_failed_max_retries_resets_attempt_counter()
 
   session.onConnectAttemptStarted();
   session.onConnectFailure();
-  TEST_ASSERT_EQUAL_INT(0, session.reconnectAttempts());  // Reset to 0
+  TEST_ASSERT_EQUAL_INT(0, session.reconnectAttempts()); // Reset to 0
 }
 
 void test_successful_connect_resets_failed_attempts()
@@ -178,7 +178,7 @@ void test_successful_connect_resets_failed_attempts()
   // Succeed on next attempt
   session.onConnectAttemptStarted();
   session.onConnectSuccess();
-  TEST_ASSERT_EQUAL_INT(0, session.reconnectAttempts());  // Reset to 0
+  TEST_ASSERT_EQUAL_INT(0, session.reconnectAttempts()); // Reset to 0
   TEST_ASSERT_TRUE(session.isConnected());
 }
 

@@ -6,12 +6,11 @@
 #include "config.h"
 #include "global_defines.h"
 
-#include "storage_manager.h"
-#include "dht11manager.h"
 #include "helper.h"
 #include "irrigation_zone.h"
 #include "mqttmanager.h"
 #include "otamanager.h"
+#include "storage_manager.h"
 #include "wifimanager.h"
 
 #include "esp_system.h"
@@ -31,9 +30,6 @@ MqttManager mqttManager;
 
 // ================ OTA ================
 OtaManager otaManager;
-
-// ================ DHT11 Sensor ================
-Dht11Manager dht11Manager;
 
 // ================ Irrigation zones ================
 // Using an array for better scalability with 8 zones
@@ -63,6 +59,14 @@ unsigned long previousMillisLongLoop = 0;   // For long loop timing
 unsigned long previousMillisMiddleLoop = 0; // For middle loop timing
 unsigned long previousMillisShortLoop = 0;  // For short loop timing
 unsigned long mainLoopStartTime = 0;        // For loop time plotting
+unsigned long previousWaterLevelRead = 0;
+int waterLevelRawValue = 0;
+float waterLevelPercent = 0.0f;
+bool waterLevelLockoutActive = false;
+String waterLevelTopic;
+String waterLevelRawTopic;
+String waterLevelStatusTopic;
+String waterLevelLockoutTopic;
 
 void handleConnectivityEvents()
 {
@@ -91,6 +95,79 @@ void initIrrigationZones()
                               ZONE_CONFIGS[i].relayPin, irrigationZones,
                               &mqttManager, i, clientName);
     irrigationZones[i].loadSettingsFromStorage(i);
+  }
+}
+
+void readAndPublishWaterLevel()
+{
+  if ((unsigned long)(currentMillis - previousWaterLevelRead) <
+      WATER_LEVEL_READ_INTERVAL)
+  {
+    return;
+  }
+
+  previousWaterLevelRead = currentMillis;
+  waterLevelRawValue = analogRead(WATER_LEVEL_SENSOR_PIN);
+
+  if (WATER_LEVEL_ADC_MAX > WATER_LEVEL_ADC_MIN)
+  {
+    waterLevelPercent =
+        ((float)(waterLevelRawValue - WATER_LEVEL_ADC_MIN) * 100.0f) /
+        (float)(WATER_LEVEL_ADC_MAX - WATER_LEVEL_ADC_MIN);
+  }
+  else
+  {
+    waterLevelPercent = 0.0f;
+  }
+
+  if (waterLevelPercent < 0.0f)
+  {
+    waterLevelPercent = 0.0f;
+  }
+  if (waterLevelPercent > 100.0f)
+  {
+    waterLevelPercent = 100.0f;
+  }
+
+  Trace::log(TraceLevel::DEBUG,
+             "Water level raw=" + String(waterLevelRawValue) +
+                 " percent=" + String(waterLevelPercent, 1));
+
+  // Hysteresis lockout: activate below critical, deactivate above release level
+  if (!waterLevelLockoutActive &&
+      waterLevelPercent < WATER_LEVEL_CRITICAL_PERCENT)
+  {
+    waterLevelLockoutActive = true;
+    IrrigationZone::setGlobalStartInhibit(true);
+    Trace::log(TraceLevel::ERROR,
+               "Low water lockout ACTIVATED: " +
+                   String(waterLevelPercent, 1) + "%");
+    if (mqttManager.isConnected())
+    {
+      mqttManager.publish(waterLevelLockoutTopic.c_str(), "true");
+    }
+  }
+  else if (waterLevelLockoutActive &&
+           waterLevelPercent >= WATER_LEVEL_LOCKOUT_RELEASE_PERCENT)
+  {
+    waterLevelLockoutActive = false;
+    IrrigationZone::setGlobalStartInhibit(false);
+    Trace::log(TraceLevel::INFO,
+               "Low water lockout DEACTIVATED: " +
+                   String(waterLevelPercent, 1) + "%");
+    if (mqttManager.isConnected())
+    {
+      mqttManager.publish(waterLevelLockoutTopic.c_str(), "false");
+    }
+  }
+
+  if (mqttManager.isConnected())
+  {
+    mqttManager.publish(waterLevelTopic.c_str(),
+                        String(waterLevelPercent, 1).c_str());
+    mqttManager.publish(waterLevelRawTopic.c_str(),
+                        String(waterLevelRawValue).c_str());
+    mqttManager.publish(waterLevelStatusTopic.c_str(), "online");
   }
 }
 
@@ -130,6 +207,15 @@ void setup()
                          "GardenController-%s", macFormatted.c_str());
   Trace::log(TraceLevel::INFO,
              "Client name set: " + String(clientName)); // Setup MQTT
+
+  waterLevelTopic = String(clientName) + "/waterlevel/percent";
+  waterLevelRawTopic = String(clientName) + "/waterlevel/raw";
+  waterLevelStatusTopic = String(clientName) + "/waterlevel/status";
+  waterLevelLockoutTopic = String(clientName) + "/waterlevel/lockout";
+
+  pinMode(WATER_LEVEL_SENSOR_PIN, INPUT);
+  analogSetPinAttenuation(WATER_LEVEL_SENSOR_PIN, ADC_11db);
+
   mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD,
                     clientName);
   handleConnectivityEvents();
@@ -149,11 +235,6 @@ void setup()
 
   // Initialize irrigation zones using the new helper function
   initIrrigationZones();
-
-  // Initialize DHT11 sensor
-  Trace::log(TraceLevel::DEBUG, "Initializing DHT11 sensor...");
-  dht11Manager.setup(DHT11_PIN, DHT11_TYPE, clientName);
-  mqttManager.setDht11Manager(&dht11Manager);
 
   // Initialize the watchdog timer
   esp_task_wdt_init(WDT_TIMEOUT_SEC,
@@ -189,9 +270,6 @@ void handleShortIntervalTasks()
   // Publish MQTT messages for all irrigation zones
   mqttManager.publishAllIrrigationZones();
 
-  // Publish DHT11 sensor data
-  mqttManager.publishDht11Data();
-
   // Process MQTT messages
   mqttManager.loop();
 
@@ -206,6 +284,8 @@ void handleShortIntervalTasks()
       yield();
     }
   }
+
+  readAndPublishWaterLevel();
 }
 
 void handleMiddleIntervalEvents()
@@ -222,9 +302,6 @@ void handleLongIntervalTasks()
   }
 
   handleConnectivityEvents();
-
-  // Update DHT11 sensor readings
-  dht11Manager.loop();
 }
 
 void loop()

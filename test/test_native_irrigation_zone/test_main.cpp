@@ -1,5 +1,5 @@
-#include <unity.h>
 #include <cstdio>
+#include <unity.h>
 
 // Phase 4.1: Test getRemainingTime() and getRemainingTimeAsString() logic
 // These tests validate the fixes from Phase 1
@@ -14,12 +14,14 @@ void tearDown(void)
 
 // Inline test functions that don't require external compilation
 
-int getRemainingTime_logic(bool timerIsActive, int durationTime, 
-                            unsigned long currentTime, unsigned long startTime)
+int getRemainingTime_logic(bool timerIsActive, int durationTime,
+                           unsigned long currentTime, unsigned long startTime)
 {
-  if (!timerIsActive) return 0;
+  if (!timerIsActive)
+    return 0;
   unsigned long elapsed = currentTime - startTime;
-  return (elapsed < (unsigned long)durationTime) ? (int)(durationTime - elapsed) : 0;
+  return (elapsed < (unsigned long)durationTime) ? (int)(durationTime - elapsed)
+                                                 : 0;
 }
 
 // Test: Timer inactive returns 0
@@ -66,7 +68,7 @@ void test_timer_with_offset()
 }
 
 // String formatting test helper
-void formatTime_logic(int remainingTimeMs, char* buffer, int bufsize)
+void formatTime_logic(int remainingTimeMs, char *buffer, int bufsize)
 {
   if (remainingTimeMs <= 0)
   {
@@ -145,7 +147,7 @@ void test_format_negative()
 // ============================================================================
 // Main – Required for native Unity test framework
 // ============================================================================
-int main(int /*argc*/, char** /*argv*/)
+int main(int /*argc*/, char ** /*argv*/)
 {
   UNITY_BEGIN();
 

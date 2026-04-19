@@ -1,34 +1,34 @@
 // Implementation example for Trace.cpp
 #include "trace.h"
 
-void Trace::log(TraceLevel level, String message) 
+void Trace::log(TraceLevel level, String message)
 {
   // Only log if the message level is >= the configured trace level
-  if (!shouldLog(level)) 
+  if (!shouldLog(level))
   {
     return;
   }
-  
+
   String prefix;
-  switch (level) 
+  switch (level)
   {
-    case TraceLevel::TRACE:
-      prefix = "[TRACE] ";
-      break;
-    case TraceLevel::INFO:
-      prefix = "[INFO] ";
-      break;
-    case TraceLevel::DEBUG:
-      prefix = "[DEBUG] ";
-      break;
-    case TraceLevel::ERROR:
-      prefix = "[ERROR] ";
-      break;
-    default:
-      prefix = "[LOG] ";
-      break;
+  case TraceLevel::TRACE:
+    prefix = "[TRACE] ";
+    break;
+  case TraceLevel::INFO:
+    prefix = "[INFO] ";
+    break;
+  case TraceLevel::DEBUG:
+    prefix = "[DEBUG] ";
+    break;
+  case TraceLevel::ERROR:
+    prefix = "[ERROR] ";
+    break;
+  default:
+    prefix = "[LOG] ";
+    break;
   }
-  
+
   Serial.println(prefix + message);
 }
 
@@ -36,22 +36,24 @@ void Trace::log(TraceLevel level, String message)
 // This function will print the state of each zone to the Serial Monitor
 // It is only enabled if ENABLE_ZONE_PLOTTING is defined
 // Visualizing with the Serial Plotter in Arduino IDE or PlatformIO
-void Trace::plotBoolState(String stateName, bool stateValue, int valueToPlotForTrue) 
+void Trace::plotBoolState(String stateName, bool stateValue,
+                          int valueToPlotForTrue)
 {
-    #ifdef ENABLE_ZONE_PLOTTING
-    Serial.print(">BoolState_" + stateName + ":");
-    Serial.print(stateValue ? String(valueToPlotForTrue) : "0");
-    Serial.println(" | np");
-    #endif
+#ifdef ENABLE_ZONE_PLOTTING
+  Serial.print(">BoolState_" + stateName + ":");
+  Serial.print(stateValue ? String(valueToPlotForTrue) : "0");
+  Serial.println(" | np");
+#endif
 }
-    
+
 // Method to plot loop time for debugging purposes
-void Trace::plotLoopTime(String loopName, int loopNameindex, unsigned long loopTime) 
+void Trace::plotLoopTime(String loopName, int loopNameindex,
+                         unsigned long loopTime)
 {
-    #ifdef ENABLE_LOOP_TIME_PLOTTING
-    Serial.print(">LoopTime_" + loopName + "_" + String(loopNameindex));
-    Serial.print(":");
-    Serial.print(loopTime);
-    Serial.println(" | np");
-    #endif
+#ifdef ENABLE_LOOP_TIME_PLOTTING
+  Serial.print(">LoopTime_" + loopName + "_" + String(loopNameindex));
+  Serial.print(":");
+  Serial.print(loopTime);
+  Serial.println(" | np");
+#endif
 }

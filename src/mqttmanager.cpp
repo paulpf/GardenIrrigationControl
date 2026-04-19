@@ -1,7 +1,6 @@
 #include "mqttmanager.h"
-#include "dht11manager.h"
 #include "helper.h"
-#include <cstring>  // Phase 3.5: for memcpy and strcmp in hot-path optimization
+#include <cstring> // Phase 3.5: for memcpy and strcmp in hot-path optimization
 
 // Initialize the static instance pointer
 MqttManager *MqttManager::_instance = nullptr;
@@ -11,7 +10,6 @@ MqttManager::MqttManager()
   // Store the instance pointer
   _instance = this;
   _pubSubClient.setClient(_wifiClient);
-  _dht11Manager = nullptr; // Initialize DHT11 manager pointer
 }
 
 void MqttManager::setup(const char *mqttServer, int mqttPort,
@@ -66,15 +64,17 @@ void MqttManager::staticMqttCallback(char *topic, byte *payload,
 void MqttManager::instanceMqttCallback(char *topic, byte *payload,
                                        unsigned int length)
 {
-  // Phase 3.5 optimization: Use fixed char buffer instead of String concatenation in hot path
-  // This reduces heap fragmentation on ESP32 for high-frequency MQTT messages
+  // Phase 3.5 optimization: Use fixed char buffer instead of String
+  // concatenation in hot path This reduces heap fragmentation on ESP32 for
+  // high-frequency MQTT messages
   char message[256];
-  int copyLength = (length < (int)sizeof(message) - 1) ? length : (int)sizeof(message) - 1;
+  int copyLength =
+      (length < (int)sizeof(message) - 1) ? length : (int)sizeof(message) - 1;
   memcpy(message, payload, copyLength);
   message[copyLength] = '\0';
 
-  Trace::log(TraceLevel::DEBUG,
-             "Message arrived [" + String(topic) + "] Message: " + String(message));
+  Trace::log(TraceLevel::DEBUG, "Message arrived [" + String(topic) +
+                                    "] Message: " + String(message));
 
   // Check if the message is for the software button of any irrigation zone
   for (int i = 0; i < _numIrrigationZones; i++)
@@ -85,14 +85,16 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
       Trace::log(TraceLevel::INFO,
                  "Processing software button message for zone " + String(i) +
                      ": " + String(message));
-      _irrigationZones[i]->synchronizeButtonStates(strcmp(message, "true") == 0);
+      _irrigationZones[i]->synchronizeButtonStates(strcmp(message, "true") ==
+                                                   0);
       break; // Exit the loop after processing the message
     }
 
     if (String(topic).startsWith(
             _irrigationZones[i]->getMqttTopicForDurationTime()))
     {
-      int durationTimeMinutes = atoi(message);  // Use atoi instead of String::toInt()
+      int durationTimeMinutes =
+          atoi(message); // Use atoi instead of String::toInt()
       int durationTimeMs =
           durationTimeMinutes * 60 * 1000; // Convert minutes to milliseconds
       if (durationTimeMs > 0 && durationTimeMs <= MAX_DURATION_TIME)
@@ -112,7 +114,7 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
                    "Invalid duration time received for zone " + String(i) +
                        ": " + String(durationTimeMinutes) + " minutes");
       }
-      break;                 // Exit the loop after processing the message
+      break; // Exit the loop after processing the message
     }
   }
 }
@@ -161,9 +163,10 @@ void MqttManager::reconnect()
   _sessionManager.onConnectAttemptStarted();
 
   // Phase 5.2: Last Will Testament (LWT) support for system stability
-  // If device disconnects unexpectedly, broker will automatically publish "offline" to status topic
+  // If device disconnects unexpectedly, broker will automatically publish
+  // "offline" to status topic
   if (_pubSubClient.connect(_clientName, _mqttUser, _mqttPassword,
-                             getLwtTopic(), 1, true, getLwtOfflinePayload()))
+                            getLwtTopic(), 1, true, getLwtOfflinePayload()))
   {
     Trace::log(TraceLevel::INFO, "MqttManager::reconnect | MQTT connected");
     _sessionManager.onConnectSuccess();
@@ -259,67 +262,25 @@ void MqttManager::publishAllIrrigationZones()
 {
   if (isConnected())
   {
-    // Phase 3.5 optimization: Use stack-allocated char buffer instead of String objects
-    // This reduces heap fragmentation for frequent MQTT publish operations
+    // Phase 3.5 optimization: Use stack-allocated char buffer instead of String
+    // objects This reduces heap fragmentation for frequent MQTT publish
+    // operations
     char remainingTimeBuffer[8];
-    
+
     for (int i = 0; i < _numIrrigationZones; i++)
     {
       publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(),
               _irrigationZones[i]->getRelayState() ? "true" : "false");
-      
+
       // Use optimized buffer method instead of String conversion
-      _irrigationZones[i]->getRemainingTimeAsString(remainingTimeBuffer, sizeof(remainingTimeBuffer));
+      _irrigationZones[i]->getRemainingTimeAsString(
+          remainingTimeBuffer, sizeof(remainingTimeBuffer));
       publish(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str(),
               remainingTimeBuffer);
-      
+
       publish(_irrigationZones[i]->getMqttTopicForSwButton().c_str(),
               _irrigationZones[i]->getBtnState() ? "true" : "false");
     }
-  }
-}
-
-void MqttManager::setDht11Manager(Dht11Manager *dht11Manager)
-{
-  _dht11Manager = dht11Manager;
-  Trace::log(TraceLevel::INFO, "DHT11 manager assigned to MQTT manager");
-}
-
-void MqttManager::publishDht11Data()
-{
-  if (!isConnected() || _dht11Manager == nullptr)
-  {
-    return;
-  }
-
-  if (_dht11Manager->isDataValid())
-  {
-    // Publish temperature
-    String tempStr = String(_dht11Manager->getTemperature(), 1);
-    publish(_dht11Manager->getMqttTopicForTemperature().c_str(),
-            tempStr.c_str());
-
-    // Publish humidity
-    String humStr = String(_dht11Manager->getHumidity(), 1);
-    publish(_dht11Manager->getMqttTopicForHumidity().c_str(), humStr.c_str());
-
-    // Publish heat index
-    String heatIndexStr = String(_dht11Manager->getHeatIndex(), 1);
-    publish(_dht11Manager->getMqttTopicForHeatIndex().c_str(),
-            heatIndexStr.c_str());
-
-    // Publish sensor status
-    publish(_dht11Manager->getMqttTopicForStatus().c_str(), "online");
-
-    // Publish timestamp on separate topic
-    String timestampTopic = _dht11Manager->getMqttTopicForStatus();
-    timestampTopic.replace("/status", "/timestamp");
-    publish(timestampTopic.c_str(), _dht11Manager->getTimeStamp().c_str());
-  }
-  else
-  {
-    // Publish offline status if sensor data is invalid
-    publish(_dht11Manager->getMqttTopicForStatus().c_str(), "offline");
   }
 }
 
@@ -397,10 +358,10 @@ const char *MqttManager::getLwtTopic() const
   // Static buffer to hold the LWT topic string
   // Format: "device_name/system/status"
   static char lwtTopic[96];
-  
+
   // Build the topic in the static buffer
   snprintf(lwtTopic, sizeof(lwtTopic), "%s/system/status", _clientName);
-  
+
   return lwtTopic;
 }
 
@@ -418,7 +379,7 @@ void MqttManager::publishOnlineStatus()
 {
   // Immediately publish online status after successful MQTT connection
   // This serves as a health check for Home Assistant and other MQTT clients
-  // If the device disconnects unexpectedly, the broker will publish "offline" 
+  // If the device disconnects unexpectedly, the broker will publish "offline"
   // based on the LWT configuration in the connect() method
   if (_sessionManager.isConnected())
   {

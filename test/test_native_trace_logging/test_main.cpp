@@ -1,6 +1,6 @@
-#include <unity.h>
 #include <cstdio>
 #include <cstring>
+#include <unity.h>
 
 // Phase 4.3: Test Trace logging level filtering and prefix formatting
 
@@ -21,26 +21,26 @@ bool shouldLog_logic(int messageLevel, int configuredLevel)
 }
 
 // Helper: Simulate prefix generation based on trace level
-void getTracePrefix_logic(int level, char* prefix_buffer, size_t bufsize)
+void getTracePrefix_logic(int level, char *prefix_buffer, size_t bufsize)
 {
   // level: 0=TRACE, 1=DEBUG, 2=INFO, 3=ERROR, 4=NONE
   switch (level)
   {
-    case 0: // TRACE
-      snprintf(prefix_buffer, bufsize, "[TRACE] ");
-      break;
-    case 1: // DEBUG
-      snprintf(prefix_buffer, bufsize, "[DEBUG] ");
-      break;
-    case 2: // INFO
-      snprintf(prefix_buffer, bufsize, "[INFO] ");
-      break;
-    case 3: // ERROR
-      snprintf(prefix_buffer, bufsize, "[ERROR] ");
-      break;
-    default: // Unknown/NONE
-      snprintf(prefix_buffer, bufsize, "[LOG] ");
-      break;
+  case 0: // TRACE
+    snprintf(prefix_buffer, bufsize, "[TRACE] ");
+    break;
+  case 1: // DEBUG
+    snprintf(prefix_buffer, bufsize, "[DEBUG] ");
+    break;
+  case 2: // INFO
+    snprintf(prefix_buffer, bufsize, "[INFO] ");
+    break;
+  case 3: // ERROR
+    snprintf(prefix_buffer, bufsize, "[ERROR] ");
+    break;
+  default: // Unknown/NONE
+    snprintf(prefix_buffer, bufsize, "[LOG] ");
+    break;
   }
 }
 
@@ -55,14 +55,14 @@ void test_trace_level_logs_at_trace()
 void test_info_not_logged_when_debug_configured()
 {
   bool result = shouldLog_logic(2, 1); // INFO=2, configLevel=DEBUG=1
-  TEST_ASSERT_TRUE(result);  // INFO should log (2 >= 1)
+  TEST_ASSERT_TRUE(result);            // INFO should log (2 >= 1)
 }
 
 // Test: TRACE should not log when trace level is DEBUG
 void test_trace_not_logged_when_debug_configured()
 {
   bool result = shouldLog_logic(0, 1); // TRACE=0, configLevel=DEBUG=1
-  TEST_ASSERT_FALSE(result);  // TRACE should NOT log (0 < 1)
+  TEST_ASSERT_FALSE(result);           // TRACE should NOT log (0 < 1)
 }
 
 // Test: DEBUG should log when trace level is DEBUG
@@ -76,7 +76,7 @@ void test_debug_logs_at_debug_level()
 void test_error_logs_when_info_configured()
 {
   bool result = shouldLog_logic(3, 2); // ERROR=3, configLevel=INFO=2
-  TEST_ASSERT_TRUE(result);  // ERROR should log (3 >= 2)
+  TEST_ASSERT_TRUE(result);            // ERROR should log (3 >= 2)
 }
 
 // Test: TRACE prefix formatting
@@ -122,10 +122,10 @@ void test_prefix_unknown_defaults_to_log()
 // Test: All levels log when trace level is TRACE (0)
 void test_all_levels_log_at_trace_level()
 {
-  TEST_ASSERT_TRUE(shouldLog_logic(0, 0));  // TRACE logs
-  TEST_ASSERT_TRUE(shouldLog_logic(1, 0));  // DEBUG logs
-  TEST_ASSERT_TRUE(shouldLog_logic(2, 0));  // INFO logs
-  TEST_ASSERT_TRUE(shouldLog_logic(3, 0));  // ERROR logs
+  TEST_ASSERT_TRUE(shouldLog_logic(0, 0)); // TRACE logs
+  TEST_ASSERT_TRUE(shouldLog_logic(1, 0)); // DEBUG logs
+  TEST_ASSERT_TRUE(shouldLog_logic(2, 0)); // INFO logs
+  TEST_ASSERT_TRUE(shouldLog_logic(3, 0)); // ERROR logs
 }
 
 // Test: Only ERROR logs when trace level is ERROR (3)

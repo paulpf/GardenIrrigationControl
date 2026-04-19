@@ -3,12 +3,11 @@
 
 // Pins configuration for ESP32
 
-// GPIO 0 - usually used for boot mode selection, should not be used for other purposes
-// GPIO 2 - usually used for boot mode selection, but can be used for other purposes
-// GPIO 5 - usually used for SPI flash, but can be used for other purposes
-// GPIO 34, 35, 36, 39 - input only pins, but they will not be used in this project
-// because they are not have internal pull-down resistors
-
+// GPIO 0 - usually used for boot mode selection, should not be used for other
+// purposes GPIO 2 - usually used for boot mode selection, but can be used for
+// other purposes GPIO 5 - usually used for SPI flash, but can be used for other
+// purposes GPIO 34, 35, 36, 39 - input only pins, but they will not be used in
+// this project because they are not have internal pull-down resistors
 
 // Hardware configuration for 8 irrigation zones
 // Pins for Zone 1
@@ -48,39 +47,48 @@ constexpr int ZONE8_RELAY_PIN = 21;
 constexpr int ZONE9_BUTTON_PIN = 18;
 constexpr int ZONE9_RELAY_PIN = 19;
 
-// DHT11 Temperature and Humidity Sensor
-constexpr int DHT11_PIN = 12;
-constexpr int DHT11_TYPE = 11; // DHT11 sensor type constant
+// Water level sensor (4-20mA via shunt resistor to ADC voltage)
+constexpr int WATER_LEVEL_SENSOR_PIN = 36; // GPIO36 / VP (ADC1)
+
+// ADC conversion defaults for ESP32 (12-bit range)
+constexpr int WATER_LEVEL_ADC_MIN = 820;  // ~0.66V (4mA on 165 Ohm)
+constexpr int WATER_LEVEL_ADC_MAX = 4095; // ~3.3V (20mA on 165 Ohm)
+constexpr float WATER_LEVEL_CRITICAL_PERCENT = 10.0f;
+constexpr float WATER_LEVEL_LOCKOUT_RELEASE_PERCENT = 12.0f;
 
 // Irrigation timing defaults
-constexpr int DEFAULT_DURATION_TIME = 5 * 60 * 1000; // Default duration time in milliseconds (5 minutes)
-constexpr int MAX_DURATION_TIME = 60 * 60 * 1000;    // Maximum duration time in milliseconds (1 hour)
+constexpr int DEFAULT_DURATION_TIME =
+    5 * 60 * 1000; // Default duration time in milliseconds (5 minutes)
+constexpr int MAX_DURATION_TIME =
+    60 * 60 * 1000; // Maximum duration time in milliseconds (1 hour)
 
 // System configuration
-constexpr int WATCHDOG_TIMEOUT = 60000;      // Watchdog timeout in milliseconds
+constexpr int WATCHDOG_TIMEOUT = 60000; // Watchdog timeout in milliseconds
 constexpr unsigned int WDT_TIMEOUT_SEC = WATCHDOG_TIMEOUT / 1000;
-constexpr int LONG_INTERVAL = 60 * 1000;     // Main loop interval in milliseconds
-constexpr int MIDDLE_INTERVAL = 1 * 1000;    // Main loop interval in milliseconds
-constexpr int SHORT_INTERVAL = 50;            // Main loop interval in milliseconds
-constexpr int DHT11_READ_INTERVAL = 30 * 1000; // DHT11 sensor reading interval in milliseconds (30 seconds)
-constexpr int BUTTON_DEBOUNCE_TIME = 500;    // Button debounce time in milliseconds
+constexpr int LONG_INTERVAL = 60 * 1000;  // Main loop interval in milliseconds
+constexpr int MIDDLE_INTERVAL = 1 * 1000; // Main loop interval in milliseconds
+constexpr int SHORT_INTERVAL = 50;        // Main loop interval in milliseconds
+constexpr int WATER_LEVEL_READ_INTERVAL =
+    30 * 1000; // Water level reading interval in milliseconds (30 seconds)
+constexpr int BUTTON_DEBOUNCE_TIME =
+    500; // Button debounce time in milliseconds
 
-#define VALIDATE_DHT11_ON_STARTUP true // Enable DHT11 validation during startup
-#define TRACE_LEVEL TraceLevel::INFO       // Enable/disable trace logging
+#define TRACE_LEVEL TraceLevel::INFO // Enable/disable trace logging
 
 // Maximum number of irrigation zones supported
 constexpr int MAX_IRRIGATION_ZONES = 9;
 
 // OTA (Over-The-Air) Update configuration
-#define ENABLE_OTA true              // Enable/disable OTA functionality
-constexpr int OTA_PORT = 3232;      // OTA port (default: 3232)
+#define ENABLE_OTA true        // Enable/disable OTA functionality
+constexpr int OTA_PORT = 3232; // OTA port (default: 3232)
 
 // Serial plotting configuration
-//#define ENABLE_ZONE_PLOTTING
-//#define ENABLE_LOOP_TIME_PLOTTING // Enable loop time plotting for debugging
+// #define ENABLE_ZONE_PLOTTING
+// #define ENABLE_LOOP_TIME_PLOTTING // Enable loop time plotting for debugging
 constexpr int TELEPLOT_INTERVAL = 1000; // Plotting-Intervall in ms
 
 // WiFi configuration
-constexpr int WIFI_CONNECTION_TIMEOUT = 10000; // WiFi connection timeout in milliseconds (10 seconds)
+constexpr int WIFI_CONNECTION_TIMEOUT =
+    10000; // WiFi connection timeout in milliseconds (10 seconds)
 
 #endif // CONFIG_H

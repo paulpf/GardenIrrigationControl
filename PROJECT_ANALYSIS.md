@@ -10,17 +10,17 @@
 
 ### Kernkomponenten
 
-| Schicht | Klasse/Modul | Aufgabe |
-|---|---|---|
-| Einstieg | `main.cpp` | Setup, 3-Frequenz-Loop (50ms / 1s / 60s), Watchdog |
-| Konnektivität | `WifiManager` | Event-driven WiFi mit State Machine |
-| Messaging | `MqttManager` + `MqttSessionManager` | MQTT Pub/Sub, Reconnect-Strategie |
-| Domäne | `IrrigationZone` | Taster-ISR, Relais-Steuerung, Timer, Storage-Sync |
-| Persistenz | `StorageManager` | Singleton, NVS (ESP32 Preferences) |
-| Diagnose | `Trace` | Level-basiertes Logging, Serial-Plotter-Support |
-| Firmware-Update | `OtaManager` | ArduinoOTA mit Fortschrittslogging |
-| Sensor | `Dht11Manager` | DHT11 Auslesen (aktuell deaktiviert/auskommentiert) |
-| Hilfsfunktionen | `Helper` | String-Formatierung, Zone-Initialisierung |
+| Schicht         | Klasse/Modul                         | Aufgabe                                             |
+| --------------- | ------------------------------------ | --------------------------------------------------- |
+| Einstieg        | `main.cpp`                           | Setup, 3-Frequenz-Loop (50ms / 1s / 60s), Watchdog  |
+| Konnektivität   | `WifiManager`                        | Event-driven WiFi mit State Machine                 |
+| Messaging       | `MqttManager` + `MqttSessionManager` | MQTT Pub/Sub, Reconnect-Strategie                   |
+| Domäne          | `IrrigationZone`                     | Taster-ISR, Relais-Steuerung, Timer, Storage-Sync   |
+| Persistenz      | `StorageManager`                     | Singleton, NVS (ESP32 Preferences)                  |
+| Diagnose        | `Trace`                              | Level-basiertes Logging, Serial-Plotter-Support     |
+| Firmware-Update | `OtaManager`                         | ArduinoOTA mit Fortschrittslogging                  |
+| Sensor          | `Dht11Manager`                       | DHT11 Auslesen (aktuell deaktiviert/auskommentiert) |
+| Hilfsfunktionen | `Helper`                             | String-Formatierung, Zone-Initialisierung           |
 
 ---
 
@@ -40,35 +40,35 @@
 
 ## 3. Kritische Fehler (sofort beheben)
 
-| # | Datei | Problem | Risiko | Fix |
-|---|---|---|---|---|
-| 1 | `main.cpp:123` | WDT-Divisor `/5000` statt `/1000` | ESP32 resettet 5× zu früh | `WATCHDOG_TIMEOUT / 1000` |
-| 2 | `irrigationZone.cpp:97` | `int - unsigned long` → Unterlauf möglich | Falsche Restzeiten, Ventil schließt nicht | `unsigned long elapsed = millis() - _startTime; return (_durationTime > elapsed) ? _durationTime - elapsed : 0;` |
-| 3 | `irrigationZone.cpp:114` | `"0"` wird angehängt statt vorangestellt → `"5:30"` statt `"5:03"` | Falsche UI-Anzeige | `snprintf(buf, sizeof(buf), "%02d:%02d", min, sec)` |
-| 4 | `mqttmanager.cpp:271` | DHT-Timestamp schreibt auf Status-Topic | `online/offline`-Status wird überschrieben | Eigenes Topic `/dht11/timestamp` |
-| 5 | `mqttmanager.cpp:34,71,183,228` | Schleifen laufen bis `MAX_IRRIGATION_ZONES` | Nullpointer wenn Zonenzahl < MAX | Schleifen auf `_numIrrigationZones` beschränken |
+| #   | Datei                           | Problem                                                            | Risiko                                     | Fix                                                                                                              |
+| --- | ------------------------------- | ------------------------------------------------------------------ | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| 1   | `main.cpp:123`                  | WDT-Divisor `/5000` statt `/1000`                                  | ESP32 resettet 5× zu früh                  | `WATCHDOG_TIMEOUT / 1000`                                                                                        |
+| 2   | `irrigationZone.cpp:97`         | `int - unsigned long` → Unterlauf möglich                          | Falsche Restzeiten, Ventil schließt nicht  | `unsigned long elapsed = millis() - _startTime; return (_durationTime > elapsed) ? _durationTime - elapsed : 0;` |
+| 3   | `irrigationZone.cpp:114`        | `"0"` wird angehängt statt vorangestellt → `"5:30"` statt `"5:03"` | Falsche UI-Anzeige                         | `snprintf(buf, sizeof(buf), "%02d:%02d", min, sec)`                                                              |
+| 4   | `mqttmanager.cpp:271`           | DHT-Timestamp schreibt auf Status-Topic                            | `online/offline`-Status wird überschrieben | Eigenes Topic `/dht11/timestamp`                                                                                 |
+| 5   | `mqttmanager.cpp:34,71,183,228` | Schleifen laufen bis `MAX_IRRIGATION_ZONES`                        | Nullpointer wenn Zonenzahl < MAX           | Schleifen auf `_numIrrigationZones` beschränken                                                                  |
 
 ---
 
 ## 4. Mittlere Probleme
 
-| # | Datei | Problem | Empfehlung |
-|---|---|---|---|
-| 6 | `otamanager.cpp:130` | `progress / (total / 100)` → Division by Zero bei kleinen Werten | `(total > 0) ? (progress * 100U) / total : 0` |
-| 7 | Diverse Includes | Dateinamen-Groß/Kleinschreibung inkonsistent (`globaldefines.h` vs `globalDefines.h`) | Auf Linux bricht das den Build; einheitliche Konvention festlegen |
-| 8 | `wifimanager.cpp` | Initialer Connect implizit via Event `STA_START`, kein explizites `WiFi.begin` | `WiFi.begin` nach Setup explizit aufrufen |
+| #   | Datei                | Problem                                                                               | Empfehlung                                                        |
+| --- | -------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 6   | `otamanager.cpp:130` | `progress / (total / 100)` → Division by Zero bei kleinen Werten                      | `(total > 0) ? (progress * 100U) / total : 0`                     |
+| 7   | Diverse Includes     | Dateinamen-Groß/Kleinschreibung inkonsistent (`globaldefines.h` vs `globalDefines.h`) | Auf Linux bricht das den Build; einheitliche Konvention festlegen |
+| 8   | `wifimanager.cpp`    | Initialer Connect implizit via Event `STA_START`, kein explizites `WiFi.begin`        | `WiFi.begin` nach Setup explizit aufrufen                         |
 
 ---
 
 ## 5. Geringe Priorität / Code-Hygiene
 
-| # | Problem | Empfehlung |
-|---|---|---|
-| 9 | Tote API: `_blockPublish`, `checkDnsResolution`, `handleTopicForSwButton` | Entfernen oder implementieren |
-| 10 | `TraceLevel::TRACE` hat kein Prefix-Mapping in `Trace.cpp` | Case hinzufügen + `default`-Fall |
-| 11 | Kaum automatisierte Tests | Native Unit-Tests für Timer-Arithmetik, String-Formatierung, State-Transitions |
-| 12 | `lib/domain/` leer | Ordner entfernen oder mit Domain-Logik befüllen |
-| 13 | `Helper::addIrrigationZone` nur eine Zwischenfunktion | Inline in `initIrrigationZones` oder als echte Factory ausbauen |
+| #   | Problem                                                                   | Empfehlung                                                                     |
+| --- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 9   | Tote API: `_blockPublish`, `checkDnsResolution`, `handleTopicForSwButton` | Entfernen oder implementieren                                                  |
+| 10  | `TraceLevel::TRACE` hat kein Prefix-Mapping in `Trace.cpp`                | Case hinzufügen + `default`-Fall                                               |
+| 11  | Kaum automatisierte Tests                                                 | Native Unit-Tests für Timer-Arithmetik, String-Formatierung, State-Transitions |
+| 12  | `lib/domain/` leer                                                        | Ordner entfernen oder mit Domain-Logik befüllen                                |
+| 13  | `Helper::addIrrigationZone` nur eine Zwischenfunktion                     | Inline in `initIrrigationZones` oder als echte Factory ausbauen                |
 
 ---
 
@@ -83,14 +83,14 @@
 
 ### Risiken / Anpassungsbedarf ⚠️
 
-| Problem | Schwere | Lösung |
-|---|---|---|
-| 8-Kanal SSR-Modul aber 9 Zonen benötigt | ✅ Gelöst | Separates Relais für Zone 9 vorhanden |
-| GPIO 12 für DHT11 = Strapping-Pin (Flash-Spannung) | Hoch | DHT11 deaktiviert lassen oder GPIO auf 34 umstellen |
-| GPIO 27 + 32 schalten kurzzeitig LOW beim Boot → Ventile öffnen kurz | Mittel | Bereits durch Firmware-Workaround in `setupRelay()` abgemildert; alternativ Kondensator am SSR-Eingang |
-| Hunter PGV-101 benötigt 24V AC → SSR muss AC-tauglich sein | ✅ Gelöst | 24V AC Netzteil vorhanden |
-| Kein Überstromschutz auf Ventilseite | Mittel | Feinsicherung 1A/Gruppe empfohlen |
-| Zone 9 ist "Drainage" – separates Relais, nicht im 8-Kanal-Modul | Niedrig | Im Code korrekt abgebildet, in Hardware dokumentieren |
+| Problem                                                              | Schwere  | Lösung                                                                                                 |
+| -------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| 8-Kanal SSR-Modul aber 9 Zonen benötigt                              | ✅ Gelöst | Separates Relais für Zone 9 vorhanden                                                                  |
+| GPIO 12 für DHT11 = Strapping-Pin (Flash-Spannung)                   | Hoch     | DHT11 deaktiviert lassen oder GPIO auf 34 umstellen                                                    |
+| GPIO 27 + 32 schalten kurzzeitig LOW beim Boot → Ventile öffnen kurz | Mittel   | Bereits durch Firmware-Workaround in `setupRelay()` abgemildert; alternativ Kondensator am SSR-Eingang |
+| Hunter PGV-101 benötigt 24V AC → SSR muss AC-tauglich sein           | ✅ Gelöst | 24V AC Netzteil vorhanden                                                                              |
+| Kein Überstromschutz auf Ventilseite                                 | Mittel   | Feinsicherung 1A/Gruppe empfohlen                                                                      |
+| Zone 9 ist "Drainage" – separates Relais, nicht im 8-Kanal-Modul     | Niedrig  | Im Code korrekt abgebildet, in Hardware dokumentieren                                                  |
 
 ---
 
@@ -119,13 +119,13 @@
 
 ## 8. Komplexitätsabbau
 
-| Maßnahme | Aufwand | Nutzen |
-|---|---|---|
-| `Dht11Manager` entfernen bis Hardware vorhanden | Klein | Weniger tote Code-Pfade, klareres Bild |
-| `lib/domain/` entfernen (leer) | Minimal | Saubere Struktur |
-| `Helper::addIrrigationZone` inlinen | Klein | Eine Indirektion weniger |
-| Tote Felder/Methoden entfernen (`_blockPublish`, etc.) | Klein | Geringere kognitive Last |
-| `globaldefines.h` auflösen – direkte Includes wo nötig | Klein | Implizite Abhängigkeiten explizit machen |
+| Maßnahme                                               | Aufwand | Nutzen                                   |
+| ------------------------------------------------------ | ------- | ---------------------------------------- |
+| `Dht11Manager` entfernen bis Hardware vorhanden        | Klein   | Weniger tote Code-Pfade, klareres Bild   |
+| `lib/domain/` entfernen (leer)                         | Minimal | Saubere Struktur                         |
+| `Helper::addIrrigationZone` inlinen                    | Klein   | Eine Indirektion weniger                 |
+| Tote Felder/Methoden entfernen (`_blockPublish`, etc.) | Klein   | Geringere kognitive Last                 |
+| `globaldefines.h` auflösen – direkte Includes wo nötig | Klein   | Implizite Abhängigkeiten explizit machen |
 
 ---
 
