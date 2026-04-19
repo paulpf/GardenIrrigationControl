@@ -39,6 +39,24 @@ OtaManager otaManager;
 // Using an array for better scalability with 8 zones
 IrrigationZone irrigationZones[MAX_IRRIGATION_ZONES];
 
+struct ZoneConfig
+{
+  int buttonPin;
+  int relayPin;
+};
+
+constexpr std::array<ZoneConfig, MAX_IRRIGATION_ZONES> ZONE_CONFIGS = {{
+    {ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN},
+    {ZONE2_BUTTON_PIN, ZONE2_RELAY_PIN},
+    {ZONE3_BUTTON_PIN, ZONE3_RELAY_PIN},
+    {ZONE4_BUTTON_PIN, ZONE4_RELAY_PIN},
+    {ZONE5_BUTTON_PIN, ZONE5_RELAY_PIN},
+    {ZONE6_BUTTON_PIN, ZONE6_RELAY_PIN},
+    {ZONE7_BUTTON_PIN, ZONE7_RELAY_PIN},
+    {ZONE8_BUTTON_PIN, ZONE8_RELAY_PIN},
+    {ZONE9_BUTTON_PIN, ZONE9_RELAY_PIN},
+}};
+
 // ================ Timing ================
 unsigned long currentMillis = 0;            // Current time in milliseconds
 unsigned long previousMillisLongLoop = 0;   // For long loop timing
@@ -66,19 +84,11 @@ void initIrrigationZones()
 {
   Trace::log(TraceLevel::INFO, "Initializing irrigation zones...");
 
-  // Zone configuration arrays
-  const int zoneButtons[] = {
-      ZONE1_BUTTON_PIN, ZONE2_BUTTON_PIN, ZONE3_BUTTON_PIN,
-      ZONE4_BUTTON_PIN, ZONE5_BUTTON_PIN, ZONE6_BUTTON_PIN,
-      ZONE7_BUTTON_PIN, ZONE8_BUTTON_PIN, ZONE9_BUTTON_PIN};
-  const int zoneRelays[] = {ZONE1_RELAY_PIN, ZONE2_RELAY_PIN, ZONE3_RELAY_PIN,
-                            ZONE4_RELAY_PIN, ZONE5_RELAY_PIN, ZONE6_RELAY_PIN,
-                            ZONE7_RELAY_PIN, ZONE8_RELAY_PIN, ZONE9_RELAY_PIN};
-
   // Initialize zones
   for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
   {
-    Helper::addIrrigationZone(zoneButtons[i], zoneRelays[i], irrigationZones,
+    Helper::addIrrigationZone(ZONE_CONFIGS[i].buttonPin,
+                              ZONE_CONFIGS[i].relayPin, irrigationZones,
                               &mqttManager, i, clientName);
     irrigationZones[i].loadSettingsFromStorage(i);
   }
@@ -146,7 +156,7 @@ void setup()
   // mqttManager.setDht11Manager(&dht11Manager);
 
   // Initialize the watchdog timer
-  esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000,
+  esp_task_wdt_init(WDT_TIMEOUT_SEC,
                     true); // Convert milliseconds to seconds
   esp_task_wdt_add(NULL);  // Add current thread to WDT watch
 

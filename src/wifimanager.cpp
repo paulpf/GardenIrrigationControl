@@ -20,6 +20,12 @@ void WifiManager::setup(String ssid, String password, String clientName)
   WiFi.mode(WIFI_STA);
   WiFi.setHostname(clientName.c_str());
   WiFi.onEvent(staticWifiEventHandler);
+
+  // Trigger initial connection explicitly to avoid relying on event ordering.
+  WiFi.begin(_ssid.c_str(), _password.c_str());
+  _wifiConnectStartTime = millis();
+  _wifiState = WIFI_CONNECTING;
+
   Trace::log(TraceLevel::DEBUG, "WiFi setup complete.");
 }
 
@@ -38,10 +44,7 @@ void WifiManager::wifiEvent(WiFiEvent_t event)
   switch (event)
   {
   case SYSTEM_EVENT_STA_START:
-    Trace::log(TraceLevel::INFO, "WiFi started, attempting to connect...");
-    WiFi.begin(_ssid.c_str(), _password.c_str());
-    _wifiConnectStartTime = millis();
-    _wifiState = WIFI_CONNECTING;
+    Trace::log(TraceLevel::INFO, "WiFi started");
     break;
   case SYSTEM_EVENT_STA_GOT_IP:
     Trace::log(TraceLevel::INFO,
