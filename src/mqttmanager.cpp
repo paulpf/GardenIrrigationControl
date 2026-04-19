@@ -1,6 +1,7 @@
 #include "mqttmanager.h"
 #include "dht11manager.h"
 #include "helper.h"
+#include <cstring>  // Phase 3.5: for memcpy and strcmp in hot-path optimization
 
 // Initialize the static instance pointer
 MqttManager *MqttManager::_instance = nullptr;
@@ -65,13 +66,15 @@ void MqttManager::staticMqttCallback(char *topic, byte *payload,
 void MqttManager::instanceMqttCallback(char *topic, byte *payload,
                                        unsigned int length)
 {
-  String message = "";
-  for (int i = 0; i < length; i++)
-  {
-    message += (char)payload[i];
-  }
+  // Phase 3.5 optimization: Use fixed char buffer instead of String concatenation in hot path
+  // This reduces heap fragmentation on ESP32 for high-frequency MQTT messages
+  char message[256];
+  int copyLength = (length < (int)sizeof(message) - 1) ? length : (int)sizeof(message) - 1;
+  memcpy(message, payload, copyLength);
+  message[copyLength] = '\0';
+
   Trace::log(TraceLevel::DEBUG,
-             "Message arrived [" + String(topic) + "]" + "Message: " + message);
+             "Message arrived [" + String(topic) + "] Message: " + String(message));
 
   // Check if the message is for the software button of any irrigation zone
   for (int i = 0; i < _numIrrigationZones; i++)
@@ -81,15 +84,15 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
     {
       Trace::log(TraceLevel::INFO,
                  "Processing software button message for zone " + String(i) +
-                     ": " + message);
-      _irrigationZones[i]->synchronizeButtonStates(message == "true");
+                     ": " + String(message));
+      _irrigationZones[i]->synchronizeButtonStates(strcmp(message, "true") == 0);
       break; // Exit the loop after processing the message
     }
 
     if (String(topic).startsWith(
             _irrigationZones[i]->getMqttTopicForDurationTime()))
     {
-      int durationTimeMinutes = message.toInt();
+      int durationTimeMinutes = atoi(message);  // Use atoi instead of String::toInt()
       int durationTimeMs =
           durationTimeMinutes * 60 * 1000; // Convert minutes to milliseconds
       if (durationTimeMs > 0 && durationTimeMs <= MAX_DURATION_TIME)
@@ -250,12 +253,20 @@ void MqttManager::publishAllIrrigationZones()
 {
   if (isConnected())
   {
+    // Phase 3.5 optimization: Use stack-allocated char buffer instead of String objects
+    // This reduces heap fragmentation for frequent MQTT publish operations
+    char remainingTimeBuffer[8];
+    
     for (int i = 0; i < _numIrrigationZones; i++)
     {
       publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(),
               _irrigationZones[i]->getRelayState() ? "true" : "false");
+      
+      // Use optimized buffer method instead of String conversion
+      _irrigationZones[i]->getRemainingTimeAsString(remainingTimeBuffer, sizeof(remainingTimeBuffer));
       publish(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str(),
-              String(_irrigationZones[i]->getRemainingTimeAsString()).c_str());
+              remainingTimeBuffer);
+      
       publish(_irrigationZones[i]->getMqttTopicForSwButton().c_str(),
               _irrigationZones[i]->getBtnState() ? "true" : "false");
     }

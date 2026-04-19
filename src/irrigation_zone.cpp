@@ -117,6 +117,28 @@ String IrrigationZone::getRemainingTimeAsString()
   return String(buffer);
 }
 
+/// @brief Phase 3.5 optimized: Get remaining time into pre-allocated char buffer
+/// @param buffer Pointer to char array (must be at least 8 bytes)
+/// @param bufsize Size of buffer
+void IrrigationZone::getRemainingTimeAsString(char* buffer, size_t bufsize)
+{
+  if (!buffer || bufsize < 8)
+  {
+    return;
+  }
+  
+  int remainingTime = getRemainingTime();
+  if (remainingTime <= 0) 
+  {
+    snprintf(buffer, bufsize, "00:00");
+    return;
+  }
+  
+  int minutes = remainingTime / 60000;
+  int seconds = (remainingTime % 60000) / 1000;
+  snprintf(buffer, bufsize, "%02d:%02d", minutes, seconds);
+}
+
 void IrrigationZone::startTimer() 
 {
   _timerIsActive = true;

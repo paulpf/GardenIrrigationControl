@@ -29,6 +29,7 @@ public:
     int getDurationTime() { return _durationTime; } // Get the relay duration time
     int getRemainingTime(); // Get the remaining time for the relay
     String getRemainingTimeAsString();
+    void getRemainingTimeAsString(char* buffer, size_t bufsize);  // Phase 3.5: optimized buffer version
     void resetTimer();
 
 private:
