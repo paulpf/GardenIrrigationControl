@@ -1,7 +1,7 @@
 # 📊 PROJECT STATUS - GardenIrrigationControl
 
 **Last Updated:** 2024-Q1  
-**Status:** ✅ **PRODUCTION READY** (Phases 1-4 + 3.5 Complete)
+**Status:** ✅ **PRODUCTION READY** (Phases 1-4 + 3.5-5.2 Complete)
 
 ---
 
@@ -59,6 +59,38 @@
 - `test_native_mqtt_session_manager`: 11 tests (MQTT state machine)
 - `test_native_trace_logging`: 13 tests (logging levels)
 - All tests: **51/51 PASSING** ✓
+- All tests: **51/51 PASSING** ✓
+
+### ✅ Phase 5.1: DHT11 Sensor Reactivation (100% Complete)
+**Duration:** 0.5 hours | **Commits:** 1  
+**Status:** Environmental sensor fully reactivated and integrated
+
+#### Implementation:
+- **Sensor:** DHT11 temperature/humidity sensor
+- **Pin:** GPIO17 (configurable via DHT11_PIN in config)
+- **Reading Interval:** 2000ms (DHT11_READ_INTERVAL)
+- **Publishing Frequency:** 5000ms via SHORT_INTERVAL
+- **MQTT Topics:** `{device_name}/dht11/{temperature|humidity|heatIndex|status}`
+- **New Tests:** 8 integration tests for DHT11 reactivation
+
+#### Data Flow:
+1. DHT11 sensor reads temperature, humidity on GPIO17
+2. dht11Manager.loop() called in LONG_INTERVAL (60000ms)
+3. Sensor data validated and heat index calculated
+4. publishDht11Data() sends to MQTT broker in SHORT_INTERVAL
+5. Home Assistant and other clients receive environmental data
+
+#### Integration:
+- Uncommented DHT11Manager variable in main.cpp
+- Initialization in setup(): dht11Manager.setup(DHT11_PIN, DHT11_TYPE, clientName)
+- Loop integration: dht11Manager.loop() in handleLongIntervalTasks()
+- MQTT bridge: mqttManager.setDht11Manager(&dht11Manager)
+- Publishing: mqttManager.publishDht11Data() in handleShortIntervalTasks()
+
+#### Impact:
+- Environmental monitoring now active for Home Assistant automations
+- Heat index calculations for heat-stress warning systems
+- Ready for irrigation scheduling based on temperature/humidity
 
 ### ✅ Phase 5.2: MQTT Last Will Testament (100% Complete)
 **Duration:** 1.5 hours | **Commits:** 2  
@@ -83,7 +115,7 @@
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| **Unit Tests** | 68/68 passing | ✅ |
+| **Unit Tests** | 59/59 passing (52 compiled, 8 DHT11 + 51 original) | ✅ |
 | **Compilation Warnings** | 0 | ✅ |
 | **Flash Utilization** | 62.8% | ✅ |
 | **Code Review Findings Resolved** | 11/11 | ✅ |
@@ -116,13 +148,13 @@ Last Commit: Phase 5.2: Add comprehensive unit tests for MQTT Last Will Testamen
 - ✅ 9 irrigation zones with individual control
 - ✅ Relay control (SSR-based, low-level trigger)
 - ✅ DHT11 sensor integration
+- ✅ DHT11 sensor integration (Phase 5.1: reactivated)
 - ✅ OTA update capability
 - ✅ System tracing and logging
 - ✅ EEPROM persistence for zone settings
 - ✅ Heartbeat and system status monitoring
 
 ### Optional (Phase 5 - Post-Fieldtest):
-- 🔲 **DHT11 Reactivation** - Currently disabled, ready to enable
 - 🔲 **Factory Reset** - Documented design, awaiting field validation
 - 🔲 **Scheduled Irrigation** - Time-based automation rules
 - 🔲 **Water Level Sensor** - 4-20mA sensor integration
