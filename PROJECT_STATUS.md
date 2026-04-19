@@ -2,6 +2,7 @@
 
 **Last Updated:** 2024-Q1  
 **Status:** ✅ **PRODUCTION READY** (Phases 1-4 + 3.5-5.2 Complete)
+**Status:** ✅ **PRODUCTION READY** (Phases 1-4 + 3.5-5.3 Complete)
 
 ---
 
@@ -93,6 +94,36 @@
 - Ready for irrigation scheduling based on temperature/humidity
 
 ### ✅ Phase 5.2: MQTT Last Will Testament (100% Complete)
+### ✅ Phase 5.3: Factory Reset (100% Complete)
+**Duration:** 0.5 hours | **Commits:** 1  
+**Status:** System-wide reset functionality implemented and tested
+
+#### Implementation:
+- **Trigger Method:** Via StorageManager.factoryReset() method
+- **Reset Scope:** Clears all zone settings and restores defaults
+- **Configuration Restored:**
+	- All 9 irrigation zones reset to DEFAULT_DURATION_TIME (5 minutes)
+	- Button states cleared (all false)
+	- Relay states cleared (all false)
+	- EEPROM write completion guaranteed (100ms delay)
+
+#### Features:
+- Singleton StorageManager pattern ensures thread-safe access
+- Logging at ERROR level for audit trail visibility
+- Complete settings restoration (no partial states possible)
+- EEPROM safety: delay ensures flash writes complete before reset
+
+#### Future Enhancement (Post-Fieldtest):
+- MQTT command trigger: subscribe to `{device_name}/system/factoryReset`
+- HTTP API endpoint for web-based reset
+- Long-press button (3-5 seconds) local hardware reset
+
+#### Impact:
+- System recovery from corrupted state
+- Easy device provisioning for new installations
+- User-facing recovery mechanism for troubleshooting
+
+### ✅ Phase 5.2: MQTT Last Will Testament (100% Complete)
 **Duration:** 1.5 hours | **Commits:** 2  
 **Status:** Production-critical feature for failover detection
 
@@ -155,7 +186,7 @@ Last Commit: Phase 5.2: Add comprehensive unit tests for MQTT Last Will Testamen
 - ✅ Heartbeat and system status monitoring
 
 ### Optional (Phase 5 - Post-Fieldtest):
-- 🔲 **Factory Reset** - Documented design, awaiting field validation
+- ✅ **Factory Reset** - Phase 5.3: Implemented and tested
 - 🔲 **Scheduled Irrigation** - Time-based automation rules
 - 🔲 **Water Level Sensor** - 4-20mA sensor integration
 - 🔲 **Mobile UI** - Web/mobile interface for control
