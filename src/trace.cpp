@@ -1,5 +1,5 @@
 // Implementation example for Trace.cpp
-#include "Trace.h"
+#include "trace.h"
 
 void Trace::log(TraceLevel level, String message) 
 {

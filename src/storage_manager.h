@@ -1,7 +1,7 @@
 #ifndef STORAGE_MANAGER_H
 #define STORAGE_MANAGER_H
 
-#include "globaldefines.h"
+#include "global_defines.h"
 #include <Preferences.h>
 
 class StorageManager {

@@ -2,7 +2,7 @@
 #ifndef WIFIMANAGER_H
 #define WIFIMANAGER_H
 
-#include "globalDefines.h"
+#include "global_defines.h"
 
 class WifiManager
 {

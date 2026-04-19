@@ -1,9 +1,9 @@
 #ifndef TRACE_H
 #define TRACE_H
 
-#include "globaldefines.h"
+#include "global_defines.h"
 #include "config.h"
-#include "irrigationZone.h"
+#include "irrigation_zone.h"
 
 /**
  * Represents different trace levels for logging

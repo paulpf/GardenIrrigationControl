@@ -4,12 +4,12 @@
 #include "../../_secrets/WifiSecret.h"
 
 #include "config.h"
-#include "globaldefines.h"
+#include "global_defines.h"
 
-#include "StorageManager.h"
+#include "storage_manager.h"
 #include "dht11manager.h"
 #include "helper.h"
-#include "irrigationZone.h"
+#include "irrigation_zone.h"
 #include "mqttmanager.h"
 #include "otamanager.h"
 #include "wifimanager.h"

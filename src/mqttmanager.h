@@ -2,8 +2,8 @@
 #ifndef MQTTMANAGER_H
 #define MQTTMANAGER_H
 
-#include "globaldefines.h"
-#include "irrigationZone.h"
+#include "global_defines.h"
+#include "irrigation_zone.h"
 #include "mqttsessionmanager.h"
 #include <PubSubClient.h>
 

@@ -1,8 +1,8 @@
 #ifndef IRRIGATION_ZONE_H
 #define IRRIGATION_ZONE_H
 
-#include "globalDefines.h"
-#include "StorageManager.h"
+#include "global_defines.h"
+#include "storage_manager.h"
 
 class IrrigationZone {
 public:

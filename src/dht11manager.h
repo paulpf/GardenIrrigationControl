@@ -1,7 +1,7 @@
 #ifndef DHT11MANAGER_H
 #define DHT11MANAGER_H
 
-#include "globaldefines.h"
+#include "global_defines.h"
 #include <DHT.h>
 
 class Dht11Manager {

@@ -3,8 +3,8 @@
 #ifndef HELPER_H
 #define HELPER_H
 
-#include "globaldefines.h"
-#include "irrigationZone.h"
+#include "global_defines.h"
+#include "irrigation_zone.h"
 #include "mqttmanager.h"
 
 class Helper

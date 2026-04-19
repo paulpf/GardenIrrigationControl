@@ -1,7 +1,7 @@
 #ifndef OTAMANAGER_H
 #define OTAMANAGER_H
 
-#include "globaldefines.h"
+#include "global_defines.h"
 #include <ArduinoOTA.h>
 
 class OtaManager 
