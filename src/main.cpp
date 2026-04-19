@@ -146,7 +146,7 @@ void setup()
   // mqttManager.setDht11Manager(&dht11Manager);
 
   // Initialize the watchdog timer
-  esp_task_wdt_init(WATCHDOG_TIMEOUT / 5000,
+  esp_task_wdt_init(WATCHDOG_TIMEOUT / 1000,
                     true); // Convert milliseconds to seconds
   esp_task_wdt_add(NULL);  // Add current thread to WDT watch
 

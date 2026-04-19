@@ -94,7 +94,8 @@ int IrrigationZone::getRemainingTime()
   {
     return 0; // Timer is not active, return 0
   }
-  return _durationTime - (millis() - _startTime);
+  unsigned long elapsed = millis() - _startTime;
+  return (elapsed < (unsigned long)_durationTime) ? (int)(_durationTime - elapsed) : 0;
 }
 
 /// @brief Method to get the remaining time as a formatted string in "MM:SS" format.
@@ -110,16 +111,10 @@ String IrrigationZone::getRemainingTimeAsString()
   int minutes = remainingTime / 60000; // Convert milliseconds to minutes
   int seconds = (remainingTime % 60000) / 1000; // Get remaining seconds
   
-  // Format as MM:SS
-  String formattedTime = String(minutes) + ":" + String(seconds);
-  
-  // Ensure two digits for seconds
-  if (seconds < 10) 
-  {
-    formattedTime += "0";
-  }
-  
-  return formattedTime;
+  // Format as MM:SS with leading zeros
+  char buffer[8];
+  snprintf(buffer, sizeof(buffer), "%02d:%02d", minutes, seconds);
+  return String(buffer);
 }
 
 void IrrigationZone::startTimer() 

@@ -31,7 +31,7 @@ void MqttManager::setup(const char *mqttServer, int mqttPort,
 
 void MqttManager::initPublish()
 {
-  for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
+  for (int i = 0; i < _numIrrigationZones; i++)
   {
     // Set initial state on mqtt for relay as false
     // This is necessary to ensure the relay state is known on startup
@@ -74,7 +74,7 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
              "Message arrived [" + String(topic) + "]" + "Message: " + message);
 
   // Check if the message is for the software button of any irrigation zone
-  for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
+  for (int i = 0; i < _numIrrigationZones; i++)
   {
     if (String(topic).startsWith(
             _irrigationZones[i]->getMqttTopicForSwButton()))
@@ -204,7 +204,7 @@ void MqttManager::subscribeIrrigationZones()
   Trace::log(TraceLevel::INFO, "MqttManager::subscribeIrrigationZones | "
                                "Subscribing to irrigation zones...");
   // Subscribe to all irrigation zones
-  for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
+  for (int i = 0; i < _numIrrigationZones; i++)
   {
     subscribe(_irrigationZones[i]->getMqttTopicForRelay().c_str());
     subscribe(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str());
@@ -252,7 +252,7 @@ void MqttManager::publishAllIrrigationZones()
 {
   if (isConnected())
   {
-    for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
+    for (int i = 0; i < _numIrrigationZones; i++)
     {
       publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(),
               _irrigationZones[i]->getRelayState() ? "true" : "false");
@@ -296,9 +296,10 @@ void MqttManager::publishDht11Data()
     // Publish sensor status
     publish(_dht11Manager->getMqttTopicForStatus().c_str(), "online");
 
-    // Publish timestamp
-    publish(_dht11Manager->getMqttTopicForStatus().c_str(),
-            _dht11Manager->getTimeStamp().c_str());
+    // Publish timestamp on separate topic
+    String timestampTopic = _dht11Manager->getMqttTopicForStatus();
+    timestampTopic.replace("/status", "/timestamp");
+    publish(timestampTopic.c_str(), _dht11Manager->getTimeStamp().c_str());
   }
   else
   {
