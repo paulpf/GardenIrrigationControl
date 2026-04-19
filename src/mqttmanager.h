@@ -43,11 +43,7 @@ public:
 private:
   // Instance callback that will be called by the static callback
   void instanceMqttCallback(char *topic, byte *payload, unsigned int length);
-  void handleTopicForSwButton(char *topic, int i, String &message,
-                              int &retFlag);
   void reconnect();
-
-  bool _blockPublish; // Flag to block publish if needed
 
   // Static pointer to the MqttManager instance
   static MqttManager *_instance;

@@ -89,7 +89,6 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
     if (String(topic).startsWith(
             _irrigationZones[i]->getMqttTopicForDurationTime()))
     {
-      _blockPublish = true; // Set block to true to prevent further processing
       int durationTimeMinutes = message.toInt();
       int durationTimeMs =
           durationTimeMinutes * 60 * 1000; // Convert minutes to milliseconds
@@ -110,7 +109,6 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
                    "Invalid duration time received for zone " + String(i) +
                        ": " + String(durationTimeMinutes) + " minutes");
       }
-      _blockPublish = false; // Reset block to false after processing
       break;                 // Exit the loop after processing the message
     }
   }

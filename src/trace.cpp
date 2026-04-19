@@ -12,6 +12,9 @@ void Trace::log(TraceLevel level, String message)
   String prefix;
   switch (level) 
   {
+    case TraceLevel::TRACE:
+      prefix = "[TRACE] ";
+      break;
     case TraceLevel::INFO:
       prefix = "[INFO] ";
       break;
@@ -20,6 +23,9 @@ void Trace::log(TraceLevel level, String message)
       break;
     case TraceLevel::ERROR:
       prefix = "[ERROR] ";
+      break;
+    default:
+      prefix = "[LOG] ";
       break;
   }
   

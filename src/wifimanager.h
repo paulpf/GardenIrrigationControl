@@ -11,7 +11,6 @@ public:
   void setup(String ssid, String password, String clientName);
   bool loop();
   void manageConnection();
-  bool checkDnsResolution();
   bool isConnected() const
   {
     return _wifiState == WIFI_CONNECTED;
@@ -32,7 +31,6 @@ private:
   String _ssid;
   String _password;
   String _clientName;
-  int _countToTryReconnect = 0;
   int _maximumCountToTryReconnect = 10;
   unsigned long _lastWifiCheckMillis = 0;
   const unsigned long _wifiCheckInterval = 30000; // Check every 30 seconds

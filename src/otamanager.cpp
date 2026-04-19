@@ -127,7 +127,7 @@ void OtaManager::onProgress(unsigned int progress, unsigned int total)
     { // Update every second
         _lastProgressUpdate = currentTime;
         
-        unsigned int percentage = (progress / (total / 100));
+        unsigned int percentage = (total > 0) ? ((progress * 100U) / total) : 0;
         String progressMsg = "OTA Progress: " + String(percentage) + "% (" + 
                            String(progress) + "/" + String(total) + " bytes)";
         Trace::log(TraceLevel::INFO, progressMsg);
