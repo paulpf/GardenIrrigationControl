@@ -53,8 +53,14 @@ constexpr int WATER_LEVEL_SENSOR_PIN = 36; // GPIO36 / VP (ADC1)
 // ADC conversion defaults for ESP32 (12-bit range)
 constexpr int WATER_LEVEL_ADC_MIN = 820;  // ~0.66V (4mA on 165 Ohm)
 constexpr int WATER_LEVEL_ADC_MAX = 4095; // ~3.3V (20mA on 165 Ohm)
+constexpr float CISTERN_CAPACITY_LITERS =
+    5000.0f; // Adjust to your real cistern capacity
 constexpr float WATER_LEVEL_CRITICAL_PERCENT = 10.0f;
 constexpr float WATER_LEVEL_LOCKOUT_RELEASE_PERCENT = 12.0f;
+constexpr float WATER_LEVEL_OVERFLOW_PERCENT = 100.0f;
+constexpr float WATER_LEVEL_OVERFLOW_CLEAR_PERCENT = 100.0f;
+constexpr float WATER_LEVEL_CRITICAL_OVERFLOW_BUFFER_LITERS = 300.0f;
+constexpr float WATER_LEVEL_CRITICAL_OVERFLOW_RELEASE_LITERS = 250.0f;
 
 // Irrigation timing defaults
 constexpr int DEFAULT_DURATION_TIME =
