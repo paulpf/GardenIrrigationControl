@@ -33,7 +33,7 @@ MqttManager mqttManager;
 OtaManager otaManager;
 
 // ================ DHT11 Sensor ================
-// Dht11Manager dht11Manager;
+Dht11Manager dht11Manager;
 
 // ================ Irrigation zones ================
 // Using an array for better scalability with 8 zones
@@ -151,9 +151,9 @@ void setup()
   initIrrigationZones();
 
   // Initialize DHT11 sensor
-  // Trace::log(TraceLevel::DEBUG, "Initializing DHT11 sensor...");
-  // dht11Manager.setup(DHT11_PIN, DHT11_TYPE, clientName);
-  // mqttManager.setDht11Manager(&dht11Manager);
+  Trace::log(TraceLevel::DEBUG, "Initializing DHT11 sensor...");
+  dht11Manager.setup(DHT11_PIN, DHT11_TYPE, clientName);
+  mqttManager.setDht11Manager(&dht11Manager);
 
   // Initialize the watchdog timer
   esp_task_wdt_init(WDT_TIMEOUT_SEC,
@@ -224,7 +224,7 @@ void handleLongIntervalTasks()
   handleConnectivityEvents();
 
   // Update DHT11 sensor readings
-  // dht11Manager.loop();
+  dht11Manager.loop();
 }
 
 void loop()
