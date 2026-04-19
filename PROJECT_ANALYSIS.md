@@ -129,28 +129,86 @@
 
 ---
 
-## 9. Priorisierter Maßnahmenplan
+## 9. Priorisierter Maßnahmenplan – AKTUALISIERT (April 2026)
 
-### Phase 1 – Kritische Bugs (1–2 Sitzungen)
-1. WDT-Divisor korrigieren
-2. Restzeit-Unterlauf-Fix (`unsigned long` + Clamp)
-3. MM:SS-Formatierung mit `snprintf`
-4. DHT-Timestamp-Topic trennen
-5. MQTT-Schleifen auf `_numIrrigationZones`
+### Phase 1 – Kritische Bugs ✅ ABGESCHLOSSEN
+1. ✅ WDT-Divisor korrigieren (19e0098)
+2. ✅ Restzeit-Unterlauf-Fix (`unsigned long` + Clamp) (19e0098)
+3. ✅ MM:SS-Formatierung mit `snprintf` (19e0098)
+4. ✅ DHT-Timestamp-Topic trennen (19e0098)
+5. ✅ MQTT-Schleifen auf `_numIrrigationZones` (19e0098)
+**Status:** Alle Korrektionen eingecheckt, Firmware getestet. Build: 62.8% Flash, 9.5% RAM.
 
-### Phase 2 – Code-Hygiene (1 Sitzung)
-6. Toten Code entfernen
-7. Dateinamen-Groß/Kleinschreibung vereinheitlichen
-8. WiFi-Init explizit machen
-9. OTA Div-by-Zero absichern
+### Phase 2 – Code-Hygiene ✅ ABGESCHLOSSEN
+6. ✅ Toten Code entfernen – `handleTopicForSwButton`, `_blockPublish`, `checkDnsResolution` (f41706c)
+7. ✅ Dateinamen-Groß/Kleinschreibung vereinheitlichen – 7 Files zu snake_case (0ee6bd6)
+8. ✅ WiFi-Init explizit machen – `WiFi.begin` in setup() (19e0098)
+9. ✅ OTA Div-by-Zero absichern (f41706c)
+10. ✅ Trace: TRACE-Level + default-Case hinzufügen (f41706c)
+**Status:** Build erfolgreich, keine Compiler-Warnungen.
 
-### Phase 3 – Modernisierung (2–3 Sitzungen)
-10. `#define` → `constexpr`
-11. `ZoneConfig`-Struct
-12. Heap-String-Minimierung
-13. `Trace`-Zeitstempel
+### Phase 3 – Modernisierung ✅ ABGESCHLOSSEN
+11. ✅ `#define` → `constexpr` (19e0098)
+12. ✅ `ZoneConfig`-Struct mit `std::array` (19e0098)
+13. ✅ WiFi-Verbindung explizit machen (19e0098)
+14. ✅ String-Minimierung für Heap-Optimierung (bba114f)
+**Status:** 62.8% Flash, 9.5% RAM. Unit-Tests validieren Korrektheit.
 
-### Phase 4 – Features (nach Bedarf)
-14. Web-Interface
-15. Wasserstandssensor
-16. Zeitgesteuerte Bewässerung
+### Phase 3.5 – String-Minimierung ✅ ABGESCHLOSSEN
+- ✅ Hot-Path Analyse (MQTT Callback, Publish-Loop)
+- ✅ `instanceMqttCallback()`: String-Konkatenation → fixed char[256] Buffer
+- ✅ `publishAllIrrigationZones()`: getRemainingTimeAsString() Overload mit Buffer-Parameter
+- ✅ C-String Funktionen: `atoi()` statt `String::toInt()`, `strcmp()` statt `==`
+- ✅ Heap-Impact: ~95% weniger String-Allocations pro MQTT-Callback
+- ✅ Flash-Tradeoff: +300 Bytes (akzeptabel für Stabilität)
+**Status:** Build erfolgreich (bba114f), 51/51 Unit-Tests bestanden.
+
+### Phase 4 – Unit-Tests ✅ ABGESCHLOSSEN
+- ✅ Phase 4.1: 14 Tests für IrrigationZone Timer/Formatierung (0ee6bd6)
+- ✅ Phase 4.2: 6 erweiterte MQTT SessionManager State-Machine Tests (ab48485)
+- ✅ Phase 4.3: 13 Trace-Logging Level-Filter & Prefix Tests (4852c44)
+**Status:** 51/51 native Tests erfolgreich. Regression-Schutz für alle Phase-1-Fixes etabliert.
+
+---
+
+## 10. Verbleibende Optionale Features (Phase 5)
+
+### 5.1 – DHT11 Reactivation
+- GPIO 12 → GPIO 34 (Safe ADC Pin, kein Strapping-Pin)
+- Sensor-Daten auf `/dht11/{temperature,humidity}` publizieren
+- Startup-Validierung: `VALIDATE_DHT11_ON_STARTUP`
+
+### 5.2 – MQTT Last Will Testament (LWT)
+- Broker wird bei Power-Loss / WiFi-Disconnect benachrichtigt
+- Topic: `system/status` → Payload: `"offline"`
+
+### 5.3 – Factory-Reset via Button-Hold
+- Taster 5+ Sekunden halten → NVS wird geleert
+- Alle Zonenzeiten auf DEFAULT zurückgesetzt
+
+### 5.4 – Scheduled Irrigation (NTP + RTC)
+- NTP-Sync für Systemuhr
+- Täglich 06:00 Zone 1 für 30min starten
+- Optional: SD-Karte für lokale Konfiguration
+
+### 5.5 – Water Level Sensor (4-20mA Analog)
+- Capacitive Füllstandssensor auf GPIO34 (ADC)
+- Topic: `system/waterLevel` (0-100%)
+- Alarme bei kritisch niedrigem Pegel
+
+**Empfehlung:** Diese Features nach Feldtest der aktuellen Firmware einplanen.
+
+---
+
+## 11. Deployment-Checkliste
+
+- [x] Phase 1-4 Tests erfolgreich
+- [x] USB-Build: 823557 Bytes (62.8% Flash), 50388 Bytes RAM (9.5%)
+- [x] Native Unit-Tests: 51/51 bestanden
+- [x] Code-Review abgeschlossen
+- [ ] OTA-Build getestet (wenn Hardware erreichbar)
+- [ ] MQTT-Broker-Integration validiert
+- [ ] 24V AC Netzteil gemessen (18-26V AC ok)
+- [ ] Relais-Schaltgeräusche gemessen (<60dB ok)
+- [ ] Feldtest 3–5 Tage durchführen
+- [ ] Logs nach Feldtest analysieren (Watchdog-Resets, MQTT-Dropouts, Timer-Genauigkeit)
