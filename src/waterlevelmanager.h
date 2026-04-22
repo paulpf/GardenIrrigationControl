@@ -2,13 +2,12 @@
 #define WATERLEVELMANAGER_H
 
 #include "global_defines.h"
-
-class MqttManager;
+#include "imessagepublisher.h"
 
 class WaterLevelManager
 {
 public:
-  explicit WaterLevelManager(MqttManager &mqttManager);
+  explicit WaterLevelManager(IMessagePublisher &messagePublisher);
 
   void setup(const char *clientName);
   void loop(unsigned long currentMillis);
@@ -41,7 +40,7 @@ private:
     String litersToOverflow;
   };
 
-  MqttManager &_mqttManager;
+  IMessagePublisher &_messagePublisher;
   unsigned long _previousRead = 0;
   State _state;
   Topics _topics;

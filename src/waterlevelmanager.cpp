@@ -1,10 +1,9 @@
 #include "waterlevelmanager.h"
 
 #include "irrigation_zone.h"
-#include "mqttmanager.h"
 
-WaterLevelManager::WaterLevelManager(MqttManager &mqttManager)
-    : _mqttManager(mqttManager)
+WaterLevelManager::WaterLevelManager(IMessagePublisher &messagePublisher)
+    : _messagePublisher(messagePublisher)
 {
 }
 
@@ -54,7 +53,8 @@ void WaterLevelManager::initSensor()
 
 bool WaterLevelManager::shouldRead(unsigned long currentMillis)
 {
-  if ((unsigned long)(currentMillis - _previousRead) < WATER_LEVEL_READ_INTERVAL)
+  if ((unsigned long)(currentMillis - _previousRead) <
+      WATER_LEVEL_READ_INTERVAL)
   {
     return false;
   }
@@ -69,9 +69,8 @@ void WaterLevelManager::updateMetrics()
 
   if (WATER_LEVEL_ADC_MAX > WATER_LEVEL_ADC_MIN)
   {
-    _state.percent =
-        ((float)(_state.rawValue - WATER_LEVEL_ADC_MIN) * 100.0f) /
-        (float)(WATER_LEVEL_ADC_MAX - WATER_LEVEL_ADC_MIN);
+    _state.percent = ((float)(_state.rawValue - WATER_LEVEL_ADC_MIN) * 100.0f) /
+                     (float)(WATER_LEVEL_ADC_MAX - WATER_LEVEL_ADC_MIN);
   }
   else
   {
@@ -108,10 +107,9 @@ void WaterLevelManager::updateMetrics()
 
 void WaterLevelManager::logSnapshot() const
 {
-  Trace::log(TraceLevel::DEBUG,
-             "Water level raw=" + String(_state.rawValue) +
-                 " percent=" + String(_state.percent, 1) +
-                 " liters=" + String(_state.liters, 1));
+  Trace::log(TraceLevel::DEBUG, "Water level raw=" + String(_state.rawValue) +
+                                    " percent=" + String(_state.percent, 1) +
+                                    " liters=" + String(_state.liters, 1));
 }
 
 void WaterLevelManager::updateLowWaterLockout()
@@ -120,24 +118,22 @@ void WaterLevelManager::updateLowWaterLockout()
       _state.percent < WATER_LEVEL_CRITICAL_PERCENT)
   {
     _state.lowWaterLockoutActive = true;
-    Trace::log(TraceLevel::ERROR,
-               "Low water lockout ACTIVATED: " + String(_state.percent, 1) +
-                   "%");
-    if (_mqttManager.isConnected())
+    Trace::log(TraceLevel::ERROR, "Low water lockout ACTIVATED: " +
+                                      String(_state.percent, 1) + "%");
+    if (_messagePublisher.isConnected())
     {
-      _mqttManager.publish(_topics.lockout.c_str(), "true");
+      _messagePublisher.publish(_topics.lockout.c_str(), "true");
     }
   }
   else if (_state.lowWaterLockoutActive &&
            _state.percent >= WATER_LEVEL_LOCKOUT_RELEASE_PERCENT)
   {
     _state.lowWaterLockoutActive = false;
-    Trace::log(TraceLevel::INFO,
-               "Low water lockout DEACTIVATED: " +
-                   String(_state.percent, 1) + "%");
-    if (_mqttManager.isConnected())
+    Trace::log(TraceLevel::INFO, "Low water lockout DEACTIVATED: " +
+                                     String(_state.percent, 1) + "%");
+    if (_messagePublisher.isConnected())
     {
-      _mqttManager.publish(_topics.lockout.c_str(), "false");
+      _messagePublisher.publish(_topics.lockout.c_str(), "false");
     }
   }
 }
@@ -148,12 +144,11 @@ void WaterLevelManager::updateCriticalOverflowAlarm()
       _state.overflowLiters >= WATER_LEVEL_CRITICAL_OVERFLOW_BUFFER_LITERS)
   {
     _state.criticalOverflowAlarmActive = true;
-    Trace::log(TraceLevel::ERROR,
-               "Critical overflow alarm ACTIVATED: " +
-                   String(_state.overflowLiters, 1) + "L");
-    if (_mqttManager.isConnected())
+    Trace::log(TraceLevel::ERROR, "Critical overflow alarm ACTIVATED: " +
+                                      String(_state.overflowLiters, 1) + "L");
+    if (_messagePublisher.isConnected())
     {
-      _mqttManager.publish(_topics.criticalHighAlarm.c_str(), "true");
+      _messagePublisher.publish(_topics.criticalHighAlarm.c_str(), "true");
     }
   }
   else if (_state.criticalOverflowAlarmActive &&
@@ -161,12 +156,11 @@ void WaterLevelManager::updateCriticalOverflowAlarm()
                WATER_LEVEL_CRITICAL_OVERFLOW_RELEASE_LITERS)
   {
     _state.criticalOverflowAlarmActive = false;
-    Trace::log(TraceLevel::INFO,
-               "Critical overflow alarm DEACTIVATED: " +
-                   String(_state.overflowLiters, 1) + "L");
-    if (_mqttManager.isConnected())
+    Trace::log(TraceLevel::INFO, "Critical overflow alarm DEACTIVATED: " +
+                                     String(_state.overflowLiters, 1) + "L");
+    if (_messagePublisher.isConnected())
     {
-      _mqttManager.publish(_topics.criticalHighAlarm.c_str(), "false");
+      _messagePublisher.publish(_topics.criticalHighAlarm.c_str(), "false");
     }
   }
 }
@@ -177,11 +171,10 @@ void WaterLevelManager::updateOverflowState()
   {
     _state.overflowActive = true;
     Trace::log(TraceLevel::ERROR,
-               "Cistern overflow detected: " + String(_state.percent, 1) +
-                   "%");
-    if (_mqttManager.isConnected())
+               "Cistern overflow detected: " + String(_state.percent, 1) + "%");
+    if (_messagePublisher.isConnected())
     {
-      _mqttManager.publish(_topics.overflow.c_str(), "true");
+      _messagePublisher.publish(_topics.overflow.c_str(), "true");
     }
   }
   else if (_state.overflowActive &&
@@ -189,11 +182,10 @@ void WaterLevelManager::updateOverflowState()
   {
     _state.overflowActive = false;
     Trace::log(TraceLevel::INFO,
-               "Cistern overflow cleared: " + String(_state.percent, 1) +
-                   "%");
-    if (_mqttManager.isConnected())
+               "Cistern overflow cleared: " + String(_state.percent, 1) + "%");
+    if (_messagePublisher.isConnected())
     {
-      _mqttManager.publish(_topics.overflow.c_str(), "false");
+      _messagePublisher.publish(_topics.overflow.c_str(), "false");
     }
   }
 }
@@ -216,31 +208,35 @@ void WaterLevelManager::updateSafetyLock()
       Trace::log(TraceLevel::INFO, "Water level safety lock RELEASED");
     }
 
-    if (_mqttManager.isConnected())
+    if (_messagePublisher.isConnected())
     {
-      _mqttManager.publish(_topics.safetyLock.c_str(),
-                           _state.safetyLockActive ? "true" : "false");
+      _messagePublisher.publish(_topics.safetyLock.c_str(),
+                                _state.safetyLockActive ? "true" : "false");
     }
   }
 }
 
 void WaterLevelManager::publishData()
 {
-  if (!_mqttManager.isConnected())
+  if (!_messagePublisher.isConnected())
   {
     return;
   }
 
-  _mqttManager.publish(_topics.percent.c_str(), String(_state.percent, 1).c_str());
-  _mqttManager.publish(_topics.liters.c_str(), String(_state.liters, 1).c_str());
-  _mqttManager.publish(_topics.raw.c_str(), String(_state.rawValue).c_str());
-  _mqttManager.publish(_topics.criticalHighAlarm.c_str(),
-                       _state.criticalOverflowAlarmActive ? "true" : "false");
-  _mqttManager.publish(_topics.safetyLock.c_str(),
-                       _state.safetyLockActive ? "true" : "false");
-  _mqttManager.publish(_topics.overflowLiters.c_str(),
-                       String(_state.overflowLiters, 1).c_str());
-  _mqttManager.publish(_topics.litersToOverflow.c_str(),
-                       String(_state.litersToOverflow, 1).c_str());
-  _mqttManager.publish(_topics.status.c_str(), "online");
+  _messagePublisher.publish(_topics.percent.c_str(),
+                            String(_state.percent, 1).c_str());
+  _messagePublisher.publish(_topics.liters.c_str(),
+                            String(_state.liters, 1).c_str());
+  _messagePublisher.publish(_topics.raw.c_str(),
+                            String(_state.rawValue).c_str());
+  _messagePublisher.publish(_topics.criticalHighAlarm.c_str(),
+                            _state.criticalOverflowAlarmActive ? "true"
+                                                               : "false");
+  _messagePublisher.publish(_topics.safetyLock.c_str(),
+                            _state.safetyLockActive ? "true" : "false");
+  _messagePublisher.publish(_topics.overflowLiters.c_str(),
+                            String(_state.overflowLiters, 1).c_str());
+  _messagePublisher.publish(_topics.litersToOverflow.c_str(),
+                            String(_state.litersToOverflow, 1).c_str());
+  _messagePublisher.publish(_topics.status.c_str(), "online");
 }

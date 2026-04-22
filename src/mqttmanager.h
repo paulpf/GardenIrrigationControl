@@ -3,11 +3,12 @@
 #define MQTTMANAGER_H
 
 #include "global_defines.h"
+#include "imessagepublisher.h"
 #include "irrigation_zone.h"
 #include "mqttsessionmanager.h"
 #include <PubSubClient.h>
 
-class MqttManager
+class MqttManager : public IMessagePublisher
 {
 
 public:
@@ -16,11 +17,11 @@ public:
              const char *mqttPassword, const char *clientName);
   void loop();
   void initPublish();
-  void publish(const char *topic, const char *payload);
+  void publish(const char *topic, const char *payload) override;
   void subscribe(const char *topic);
   void addIrrigationZone(IrrigationZone *zone);
   void subscribeIrrigationZones();
-  bool isConnected();
+  bool isConnected() override;
   void publishAllIrrigationZones();
 
   // System status and heartbeat functionality
