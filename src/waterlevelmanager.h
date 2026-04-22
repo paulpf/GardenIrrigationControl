@@ -40,6 +40,14 @@ private:
     String litersToOverflow;
   };
 
+  struct TransitionEvents
+  {
+    bool lowWaterLockoutChanged = false;
+    bool criticalOverflowAlarmChanged = false;
+    bool overflowChanged = false;
+    bool safetyLockChanged = false;
+  };
+
   IMessagePublisher &_messagePublisher;
   unsigned long _previousRead = 0;
   State _state;
@@ -50,10 +58,9 @@ private:
   bool shouldRead(unsigned long currentMillis);
   void updateMetrics();
   void logSnapshot() const;
-  void updateLowWaterLockout();
-  void updateCriticalOverflowAlarm();
-  void updateOverflowState();
-  void updateSafetyLock();
+  TransitionEvents updateStateTransitions();
+  void applyTransitionEffects(const TransitionEvents &events);
+  void publishStateChange(const char *topic, bool active);
   void publishData();
 };
 

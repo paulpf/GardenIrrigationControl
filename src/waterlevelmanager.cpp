@@ -22,10 +22,8 @@ void WaterLevelManager::loop(unsigned long currentMillis)
 
   updateMetrics();
   logSnapshot();
-  updateLowWaterLockout();
-  updateCriticalOverflowAlarm();
-  updateOverflowState();
-  updateSafetyLock();
+  const TransitionEvents events = updateStateTransitions();
+  applyTransitionEffects(events);
   publishData();
 }
 
@@ -112,91 +110,119 @@ void WaterLevelManager::logSnapshot() const
                                     " liters=" + String(_state.liters, 1));
 }
 
-void WaterLevelManager::updateLowWaterLockout()
+WaterLevelManager::TransitionEvents WaterLevelManager::updateStateTransitions()
 {
-  if (!_state.lowWaterLockoutActive &&
-      _state.percent < WATER_LEVEL_CRITICAL_PERCENT)
+  TransitionEvents events;
+
+  const bool shouldEnableLowWaterLockout =
+      _state.percent < WATER_LEVEL_CRITICAL_PERCENT;
+  const bool shouldReleaseLowWaterLockout =
+      _state.percent >= WATER_LEVEL_LOCKOUT_RELEASE_PERCENT;
+
+  if (!_state.lowWaterLockoutActive && shouldEnableLowWaterLockout)
   {
     _state.lowWaterLockoutActive = true;
-    Trace::log(TraceLevel::ERROR, "Low water lockout ACTIVATED: " +
-                                      String(_state.percent, 1) + "%");
-    if (_messagePublisher.isConnected())
-    {
-      _messagePublisher.publish(_topics.lockout.c_str(), "true");
-    }
+    events.lowWaterLockoutChanged = true;
   }
-  else if (_state.lowWaterLockoutActive &&
-           _state.percent >= WATER_LEVEL_LOCKOUT_RELEASE_PERCENT)
+  else if (_state.lowWaterLockoutActive && shouldReleaseLowWaterLockout)
   {
     _state.lowWaterLockoutActive = false;
-    Trace::log(TraceLevel::INFO, "Low water lockout DEACTIVATED: " +
-                                     String(_state.percent, 1) + "%");
-    if (_messagePublisher.isConnected())
-    {
-      _messagePublisher.publish(_topics.lockout.c_str(), "false");
-    }
+    events.lowWaterLockoutChanged = true;
   }
-}
 
-void WaterLevelManager::updateCriticalOverflowAlarm()
-{
-  if (!_state.criticalOverflowAlarmActive &&
-      _state.overflowLiters >= WATER_LEVEL_CRITICAL_OVERFLOW_BUFFER_LITERS)
+  const bool shouldEnableCriticalOverflowAlarm =
+      _state.overflowLiters >= WATER_LEVEL_CRITICAL_OVERFLOW_BUFFER_LITERS;
+  const bool shouldReleaseCriticalOverflowAlarm =
+      _state.overflowLiters <= WATER_LEVEL_CRITICAL_OVERFLOW_RELEASE_LITERS;
+
+  if (!_state.criticalOverflowAlarmActive && shouldEnableCriticalOverflowAlarm)
   {
     _state.criticalOverflowAlarmActive = true;
-    Trace::log(TraceLevel::ERROR, "Critical overflow alarm ACTIVATED: " +
-                                      String(_state.overflowLiters, 1) + "L");
-    if (_messagePublisher.isConnected())
-    {
-      _messagePublisher.publish(_topics.criticalHighAlarm.c_str(), "true");
-    }
+    events.criticalOverflowAlarmChanged = true;
   }
   else if (_state.criticalOverflowAlarmActive &&
-           _state.overflowLiters <=
-               WATER_LEVEL_CRITICAL_OVERFLOW_RELEASE_LITERS)
+           shouldReleaseCriticalOverflowAlarm)
   {
     _state.criticalOverflowAlarmActive = false;
-    Trace::log(TraceLevel::INFO, "Critical overflow alarm DEACTIVATED: " +
-                                     String(_state.overflowLiters, 1) + "L");
-    if (_messagePublisher.isConnected())
-    {
-      _messagePublisher.publish(_topics.criticalHighAlarm.c_str(), "false");
-    }
+    events.criticalOverflowAlarmChanged = true;
   }
-}
 
-void WaterLevelManager::updateOverflowState()
-{
   if (!_state.overflowActive && _state.percent > WATER_LEVEL_OVERFLOW_PERCENT)
   {
     _state.overflowActive = true;
-    Trace::log(TraceLevel::ERROR,
-               "Cistern overflow detected: " + String(_state.percent, 1) + "%");
-    if (_messagePublisher.isConnected())
-    {
-      _messagePublisher.publish(_topics.overflow.c_str(), "true");
-    }
+    events.overflowChanged = true;
   }
   else if (_state.overflowActive &&
            _state.percent <= WATER_LEVEL_OVERFLOW_CLEAR_PERCENT)
   {
     _state.overflowActive = false;
-    Trace::log(TraceLevel::INFO,
-               "Cistern overflow cleared: " + String(_state.percent, 1) + "%");
-    if (_messagePublisher.isConnected())
-    {
-      _messagePublisher.publish(_topics.overflow.c_str(), "false");
-    }
+    events.overflowChanged = true;
   }
-}
 
-void WaterLevelManager::updateSafetyLock()
-{
   const bool shouldSafetyLock =
       _state.lowWaterLockoutActive || _state.criticalOverflowAlarmActive;
   if (_state.safetyLockActive != shouldSafetyLock)
   {
     _state.safetyLockActive = shouldSafetyLock;
+    events.safetyLockChanged = true;
+  }
+
+  return events;
+}
+
+void WaterLevelManager::applyTransitionEffects(const TransitionEvents &events)
+{
+  if (events.lowWaterLockoutChanged)
+  {
+    if (_state.lowWaterLockoutActive)
+    {
+      Trace::log(TraceLevel::ERROR, "Low water lockout ACTIVATED: " +
+                                        String(_state.percent, 1) + "%");
+    }
+    else
+    {
+      Trace::log(TraceLevel::INFO, "Low water lockout DEACTIVATED: " +
+                                       String(_state.percent, 1) + "%");
+    }
+
+    publishStateChange(_topics.lockout.c_str(), _state.lowWaterLockoutActive);
+  }
+
+  if (events.criticalOverflowAlarmChanged)
+  {
+    if (_state.criticalOverflowAlarmActive)
+    {
+      Trace::log(TraceLevel::ERROR, "Critical overflow alarm ACTIVATED: " +
+                                        String(_state.overflowLiters, 1) + "L");
+    }
+    else
+    {
+      Trace::log(TraceLevel::INFO, "Critical overflow alarm DEACTIVATED: " +
+                                       String(_state.overflowLiters, 1) + "L");
+    }
+
+    publishStateChange(_topics.criticalHighAlarm.c_str(),
+                       _state.criticalOverflowAlarmActive);
+  }
+
+  if (events.overflowChanged)
+  {
+    if (_state.overflowActive)
+    {
+      Trace::log(TraceLevel::ERROR, "Cistern overflow detected: " +
+                                        String(_state.percent, 1) + "%");
+    }
+    else
+    {
+      Trace::log(TraceLevel::INFO, "Cistern overflow cleared: " +
+                                       String(_state.percent, 1) + "%");
+    }
+
+    publishStateChange(_topics.overflow.c_str(), _state.overflowActive);
+  }
+
+  if (events.safetyLockChanged)
+  {
     IrrigationZone::setGlobalStartInhibit(_state.safetyLockActive);
 
     if (_state.safetyLockActive)
@@ -208,11 +234,15 @@ void WaterLevelManager::updateSafetyLock()
       Trace::log(TraceLevel::INFO, "Water level safety lock RELEASED");
     }
 
-    if (_messagePublisher.isConnected())
-    {
-      _messagePublisher.publish(_topics.safetyLock.c_str(),
-                                _state.safetyLockActive ? "true" : "false");
-    }
+    publishStateChange(_topics.safetyLock.c_str(), _state.safetyLockActive);
+  }
+}
+
+void WaterLevelManager::publishStateChange(const char *topic, bool active)
+{
+  if (_messagePublisher.isConnected())
+  {
+    _messagePublisher.publish(topic, active ? "true" : "false");
   }
 }
 
