@@ -11,6 +11,7 @@
 #include "mqttmanager.h"
 #include "otamanager.h"
 #include "storage_manager.h"
+#include "waterlevelmanager.h"
 #include "wifimanager.h"
 
 #include "esp_system.h"
@@ -59,26 +60,8 @@ unsigned long previousMillisLongLoop = 0;   // For long loop timing
 unsigned long previousMillisMiddleLoop = 0; // For middle loop timing
 unsigned long previousMillisShortLoop = 0;  // For short loop timing
 unsigned long mainLoopStartTime = 0;        // For loop time plotting
-unsigned long previousWaterLevelRead = 0;
-int waterLevelRawValue = 0;
-float waterLevelPercent = 0.0f;
-float waterLevelLiters = 0.0f;
-float waterLevelOverflowLiters = 0.0f;
-float waterLevelLitersToOverflow = 0.0f;
-bool waterLevelLockoutActive = false;
-bool waterLevelCriticalHighAlarmActive = false;
-bool waterLevelOverflowActive = false;
-bool waterLevelSafetyLockActive = false;
-String waterLevelTopic;
-String waterLevelLitersTopic;
-String waterLevelRawTopic;
-String waterLevelStatusTopic;
-String waterLevelLockoutTopic;
-String waterLevelCriticalHighAlarmTopic;
-String waterLevelOverflowTopic;
-String waterLevelSafetyLockTopic;
-String waterLevelOverflowLitersTopic;
-String waterLevelLitersToOverflowTopic;
+// Encapsulates water level sensing, thresholds, lock states, and MQTT updates.
+WaterLevelManager waterLevelManager(mqttManager);
 
 void handleConnectivityEvents()
 {
@@ -110,203 +93,54 @@ void initIrrigationZones()
   }
 }
 
-void updateWaterLevelMetrics()
+void updateClientNameFromMac()
 {
-  waterLevelRawValue = analogRead(WATER_LEVEL_SENSOR_PIN);
+  String macFormatted = Helper::replaceChars(WiFi.macAddress(), ':', '-');
+  Helper::formatToBuffer(clientName, CLIENT_NAME_MAX_SIZE,
+                         "GardenController-%s", macFormatted.c_str());
+  Trace::log(TraceLevel::INFO, "Client name set: " + String(clientName));
+}
 
-  if (WATER_LEVEL_ADC_MAX > WATER_LEVEL_ADC_MIN)
+void connectMqttIfWifiAvailable()
+{
+  handleConnectivityEvents();
+  if (wifiManager.isConnected())
   {
-    waterLevelPercent =
-        ((float)(waterLevelRawValue - WATER_LEVEL_ADC_MIN) * 100.0f) /
-        (float)(WATER_LEVEL_ADC_MAX - WATER_LEVEL_ADC_MIN);
-  }
-  else
-  {
-    waterLevelPercent = 0.0f;
-  }
-
-  if (waterLevelPercent < 0.0f)
-  {
-    waterLevelPercent = 0.0f;
-  }
-
-  waterLevelLiters = (waterLevelPercent / 100.0f) * CISTERN_CAPACITY_LITERS;
-
-  const float overflowThresholdLiters =
-      (WATER_LEVEL_OVERFLOW_PERCENT / 100.0f) * CISTERN_CAPACITY_LITERS;
-  if (waterLevelLiters > overflowThresholdLiters)
-  {
-    waterLevelOverflowLiters = waterLevelLiters - overflowThresholdLiters;
-  }
-  else
-  {
-    waterLevelOverflowLiters = 0.0f;
-  }
-
-  if (waterLevelLiters < overflowThresholdLiters)
-  {
-    waterLevelLitersToOverflow = overflowThresholdLiters - waterLevelLiters;
-  }
-  else
-  {
-    waterLevelLitersToOverflow = 0.0f;
+    mqttManager.requestConnect();
   }
 }
 
-void updateLowWaterLockout()
+void setupOta()
 {
-  if (!waterLevelLockoutActive &&
-      waterLevelPercent < WATER_LEVEL_CRITICAL_PERCENT)
-  {
-    waterLevelLockoutActive = true;
-    Trace::log(TraceLevel::ERROR, "Low water lockout ACTIVATED: " +
-                                      String(waterLevelPercent, 1) + "%");
-    if (mqttManager.isConnected())
-    {
-      mqttManager.publish(waterLevelLockoutTopic.c_str(), "true");
-    }
-  }
-  else if (waterLevelLockoutActive &&
-           waterLevelPercent >= WATER_LEVEL_LOCKOUT_RELEASE_PERCENT)
-  {
-    waterLevelLockoutActive = false;
-    Trace::log(TraceLevel::INFO, "Low water lockout DEACTIVATED: " +
-                                     String(waterLevelPercent, 1) + "%");
-    if (mqttManager.isConnected())
-    {
-      mqttManager.publish(waterLevelLockoutTopic.c_str(), "false");
-    }
-  }
+#if ENABLE_OTA
+  Trace::log(TraceLevel::INFO, "Setting up OTA...");
+  otaManager.setup(clientName, OTA_PASSWORD);
+#else
+  Trace::log(TraceLevel::INFO, "OTA disabled in configuration");
+  otaManager.setEnabled(false);
+#endif
 }
 
-void updateCriticalOverflowAlarm()
+void initWatchdog()
 {
-  if (!waterLevelCriticalHighAlarmActive &&
-      waterLevelOverflowLiters >= WATER_LEVEL_CRITICAL_OVERFLOW_BUFFER_LITERS)
-  {
-    waterLevelCriticalHighAlarmActive = true;
-    Trace::log(TraceLevel::ERROR,
-               "Critical overflow alarm ACTIVATED: " +
-                   String(waterLevelOverflowLiters, 1) + "L");
-    if (mqttManager.isConnected())
-    {
-      mqttManager.publish(waterLevelCriticalHighAlarmTopic.c_str(), "true");
-    }
-  }
-  else if (waterLevelCriticalHighAlarmActive &&
-           waterLevelOverflowLiters <=
-               WATER_LEVEL_CRITICAL_OVERFLOW_RELEASE_LITERS)
-  {
-    waterLevelCriticalHighAlarmActive = false;
-    Trace::log(TraceLevel::INFO,
-               "Critical overflow alarm DEACTIVATED: " +
-                   String(waterLevelOverflowLiters, 1) + "L");
-    if (mqttManager.isConnected())
-    {
-      mqttManager.publish(waterLevelCriticalHighAlarmTopic.c_str(), "false");
-    }
-  }
+  esp_task_wdt_init(WDT_TIMEOUT_SEC,
+                    true); // Convert milliseconds to seconds
+  esp_task_wdt_add(NULL);  // Add current thread to WDT watch
 }
 
-void updateOverflowState()
+void waitForWifiConnection()
 {
-  if (!waterLevelOverflowActive &&
-      waterLevelPercent > WATER_LEVEL_OVERFLOW_PERCENT)
+  Trace::log(TraceLevel::INFO, "Waiting for WiFi connection...");
+  unsigned long wifiConnectStart = millis();
+  while (!wifiManager.isConnected())
   {
-    waterLevelOverflowActive = true;
-    Trace::log(TraceLevel::ERROR,
-               "Cistern overflow detected: " +
-                   String(waterLevelPercent, 1) + "%");
-    if (mqttManager.isConnected())
+    if (millis() - wifiConnectStart > WIFI_CONNECTION_TIMEOUT)
     {
-      mqttManager.publish(waterLevelOverflowTopic.c_str(), "true");
+      Trace::log(TraceLevel::ERROR, "WiFi connection timeout");
+      break; // Exit if connection takes too long
     }
+    delay(100); // Polling delay
   }
-  else if (waterLevelOverflowActive &&
-           waterLevelPercent <= WATER_LEVEL_OVERFLOW_CLEAR_PERCENT)
-  {
-    waterLevelOverflowActive = false;
-    Trace::log(TraceLevel::INFO,
-               "Cistern overflow cleared: " +
-                   String(waterLevelPercent, 1) + "%");
-    if (mqttManager.isConnected())
-    {
-      mqttManager.publish(waterLevelOverflowTopic.c_str(), "false");
-    }
-  }
-}
-
-void updateWaterLevelSafetyLock()
-{
-  const bool shouldSafetyLock =
-      waterLevelLockoutActive || waterLevelCriticalHighAlarmActive;
-  if (waterLevelSafetyLockActive != shouldSafetyLock)
-  {
-    waterLevelSafetyLockActive = shouldSafetyLock;
-    IrrigationZone::setGlobalStartInhibit(waterLevelSafetyLockActive);
-
-    if (waterLevelSafetyLockActive)
-    {
-      Trace::log(TraceLevel::ERROR, "Water level safety lock ACTIVATED");
-    }
-    else
-    {
-      Trace::log(TraceLevel::INFO, "Water level safety lock RELEASED");
-    }
-
-    if (mqttManager.isConnected())
-    {
-      mqttManager.publish(waterLevelSafetyLockTopic.c_str(),
-                          waterLevelSafetyLockActive ? "true" : "false");
-    }
-  }
-}
-
-void publishWaterLevelData()
-{
-  if (!mqttManager.isConnected())
-  {
-    return;
-  }
-
-  mqttManager.publish(waterLevelTopic.c_str(),
-                      String(waterLevelPercent, 1).c_str());
-  mqttManager.publish(waterLevelLitersTopic.c_str(),
-                      String(waterLevelLiters, 1).c_str());
-  mqttManager.publish(waterLevelRawTopic.c_str(),
-                      String(waterLevelRawValue).c_str());
-  mqttManager.publish(waterLevelCriticalHighAlarmTopic.c_str(),
-                      waterLevelCriticalHighAlarmActive ? "true" : "false");
-  mqttManager.publish(waterLevelSafetyLockTopic.c_str(),
-                      waterLevelSafetyLockActive ? "true" : "false");
-  mqttManager.publish(waterLevelOverflowLitersTopic.c_str(),
-                      String(waterLevelOverflowLiters, 1).c_str());
-  mqttManager.publish(waterLevelLitersToOverflowTopic.c_str(),
-                      String(waterLevelLitersToOverflow, 1).c_str());
-  mqttManager.publish(waterLevelStatusTopic.c_str(), "online");
-}
-
-void readAndPublishWaterLevel()
-{
-  if ((unsigned long)(currentMillis - previousWaterLevelRead) <
-      WATER_LEVEL_READ_INTERVAL)
-  {
-    return;
-  }
-
-  previousWaterLevelRead = currentMillis;
-  updateWaterLevelMetrics();
-
-  Trace::log(TraceLevel::DEBUG,
-             "Water level raw=" + String(waterLevelRawValue) +
-                 " percent=" + String(waterLevelPercent, 1) +
-                 " liters=" + String(waterLevelLiters, 1));
-
-  updateLowWaterLockout();
-  updateCriticalOverflowAlarm();
-  updateOverflowState();
-  updateWaterLevelSafetyLock();
-  publishWaterLevelData();
 }
 
 void setup()
@@ -325,68 +159,22 @@ void setup()
 
   // Setup WiFi
   wifiManager.setup(WIFI_SSID, WIFI_PWD, clientName);
+  waitForWifiConnection();
 
-  // Wait for WiFi connection
-  Trace::log(TraceLevel::INFO, "Waiting for WiFi connection...");
-  unsigned long wifiConnectStart = millis();
-  while (!wifiManager.isConnected())
-  {
-    if (millis() - wifiConnectStart > WIFI_CONNECTION_TIMEOUT)
-    {
-      Trace::log(TraceLevel::ERROR, "WiFi connection timeout");
-      break; // Exit if connection takes too long
-    }
-    delay(100); // Polling delay
-  }
-
-  // Update client name with MAC address for unique identification
-  String macFormatted = Helper::replaceChars(WiFi.macAddress(), ':', '-');
-  Helper::formatToBuffer(clientName, CLIENT_NAME_MAX_SIZE,
-                         "GardenController-%s", macFormatted.c_str());
-  Trace::log(TraceLevel::INFO,
-             "Client name set: " + String(clientName)); // Setup MQTT
-
-  waterLevelTopic = String(clientName) + "/waterlevel/percent";
-  waterLevelLitersTopic = String(clientName) + "/waterlevel/liters";
-  waterLevelRawTopic = String(clientName) + "/waterlevel/raw";
-  waterLevelStatusTopic = String(clientName) + "/waterlevel/status";
-  waterLevelLockoutTopic = String(clientName) + "/waterlevel/lockout";
-  waterLevelCriticalHighAlarmTopic =
-      String(clientName) + "/waterlevel/critical_high_alarm";
-  waterLevelOverflowTopic = String(clientName) + "/waterlevel/overflow";
-  waterLevelSafetyLockTopic = String(clientName) + "/waterlevel/safety_lock";
-  waterLevelOverflowLitersTopic =
-      String(clientName) + "/waterlevel/overflow_liters";
-  waterLevelLitersToOverflowTopic =
-      String(clientName) + "/waterlevel/liters_to_overflow";
-
-  pinMode(WATER_LEVEL_SENSOR_PIN, INPUT);
-  analogSetPinAttenuation(WATER_LEVEL_SENSOR_PIN, ADC_11db);
+  updateClientNameFromMac();
+  waterLevelManager.setup(clientName);
 
   mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD,
                     clientName);
-  handleConnectivityEvents();
-  if (wifiManager.isConnected())
-  {
-    mqttManager.requestConnect();
-  }
+  connectMqttIfWifiAvailable();
 
-// Setup OTA (Over-The-Air updates)
-#if ENABLE_OTA
-  Trace::log(TraceLevel::INFO, "Setting up OTA...");
-  otaManager.setup(clientName, OTA_PASSWORD);
-#else
-  Trace::log(TraceLevel::INFO, "OTA disabled in configuration");
-  otaManager.setEnabled(false);
-#endif
+  setupOta();
 
   // Initialize irrigation zones using the new helper function
   initIrrigationZones();
 
   // Initialize the watchdog timer
-  esp_task_wdt_init(WDT_TIMEOUT_SEC,
-                    true); // Convert milliseconds to seconds
-  esp_task_wdt_add(NULL);  // Add current thread to WDT watch
+  initWatchdog();
 
   Trace::log(TraceLevel::INFO, "Setup end");
 }
@@ -432,7 +220,41 @@ void handleShortIntervalTasks()
     }
   }
 
-  readAndPublishWaterLevel();
+  waterLevelManager.loop(currentMillis);
+}
+
+bool shouldRunInterval(unsigned long &previousMillis, unsigned long interval)
+{
+  if ((unsigned long)(currentMillis - previousMillis) < interval)
+  {
+    return false;
+  }
+
+  previousMillis = currentMillis;
+  return true;
+}
+
+bool handleOtaUpdate()
+{
+#if ENABLE_OTA
+  otaManager.loop();
+
+  // If OTA update is in progress, skip other operations to ensure stability
+  if (otaManager.isUpdating())
+  {
+    return true;
+  }
+#endif
+
+  return false;
+}
+
+void updateLoopTimingPlot()
+{
+#ifdef ENABLE_LOOP_TIME_PLOTTING
+  Trace::plotLoopTime("Mainloop", 0, currentMillis - mainLoopStartTime);
+  mainLoopStartTime = currentMillis;
+#endif
 }
 
 void handleMiddleIntervalEvents()
@@ -456,36 +278,22 @@ void loop()
   esp_task_wdt_reset();
   currentMillis = millis();
 
-// Handle OTA updates - this should be processed frequently
-#if ENABLE_OTA
-  otaManager.loop();
-
-  // If OTA update is in progress, skip other operations to ensure stability
-  if (otaManager.isUpdating())
+  // Handle OTA updates - this should be processed frequently
+  if (handleOtaUpdate())
   {
     return;
   }
-#endif
 
-#ifdef ENABLE_LOOP_TIME_PLOTTING
-  Trace::plotLoopTime("Mainloop", 0, currentMillis - mainLoopStartTime);
-  mainLoopStartTime = currentMillis;
-#endif
+  updateLoopTimingPlot();
 
-  if ((unsigned long)(currentMillis - previousMillisShortLoop) >=
-      SHORT_INTERVAL)
+  if (shouldRunInterval(previousMillisShortLoop, SHORT_INTERVAL))
   {
-    previousMillisShortLoop = currentMillis;
-
     handleShortIntervalTasks();
   }
 
   // Handle middle loop events (e.g., WiFi management)
-  if ((unsigned long)(currentMillis - previousMillisMiddleLoop) >=
-      MIDDLE_INTERVAL)
+  if (shouldRunInterval(previousMillisMiddleLoop, MIDDLE_INTERVAL))
   {
-    previousMillisMiddleLoop = currentMillis;
-
     handleMiddleIntervalEvents();
 
     // Yield to allow other tasks to run
@@ -493,10 +301,8 @@ void loop()
   }
 
   // Handle long loop events (e.g., WiFi connection management)
-  if ((unsigned long)(currentMillis - previousMillisLongLoop) >= LONG_INTERVAL)
+  if (shouldRunInterval(previousMillisLongLoop, LONG_INTERVAL))
   {
-    previousMillisLongLoop = currentMillis;
-
     handleLongIntervalTasks();
   }
 
