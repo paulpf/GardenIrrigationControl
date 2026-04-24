@@ -59,6 +59,11 @@ Stand: 2026-04-24
   - `WifiConnectionAwaiter` kapselt Timeout-/Polling-Verhalten bis zur WiFi-Verbindung
   - injizierte Zeitquelle (`ITimeProvider`) macht Timeout-Logik deterministisch testbar
   - nativer Test deckt Sofort-Connect, rechtzeitigen Connect und Timeout ab
+- Setup-Orchestrierung wurde in benannte Phasen geschnitten:
+  - `initializeStorage`, `initializeIdentity`, `initializeConnectivity`,
+    `initializeSubsystems`, `initializeRuntimeSafety`
+  - Startpfad ist damit klarer nachvollziehbar und vorbereitet fuer weitere
+    App-Level-Tests
 - Build und Tests waren bei den letzten Schritten erfolgreich (91/91).
 
 ### Letzte relevante Commits

@@ -53,6 +53,12 @@ private:
   unsigned long _previousMillisShortLoop = 0;
   unsigned long _mainLoopStartTime = 0;
 
+  void initializeStorage();
+  void initializeIdentity();
+  void initializeConnectivity();
+  void initializeSubsystems();
+  void initializeRuntimeSafety();
+
   void initIrrigationZones();
   void updateClientNameFromMac();
   void setupOta();

@@ -83,30 +83,53 @@ void GardenControllerApp::waitForWifiConnection()
   }
 }
 
-void GardenControllerApp::setup()
+void GardenControllerApp::initializeStorage()
 {
-  Serial.begin(115200);
-  Trace::log(TraceLevel::INFO, "Setup begin");
-
   StorageManager::getInstance().begin();
   Trace::log(TraceLevel::INFO, "StorageManager initialized");
+}
 
+void GardenControllerApp::initializeIdentity()
+{
   strncpy(_clientName, "GardenController-Init", CLIENT_NAME_MAX_SIZE - 1);
   _clientName[CLIENT_NAME_MAX_SIZE - 1] = '\0';
+}
 
+void GardenControllerApp::initializeConnectivity()
+{
   _wifiManager.setup(WIFI_SSID, WIFI_PWD, _clientName);
   waitForWifiConnection();
-
   updateClientNameFromMac();
+}
+
+void GardenControllerApp::initializeSubsystems()
+{
   _waterLevelManager.setup(_clientName);
 
   _mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD,
                      _clientName);
   _connectivityCoordinator.ensureMqttConnected();
+nected();
 
   setupOta();
   initIrrigationZones();
+}
+
+void GardenControllerApp::initializeRuntimeSafety()
+{
   initWatchdog();
+}
+
+void GardenControllerApp::setup()
+{
+  Serial.begin(115200);
+  Trace::log(TraceLevel::INFO, "Setup begin");
+
+  initializeStorage();
+  initializeIdentity();
+  initializeConnectivity();
+  initializeSubsystems();
+  initializeRuntimeSafety();
 
   Trace::log(TraceLevel::INFO, "Setup end");
 }
