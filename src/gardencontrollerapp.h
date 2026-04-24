@@ -6,11 +6,14 @@
 #include "arduinotimeprovider.h"
 #include "connectivitycoordinator.h"
 #include "esp32waterlevelsensor.h"
+#include "hardwareconfig.h"
+#include "irrigationconfig.h"
 #include "irrigation_zone.h"
 #include "loopscheduler.h"
 #include "mqttmanager.h"
 #include "otamanager.h"
 #include "otaloopguard.h"
+#include "systemconfig.h"
 #include "waterlevelmanager.h"
 #include "wificonnectionawaiter.h"
 #include "wifimanager.h"
@@ -24,16 +27,12 @@ public:
   void loop();
 
 private:
-  struct ZoneConfig
-  {
-    int buttonPin;
-    int relayPin;
-  };
-
   static const int CLIENT_NAME_MAX_SIZE = 50;
-  static const std::array<ZoneConfig, MAX_IRRIGATION_ZONES> ZONE_CONFIGS;
 
   char _clientName[CLIENT_NAME_MAX_SIZE];
+  IrrigationConfig _irrigationConfig;
+  SystemConfig _systemConfig;
+  HardwareConfig _hardwareConfig;
 
   WifiManager _wifiManager;
   MqttManager _mqttManager;

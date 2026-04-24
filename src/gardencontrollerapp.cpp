@@ -15,19 +15,6 @@
 #include "esp_system.h"
 #include "esp_task_wdt.h"
 
-const std::array<GardenControllerApp::ZoneConfig, MAX_IRRIGATION_ZONES>
-    GardenControllerApp::ZONE_CONFIGS = {{
-        {ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN},
-        {ZONE2_BUTTON_PIN, ZONE2_RELAY_PIN},
-        {ZONE3_BUTTON_PIN, ZONE3_RELAY_PIN},
-        {ZONE4_BUTTON_PIN, ZONE4_RELAY_PIN},
-        {ZONE5_BUTTON_PIN, ZONE5_RELAY_PIN},
-        {ZONE6_BUTTON_PIN, ZONE6_RELAY_PIN},
-        {ZONE7_BUTTON_PIN, ZONE7_RELAY_PIN},
-        {ZONE8_BUTTON_PIN, ZONE8_RELAY_PIN},
-        {ZONE9_BUTTON_PIN, ZONE9_RELAY_PIN},
-    }};
-
 GardenControllerApp::GardenControllerApp()
     : _waterLevelManager(_mqttManager, _waterLevelSensor),
       _connectivityCoordinator(_wifiManager, _mqttManager),
@@ -43,8 +30,9 @@ void GardenControllerApp::initIrrigationZones()
 
   for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
   {
-    Helper::addIrrigationZone(ZONE_CONFIGS[i].buttonPin, ZONE_CONFIGS[i].relayPin,
-                              _irrigationZones, &_mqttManager, i, _clientName);
+    Helper::addIrrigationZone(_hardwareConfig.zones[i].buttonPin,
+                              _hardwareConfig.zones[i].relayPin, _irrigationZones,
+                              &_mqttManager, i, _clientName);
     _irrigationZones[i].loadSettingsFromStorage(i);
   }
 }
