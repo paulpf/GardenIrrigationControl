@@ -45,6 +45,8 @@ Stand: 2026-04-24
   - neuer nativer Manager-Test mit Fake-Sensor + Fake-Publisher
   - Bool-State-Topics werden nur noch bei echten Zustandswechseln publiziert
   - periodische Datenpunkte (`percent`, `liters`, `raw`, `status`) bleiben zyklisch aktiv
+  - gemeinsame Host-Bindings fuer WaterLevelManager-Tests reduzieren Stub-Duplikate
+  - Disconnected-Fall ist ebenfalls abgedeckt (keine Publishes ohne Verbindung)
 - Build und Tests waren bei den letzten Schritten erfolgreich (91/91).
 
 ### Letzte relevante Commits

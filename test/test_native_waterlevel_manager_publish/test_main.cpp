@@ -2,32 +2,9 @@
 
 #include "../support/fakes/FakeMessagePublisher.h"
 #include "../support/fakes/FakeWaterLevelSensor.h"
+#include "../support/fakes/WaterLevelManagerNativeBindings.h"
 
 #include "../../src/waterlevelmanager.cpp"
-
-bool IrrigationZone::_globalStartInhibit = false;
-
-void IrrigationZone::setGlobalStartInhibit(bool inhibit)
-{
-  _globalStartInhibit = inhibit;
-}
-
-bool IrrigationZone::isGlobalStartInhibited()
-{
-  return _globalStartInhibit;
-}
-
-void Trace::log(TraceLevel, String)
-{
-}
-
-void Trace::plotBoolState(String, bool, int)
-{
-}
-
-void Trace::plotLoopTime(String, int, unsigned long)
-{
-}
 
 void setUp(void)
 {
@@ -94,12 +71,34 @@ void test_critical_alarm_and_overflow_topics_do_not_duplicate_without_changes(vo
                         publisher.countTopic("device/waterlevel/safety_lock"));
 }
 
+void test_disconnected_publisher_suppresses_all_outputs(void)
+{
+  WaterLevelConfig config;
+  config.adcMin = 0;
+  config.adcMax = 100;
+  config.capacityLiters = 100.0f;
+  config.readIntervalMs = 1;
+
+  FakeMessagePublisher publisher;
+  publisher.connected = false;
+
+  FakeWaterLevelSensor sensor;
+  sensor.rawValue = 5;
+
+  WaterLevelManager manager(publisher, sensor, config);
+  manager.setup("device");
+  manager.loop(1);
+
+  TEST_ASSERT_EQUAL_INT(0, (int)publisher.entries.size());
+}
+
 int main(int /*argc*/, char ** /*argv*/)
 {
   UNITY_BEGIN();
 
   RUN_TEST(test_bool_state_topics_publish_only_on_real_state_changes);
   RUN_TEST(test_critical_alarm_and_overflow_topics_do_not_duplicate_without_changes);
+  RUN_TEST(test_disconnected_publisher_suppresses_all_outputs);
 
   return UNITY_END();
 }
