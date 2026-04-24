@@ -142,7 +142,7 @@ Die Intervallentscheidung erfolgt ueber `LoopScheduler`.
 
 ```mermaid
 sequenceDiagram
-  participant Loop as main loop
+  participant Main as Hauptschleife
   participant Guard as OtaLoopGuard
   participant Scheduler as LoopScheduler
   participant MQTT as MqttManager
@@ -151,20 +151,20 @@ sequenceDiagram
   participant Wifi as WifiManager
   participant Conn as ConnectivityCoordinator
 
-  Loop->>Guard: OTA-Zustand pruefen
+  Main->>Guard: OTA-Zustand pruefen
   alt OTA aktiv
-    Guard-->>Loop: normale Tasks aussetzen
+    Guard-->>Main: normale Tasks aussetzen
   else OTA inaktiv
-    Loop->>Scheduler: Intervalle pruefen
-    Loop->>MQTT: loop und Publishes
-    Loop->>Zone: loop je Zone
-    Loop->>Water: loop
+    Main->>Scheduler: Intervalle pruefen
+    Main->>MQTT: zyklische MQTT-Verarbeitung
+    Main->>Zone: Zonen aktualisieren
+    Main->>Water: Wasserstand aktualisieren
     opt Mittelintervall faellig
-      Loop->>MQTT: Systemstatus publizieren
+      Main->>MQTT: Systemstatus publizieren
     end
     opt Langintervall faellig
-      Loop->>Wifi: loop
-      Loop->>Conn: Konnektivitaet koordinieren
+      Main->>Wifi: WLAN aktualisieren
+      Main->>Conn: Konnektivitaet koordinieren
     end
   end
 ```
