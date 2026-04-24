@@ -15,11 +15,27 @@
 #include "esp_system.h"
 #include "esp_task_wdt.h"
 
-GardenControllerApp::GardenControllerApp()
-    : _waterLevelManager(_mqttManager, _waterLevelSensor),
-      _connectivityCoordinator(_wifiManager, _mqttManager),
-      _wifiConnectionAwaiter(_wifiManager, _timeProvider),
-      _otaLoopGuard(_otaManager)
+GardenControllerApp::GardenControllerApp(
+    IrrigationConfig &irrigationConfig, SystemConfig &systemConfig,
+    HardwareConfig &hardwareConfig, WifiManager &wifiManager,
+    MqttManager &mqttManager, OtaManager &otaManager,
+    IrrigationZone (&irrigationZones)[MAX_IRRIGATION_ZONES],
+    WaterLevelManager &waterLevelManager,
+    ConnectivityCoordinator &connectivityCoordinator,
+    WifiConnectionAwaiter &wifiConnectionAwaiter, OtaLoopGuard &otaLoopGuard,
+    LoopScheduler &loopScheduler)
+    : _irrigationConfig(irrigationConfig),
+      _systemConfig(systemConfig),
+      _hardwareConfig(hardwareConfig),
+      _wifiManager(wifiManager),
+      _mqttManager(mqttManager),
+      _otaManager(otaManager),
+      _irrigationZones(irrigationZones),
+      _waterLevelManager(waterLevelManager),
+      _connectivityCoordinator(connectivityCoordinator),
+      _wifiConnectionAwaiter(wifiConnectionAwaiter),
+      _otaLoopGuard(otaLoopGuard),
+      _loopScheduler(loopScheduler)
 {
   _clientName[0] = '\0';
 }
@@ -40,8 +56,8 @@ void GardenControllerApp::initIrrigationZones()
 void GardenControllerApp::updateClientNameFromMac()
 {
   String macFormatted = Helper::replaceChars(WiFi.macAddress(), ':', '-');
-  Helper::formatToBuffer(_clientName, CLIENT_NAME_MAX_SIZE, "GardenController-%s",
-                         macFormatted.c_str());
+  Helper::formatToBuffer(_clientName, CLIENT_NAME_MAX_SIZE,
+                         "GardenController-%s", macFormatted.c_str());
   Trace::log(TraceLevel::INFO, "Client name set: " + String(_clientName));
 }
 

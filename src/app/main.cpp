@@ -1,6 +1,7 @@
-#include "gardencontrollerapp.h"
+#include "gardencontrollerbootstrap.h"
 
-GardenControllerApp app;
+GardenControllerBootstrap bootstrap;
+GardenControllerApp &app = bootstrap.application();
 
 void setup()
 {
