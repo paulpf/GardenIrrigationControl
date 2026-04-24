@@ -31,6 +31,7 @@ const std::array<GardenControllerApp::ZoneConfig, MAX_IRRIGATION_ZONES>
 GardenControllerApp::GardenControllerApp()
     : _waterLevelManager(_mqttManager, _waterLevelSensor),
       _connectivityCoordinator(_wifiManager, _mqttManager),
+      _wifiConnectionAwaiter(_wifiManager, _timeProvider),
       _otaLoopGuard(_otaManager)
 {
   _clientName[0] = '\0';
@@ -76,15 +77,9 @@ void GardenControllerApp::initWatchdog()
 void GardenControllerApp::waitForWifiConnection()
 {
   Trace::log(TraceLevel::INFO, "Waiting for WiFi connection...");
-  unsigned long wifiConnectStart = millis();
-  while (!_wifiManager.isConnected())
+  if (!_wifiConnectionAwaiter.waitForConnection(WIFI_CONNECTION_TIMEOUT))
   {
-    if (millis() - wifiConnectStart > WIFI_CONNECTION_TIMEOUT)
-    {
-      Trace::log(TraceLevel::ERROR, "WiFi connection timeout");
-      break;
-    }
-    delay(100);
+    Trace::log(TraceLevel::ERROR, "WiFi connection timeout");
   }
 }
 

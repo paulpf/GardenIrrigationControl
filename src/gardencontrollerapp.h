@@ -3,6 +3,7 @@
 
 #include <array>
 
+#include "arduinotimeprovider.h"
 #include "connectivitycoordinator.h"
 #include "esp32waterlevelsensor.h"
 #include "irrigation_zone.h"
@@ -11,6 +12,7 @@
 #include "otamanager.h"
 #include "otaloopguard.h"
 #include "waterlevelmanager.h"
+#include "wificonnectionawaiter.h"
 #include "wifimanager.h"
 
 class GardenControllerApp
@@ -40,6 +42,8 @@ private:
   Esp32WaterLevelSensor _waterLevelSensor;
   WaterLevelManager _waterLevelManager;
   ConnectivityCoordinator _connectivityCoordinator;
+  ArduinoTimeProvider _timeProvider;
+  WifiConnectionAwaiter _wifiConnectionAwaiter;
   OtaLoopGuard _otaLoopGuard;
   LoopScheduler _loopScheduler;
 

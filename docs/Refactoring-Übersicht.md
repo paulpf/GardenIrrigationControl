@@ -55,6 +55,10 @@ Stand: 2026-04-24
   - `OtaLoopGuard` kapselt die Entscheidung, ob ein laufendes OTA-Update den Rest des Loops sperrt
   - `OtaManager` exponiert dafuer ein schlankes Loop-/State-Interface
   - nativer Test deckt Loop-Aufruf und Skip-Entscheidung ab
+- WiFi-Startup-Wartepfad wurde fuer App-Level-Testbarkeit separiert:
+  - `WifiConnectionAwaiter` kapselt Timeout-/Polling-Verhalten bis zur WiFi-Verbindung
+  - injizierte Zeitquelle (`ITimeProvider`) macht Timeout-Logik deterministisch testbar
+  - nativer Test deckt Sofort-Connect, rechtzeitigen Connect und Timeout ab
 - Build und Tests waren bei den letzten Schritten erfolgreich (91/91).
 
 ### Letzte relevante Commits
