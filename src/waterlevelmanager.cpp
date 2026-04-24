@@ -52,7 +52,7 @@ void WaterLevelManager::initSensor()
 
 bool WaterLevelManager::shouldRead(unsigned long currentMillis)
 {
-    if ((unsigned long)(currentMillis - _previousRead) <
+  if ((unsigned long)(currentMillis - _previousRead) <
       _config.readIntervalMs)
   {
     return false;
@@ -81,7 +81,7 @@ void WaterLevelManager::updateMetrics()
     _state.percent = 0.0f;
   }
 
-    _state.liters = (_state.percent / 100.0f) * _config.capacityLiters;
+  _state.liters = (_state.percent / 100.0f) * _config.capacityLiters;
 
   const float overflowThresholdLiters =
       (_config.overflowPercent / 100.0f) * _config.capacityLiters;
@@ -115,49 +115,53 @@ WaterLevelManager::TransitionEvents WaterLevelManager::updateStateTransitions()
 {
   TransitionEvents events;
 
-    const bool shouldEnableLowWaterLockout =
+  const bool shouldEnableLowWaterLockout =
       _state.percent < _config.criticalPercent;
-    const bool shouldReleaseLowWaterLockout =
+  const bool shouldReleaseLowWaterLockout =
       _state.percent >= _config.lockoutReleasePercent;
 
   if (!_state.lowWaterLockoutActive && shouldEnableLowWaterLockout)
   {
     _state.lowWaterLockoutActive = true;
-    events.lowWaterLockoutChanged = true;
+    events.add(TransitionEvents::Type::LowWaterLockout,
+               _state.lowWaterLockoutActive);
   }
   else if (_state.lowWaterLockoutActive && shouldReleaseLowWaterLockout)
   {
     _state.lowWaterLockoutActive = false;
-    events.lowWaterLockoutChanged = true;
+    events.add(TransitionEvents::Type::LowWaterLockout,
+               _state.lowWaterLockoutActive);
   }
 
-    const bool shouldEnableCriticalOverflowAlarm =
+  const bool shouldEnableCriticalOverflowAlarm =
       _state.overflowLiters >= _config.criticalOverflowBufferLiters;
-    const bool shouldReleaseCriticalOverflowAlarm =
+  const bool shouldReleaseCriticalOverflowAlarm =
       _state.overflowLiters <= _config.criticalOverflowReleaseLiters;
 
   if (!_state.criticalOverflowAlarmActive && shouldEnableCriticalOverflowAlarm)
   {
     _state.criticalOverflowAlarmActive = true;
-    events.criticalOverflowAlarmChanged = true;
+    events.add(TransitionEvents::Type::CriticalOverflowAlarm,
+               _state.criticalOverflowAlarmActive);
   }
   else if (_state.criticalOverflowAlarmActive &&
            shouldReleaseCriticalOverflowAlarm)
   {
     _state.criticalOverflowAlarmActive = false;
-    events.criticalOverflowAlarmChanged = true;
+    events.add(TransitionEvents::Type::CriticalOverflowAlarm,
+               _state.criticalOverflowAlarmActive);
   }
 
   if (!_state.overflowActive && _state.percent > _config.overflowPercent)
   {
     _state.overflowActive = true;
-    events.overflowChanged = true;
+    events.add(TransitionEvents::Type::Overflow, _state.overflowActive);
   }
   else if (_state.overflowActive &&
            _state.percent <= _config.overflowClearPercent)
   {
     _state.overflowActive = false;
-    events.overflowChanged = true;
+    events.add(TransitionEvents::Type::Overflow, _state.overflowActive);
   }
 
   const bool shouldSafetyLock =
@@ -165,7 +169,7 @@ WaterLevelManager::TransitionEvents WaterLevelManager::updateStateTransitions()
   if (_state.safetyLockActive != shouldSafetyLock)
   {
     _state.safetyLockActive = shouldSafetyLock;
-    events.safetyLockChanged = true;
+    events.add(TransitionEvents::Type::SafetyLock, _state.safetyLockActive);
   }
 
   return events;
@@ -173,69 +177,72 @@ WaterLevelManager::TransitionEvents WaterLevelManager::updateStateTransitions()
 
 void WaterLevelManager::applyTransitionEffects(const TransitionEvents &events)
 {
-  if (events.lowWaterLockoutChanged)
+  for (int i = 0; i < events.count; i++)
   {
-    if (_state.lowWaterLockoutActive)
-    {
-      Trace::log(TraceLevel::ERROR, "Low water lockout ACTIVATED: " +
-                                        String(_state.percent, 1) + "%");
-    }
-    else
-    {
-      Trace::log(TraceLevel::INFO, "Low water lockout DEACTIVATED: " +
-                                       String(_state.percent, 1) + "%");
-    }
+    const TransitionEvents::Event &event = events.events[i];
 
-    publishStateChange(_topics.lockout.c_str(), _state.lowWaterLockoutActive);
-  }
-
-  if (events.criticalOverflowAlarmChanged)
-  {
-    if (_state.criticalOverflowAlarmActive)
+    if (event.type == TransitionEvents::Type::LowWaterLockout)
     {
-      Trace::log(TraceLevel::ERROR, "Critical overflow alarm ACTIVATED: " +
-                                        String(_state.overflowLiters, 1) + "L");
+      if (event.active)
+      {
+        Trace::log(TraceLevel::ERROR, "Low water lockout ACTIVATED: " +
+                                          String(_state.percent, 1) + "%");
+      }
+      else
+      {
+        Trace::log(TraceLevel::INFO, "Low water lockout DEACTIVATED: " +
+                                         String(_state.percent, 1) + "%");
+      }
+
+      publishStateChange(_topics.lockout.c_str(), event.active);
     }
-    else
+    else if (event.type == TransitionEvents::Type::CriticalOverflowAlarm)
     {
-      Trace::log(TraceLevel::INFO, "Critical overflow alarm DEACTIVATED: " +
-                                       String(_state.overflowLiters, 1) + "L");
+      if (event.active)
+      {
+        Trace::log(TraceLevel::ERROR, "Critical overflow alarm ACTIVATED: " +
+                                          String(_state.overflowLiters, 1) +
+                                          "L");
+      }
+      else
+      {
+        Trace::log(TraceLevel::INFO, "Critical overflow alarm DEACTIVATED: " +
+                                         String(_state.overflowLiters, 1) +
+                                         "L");
+      }
+
+      publishStateChange(_topics.criticalHighAlarm.c_str(), event.active);
     }
-
-    publishStateChange(_topics.criticalHighAlarm.c_str(),
-                       _state.criticalOverflowAlarmActive);
-  }
-
-  if (events.overflowChanged)
-  {
-    if (_state.overflowActive)
+    else if (event.type == TransitionEvents::Type::Overflow)
     {
-      Trace::log(TraceLevel::ERROR, "Cistern overflow detected: " +
-                                        String(_state.percent, 1) + "%");
+      if (event.active)
+      {
+        Trace::log(TraceLevel::ERROR, "Cistern overflow detected: " +
+                                          String(_state.percent, 1) + "%");
+      }
+      else
+      {
+        Trace::log(TraceLevel::INFO, "Cistern overflow cleared: " +
+                                         String(_state.percent, 1) + "%");
+      }
+
+      publishStateChange(_topics.overflow.c_str(), event.active);
     }
-    else
+    else if (event.type == TransitionEvents::Type::SafetyLock)
     {
-      Trace::log(TraceLevel::INFO, "Cistern overflow cleared: " +
-                                       String(_state.percent, 1) + "%");
+      IrrigationZone::setGlobalStartInhibit(event.active);
+
+      if (event.active)
+      {
+        Trace::log(TraceLevel::ERROR, "Water level safety lock ACTIVATED");
+      }
+      else
+      {
+        Trace::log(TraceLevel::INFO, "Water level safety lock RELEASED");
+      }
+
+      publishStateChange(_topics.safetyLock.c_str(), event.active);
     }
-
-    publishStateChange(_topics.overflow.c_str(), _state.overflowActive);
-  }
-
-  if (events.safetyLockChanged)
-  {
-    IrrigationZone::setGlobalStartInhibit(_state.safetyLockActive);
-
-    if (_state.safetyLockActive)
-    {
-      Trace::log(TraceLevel::ERROR, "Water level safety lock ACTIVATED");
-    }
-    else
-    {
-      Trace::log(TraceLevel::INFO, "Water level safety lock RELEASED");
-    }
-
-    publishStateChange(_topics.safetyLock.c_str(), _state.safetyLockActive);
   }
 }
 

@@ -46,10 +46,31 @@ private:
 
   struct TransitionEvents
   {
-    bool lowWaterLockoutChanged = false;
-    bool criticalOverflowAlarmChanged = false;
-    bool overflowChanged = false;
-    bool safetyLockChanged = false;
+    enum class Type
+    {
+      LowWaterLockout,
+      CriticalOverflowAlarm,
+      Overflow,
+      SafetyLock,
+    };
+
+    struct Event
+    {
+      Type type;
+      bool active;
+    };
+
+    static const int MAX_EVENTS = 4;
+    Event events[MAX_EVENTS];
+    int count = 0;
+
+    void add(Type type, bool active)
+    {
+      if (count < MAX_EVENTS)
+      {
+        events[count++] = {type, active};
+      }
+    }
   };
 
   IMessagePublisher &_messagePublisher;

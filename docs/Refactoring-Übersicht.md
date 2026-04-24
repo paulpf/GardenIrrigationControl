@@ -37,6 +37,10 @@ Stand: 2026-04-24
   - `WaterLevelManager` bekommt `IWaterLevelSensorReader` per Konstruktor (DI)
   - `test/support/fakes/FakeWaterLevelSensor.h` fuer kuenftige direkte Tests
   - 3 neue Testfaelle: Safety-Lock Partial-Release, Multi-Event-Zyklus, Hysterese ueber mehrere Zyklen
+- Transition-Events wurden typisiert (Schritt 4):
+  - Bool-Flags durch typisierte Event-Liste (`Type` + `active`) ersetzt
+  - Effekte werden event-getrieben in einer zentralen Schleife verarbeitet
+  - Tests auf typed Events umgestellt und um Event-Reihenfolge erweitert
 - Build und Tests waren bei den letzten Schritten erfolgreich (91/91).
 
 ### Letzte relevante Commits
@@ -78,16 +82,9 @@ Nutzen:
 
 ### 3) Fokus-Tests fuer WaterLevelManager weiter ausbauen (mittlere Prioritaet)
 
-### 4) Transition-Events als typisierte Events modellieren (mittlere Prioritaet)
-Problem:
-- Aktuell sind Transition-Events boolesche Flags.
-
-Ziel:
-- Typisierte Event-Liste (z. B. Enum + Payload) fuer bessere Erweiterbarkeit.
-
-Nutzen:
-- Klarere Event-Semantik.
-- Einfachere Weiterverarbeitung fuer Automationen.
+### 4) Transition-Events als typisierte Events modellieren ✅ ERLEDIGT
+- Bool-Flags wurden durch typisierte Event-Liste ersetzt
+- Reihenfolge und Duplikat-Verhalten sind im nativen Test abgedeckt
 
 ## Risiko-/Aufwands-Einschaetzung
 - Schritt 1 (Konfig-Gruppierung): niedriges Risiko, mittlerer Nutzen.
