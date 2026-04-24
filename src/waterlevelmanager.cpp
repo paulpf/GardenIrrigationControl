@@ -267,11 +267,6 @@ void WaterLevelManager::publishData()
                             String(_state.liters, 1).c_str());
   _messagePublisher.publish(_topics.raw.c_str(),
                             String(_state.rawValue).c_str());
-  _messagePublisher.publish(_topics.criticalHighAlarm.c_str(),
-                            _state.criticalOverflowAlarmActive ? "true"
-                                                               : "false");
-  _messagePublisher.publish(_topics.safetyLock.c_str(),
-                            _state.safetyLockActive ? "true" : "false");
   _messagePublisher.publish(_topics.overflowLiters.c_str(),
                             String(_state.overflowLiters, 1).c_str());
   _messagePublisher.publish(_topics.litersToOverflow.c_str(),

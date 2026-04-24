@@ -41,6 +41,10 @@ Stand: 2026-04-24
   - Bool-Flags durch typisierte Event-Liste (`Type` + `active`) ersetzt
   - Effekte werden event-getrieben in einer zentralen Schleife verarbeitet
   - Tests auf typed Events umgestellt und um Event-Reihenfolge erweitert
+- Publish-Semantik fuer Bool-Topics wurde abgesichert:
+  - neuer nativer Manager-Test mit Fake-Sensor + Fake-Publisher
+  - Bool-State-Topics werden nur noch bei echten Zustandswechseln publiziert
+  - periodische Datenpunkte (`percent`, `liters`, `raw`, `status`) bleiben zyklisch aktiv
 - Build und Tests waren bei den letzten Schritten erfolgreich (91/91).
 
 ### Letzte relevante Commits
