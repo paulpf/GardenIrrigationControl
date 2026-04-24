@@ -29,22 +29,10 @@ const std::array<GardenControllerApp::ZoneConfig, MAX_IRRIGATION_ZONES>
     }};
 
 GardenControllerApp::GardenControllerApp()
-    : _waterLevelManager(_mqttManager, _waterLevelSensor)
+    : _waterLevelManager(_mqttManager, _waterLevelSensor),
+      _connectivityCoordinator(_wifiManager, _mqttManager)
 {
   _clientName[0] = '\0';
-}
-
-void GardenControllerApp::handleConnectivityEvents()
-{
-  if (_wifiManager.consumeDisconnectedEvent())
-  {
-    _mqttManager.forceDisconnect();
-  }
-
-  if (_wifiManager.consumeConnectedEvent())
-  {
-    _mqttManager.requestConnect();
-  }
 }
 
 void GardenControllerApp::initIrrigationZones()
@@ -65,15 +53,6 @@ void GardenControllerApp::updateClientNameFromMac()
   Helper::formatToBuffer(_clientName, CLIENT_NAME_MAX_SIZE, "GardenController-%s",
                          macFormatted.c_str());
   Trace::log(TraceLevel::INFO, "Client name set: " + String(_clientName));
-}
-
-void GardenControllerApp::connectMqttIfWifiAvailable()
-{
-  handleConnectivityEvents();
-  if (_wifiManager.isConnected())
-  {
-    _mqttManager.requestConnect();
-  }
 }
 
 void GardenControllerApp::setupOta()
@@ -127,7 +106,7 @@ void GardenControllerApp::setup()
 
   _mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD,
                      _clientName);
-  connectMqttIfWifiAvailable();
+  _connectivityCoordinator.ensureMqttConnected();
 
   setupOta();
   initIrrigationZones();
@@ -156,7 +135,7 @@ void GardenControllerApp::plotZoneStates(unsigned long currentTime)
 
 void GardenControllerApp::handleShortIntervalTasks()
 {
-  handleConnectivityEvents();
+  _connectivityCoordinator.handleEvents();
 
   _mqttManager.publishAllIrrigationZones();
   _mqttManager.loop();
@@ -208,7 +187,7 @@ void GardenControllerApp::handleLongIntervalTasks()
     Trace::log(TraceLevel::ERROR, "WiFi connection issue detected");
   }
 
-  handleConnectivityEvents();
+  _connectivityCoordinator.handleEvents();
 }
 
 void GardenControllerApp::loop()

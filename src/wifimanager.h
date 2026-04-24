@@ -3,20 +3,21 @@
 #define WIFIMANAGER_H
 
 #include "global_defines.h"
+#include "iwificonnectivity.h"
 
-class WifiManager
+class WifiManager : public IWifiConnectivity
 {
 public:
   WifiManager(/* args */);
   void setup(String ssid, String password, String clientName);
   bool loop();
   void manageConnection();
-  bool isConnected() const
+  bool isConnected() const override
   {
     return _wifiState == WIFI_CONNECTED;
   }
-  bool consumeConnectedEvent();
-  bool consumeDisconnectedEvent();
+  bool consumeConnectedEvent() override;
+  bool consumeDisconnectedEvent() override;
 
   // Static WiFi event handler that will be used with WiFi.onEvent
   static void staticWifiEventHandler(WiFiEvent_t event);

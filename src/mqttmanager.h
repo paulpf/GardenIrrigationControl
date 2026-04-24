@@ -3,12 +3,13 @@
 #define MQTTMANAGER_H
 
 #include "global_defines.h"
+#include "imqttconnectioncontrol.h"
 #include "imessagepublisher.h"
 #include "irrigation_zone.h"
 #include "mqttsessionmanager.h"
 #include <PubSubClient.h>
 
-class MqttManager : public IMessagePublisher
+class MqttManager : public IMessagePublisher, public IMqttConnectionControl
 {
 
 public:
@@ -27,8 +28,8 @@ public:
   // System status and heartbeat functionality
   void publishSystemStatus();
   void disconnect();
-  void requestConnect();
-  void forceDisconnect();
+  void requestConnect() override;
+  void forceDisconnect() override;
 
   // Last Will Testament (LWT) support - Phase 5.2
   // Factory Reset support - Phase 5.3

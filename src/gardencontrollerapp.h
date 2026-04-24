@@ -3,6 +3,7 @@
 
 #include <array>
 
+#include "connectivitycoordinator.h"
 #include "esp32waterlevelsensor.h"
 #include "irrigation_zone.h"
 #include "loopscheduler.h"
@@ -37,6 +38,7 @@ private:
   IrrigationZone _irrigationZones[MAX_IRRIGATION_ZONES];
   Esp32WaterLevelSensor _waterLevelSensor;
   WaterLevelManager _waterLevelManager;
+  ConnectivityCoordinator _connectivityCoordinator;
   LoopScheduler _loopScheduler;
 
   unsigned long _currentMillis = 0;
@@ -45,10 +47,8 @@ private:
   unsigned long _previousMillisShortLoop = 0;
   unsigned long _mainLoopStartTime = 0;
 
-  void handleConnectivityEvents();
   void initIrrigationZones();
   void updateClientNameFromMac();
-  void connectMqttIfWifiAvailable();
   void setupOta();
   void initWatchdog();
   void waitForWifiConnection();

@@ -47,6 +47,10 @@ Stand: 2026-04-24
   - periodische Datenpunkte (`percent`, `liters`, `raw`, `status`) bleiben zyklisch aktiv
   - gemeinsame Host-Bindings fuer WaterLevelManager-Tests reduzieren Stub-Duplikate
   - Disconnected-Fall ist ebenfalls abgedeckt (keine Publishes ohne Verbindung)
+- Connectivity-Steuerung wurde fuer App-Level-Testbarkeit separiert:
+  - `ConnectivityCoordinator` kapselt WiFi-Event-Verbrauch und MQTT-Connect-Steuerung
+  - `WifiManager` und `MqttManager` exponieren dafuer schlanke Interfaces
+  - nativer Test deckt Disconnect-, Connect- und Ensure-Connect-Verhalten ab
 - Build und Tests waren bei den letzten Schritten erfolgreich (91/91).
 
 ### Letzte relevante Commits
