@@ -109,7 +109,6 @@ void GardenControllerApp::initializeSubsystems()
   _mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD,
                      _clientName);
   _connectivityCoordinator.ensureMqttConnected();
-nected();
 
   setupOta();
   initIrrigationZones();
