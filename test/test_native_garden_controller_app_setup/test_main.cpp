@@ -1,11 +1,13 @@
+#include <string>
 #include <unity.h>
 #include <vector>
-#include <string>
 
 // Minimal setup phase tracking (no app includes needed)
-class SetupPhaseTracker {
+class SetupPhaseTracker
+{
 public:
-  enum Phase {
+  enum Phase
+  {
     STORAGE,
     IDENTITY,
     CONNECTIVITY,
@@ -15,31 +17,41 @@ public:
 
   static std::vector<Phase> executionOrder;
 
-  static void reset() {
+  static void reset()
+  {
     executionOrder.clear();
   }
 
-  static void recordPhase(Phase phase) {
+  static void recordPhase(Phase phase)
+  {
     executionOrder.push_back(phase);
   }
 
-  static bool wasPhaseExecuted(Phase phase) {
-    for (const auto& p : executionOrder) {
-      if (p == phase) return true;
+  static bool wasPhaseExecuted(Phase phase)
+  {
+    for (const auto &p : executionOrder)
+    {
+      if (p == phase)
+        return true;
     }
     return false;
   }
 
-  static bool phaseExecutedBefore(Phase phase1, Phase phase2) {
+  static bool phaseExecutedBefore(Phase phase1, Phase phase2)
+  {
     int idx1 = -1, idx2 = -1;
-    for (size_t i = 0; i < executionOrder.size(); ++i) {
-      if (executionOrder[i] == phase1) idx1 = i;
-      if (executionOrder[i] == phase2) idx2 = i;
+    for (size_t i = 0; i < executionOrder.size(); ++i)
+    {
+      if (executionOrder[i] == phase1)
+        idx1 = i;
+      if (executionOrder[i] == phase2)
+        idx2 = i;
     }
     return idx1 >= 0 && idx2 >= 0 && idx1 < idx2;
   }
 
-  static size_t phaseCount() {
+  static size_t phaseCount()
+  {
     return executionOrder.size();
   }
 };
@@ -47,7 +59,8 @@ public:
 std::vector<SetupPhaseTracker::Phase> SetupPhaseTracker::executionOrder;
 
 // Test suite: Setup phase ordering and execution
-void test_all_setup_phases_are_executed() {
+void test_all_setup_phases_are_executed()
+{
   SetupPhaseTracker::reset();
 
   // Simulate the app setup sequence by recording phases
@@ -60,7 +73,8 @@ void test_all_setup_phases_are_executed() {
   TEST_ASSERT_EQUAL_UINT(5, SetupPhaseTracker::phaseCount());
 }
 
-void test_setup_phases_execute_in_correct_order() {
+void test_setup_phases_execute_in_correct_order()
+{
   SetupPhaseTracker::reset();
 
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
@@ -80,7 +94,8 @@ void test_setup_phases_execute_in_correct_order() {
       SetupPhaseTracker::SUBSYSTEMS, SetupPhaseTracker::RUNTIME_SAFETY));
 }
 
-void test_identity_phase_executes_before_connectivity() {
+void test_identity_phase_executes_before_connectivity()
+{
   SetupPhaseTracker::reset();
 
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
@@ -94,7 +109,8 @@ void test_identity_phase_executes_before_connectivity() {
       SetupPhaseTracker::IDENTITY, SetupPhaseTracker::CONNECTIVITY));
 }
 
-void test_connectivity_phase_executes_before_subsystems() {
+void test_connectivity_phase_executes_before_subsystems()
+{
   SetupPhaseTracker::reset();
 
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
@@ -108,7 +124,8 @@ void test_connectivity_phase_executes_before_subsystems() {
       SetupPhaseTracker::CONNECTIVITY, SetupPhaseTracker::SUBSYSTEMS));
 }
 
-void test_subsystems_phase_executes_before_runtime_safety() {
+void test_subsystems_phase_executes_before_runtime_safety()
+{
   SetupPhaseTracker::reset();
 
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
@@ -122,7 +139,8 @@ void test_subsystems_phase_executes_before_runtime_safety() {
       SetupPhaseTracker::SUBSYSTEMS, SetupPhaseTracker::RUNTIME_SAFETY));
 }
 
-void test_storage_phase_is_first() {
+void test_storage_phase_is_first()
+{
   SetupPhaseTracker::reset();
 
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
@@ -132,11 +150,12 @@ void test_storage_phase_is_first() {
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::RUNTIME_SAFETY);
 
   // Storage must always be the first phase
-  TEST_ASSERT_EQUAL_INT(SetupPhaseTracker::STORAGE, 
+  TEST_ASSERT_EQUAL_INT(SetupPhaseTracker::STORAGE,
                         SetupPhaseTracker::executionOrder[0]);
 }
 
-void test_runtime_safety_phase_is_last() {
+void test_runtime_safety_phase_is_last()
+{
   SetupPhaseTracker::reset();
 
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
@@ -146,20 +165,23 @@ void test_runtime_safety_phase_is_last() {
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::RUNTIME_SAFETY);
 
   // Runtime safety must always be the last phase
-  TEST_ASSERT_EQUAL_INT(SetupPhaseTracker::RUNTIME_SAFETY, 
+  TEST_ASSERT_EQUAL_INT(SetupPhaseTracker::RUNTIME_SAFETY,
                         SetupPhaseTracker::executionOrder[4]);
 }
 
 // Setup and teardown
-void setUp(void) {
+void setUp(void)
+{
   SetupPhaseTracker::reset();
 }
 
-void tearDown(void) {
+void tearDown(void)
+{
   SetupPhaseTracker::reset();
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   UNITY_BEGIN();
 
   RUN_TEST(test_all_setup_phases_are_executed);

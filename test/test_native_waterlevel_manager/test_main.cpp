@@ -61,8 +61,7 @@ static TransitionEvents updateStateTransitions(WaterLevelState &state,
 {
   TransitionEvents events;
 
-  const bool shouldEnableLowWaterLockout =
-      state.percent < cfg.criticalPercent;
+  const bool shouldEnableLowWaterLockout = state.percent < cfg.criticalPercent;
   const bool shouldReleaseLowWaterLockout =
       state.percent >= cfg.lockoutReleasePercent;
 
@@ -103,8 +102,7 @@ static TransitionEvents updateStateTransitions(WaterLevelState &state,
     state.overflowActive = true;
     events.add(TransitionEvents::Type::Overflow, state.overflowActive);
   }
-  else if (state.overflowActive &&
-           state.percent <= cfg.overflowClearPercent)
+  else if (state.overflowActive && state.percent <= cfg.overflowClearPercent)
   {
     state.overflowActive = false;
     events.add(TransitionEvents::Type::Overflow, state.overflowActive);
@@ -139,8 +137,8 @@ void test_low_water_lockout_activates_below_threshold(void)
   TEST_ASSERT_TRUE(state.lowWaterLockoutActive);
   TEST_ASSERT_TRUE(state.safetyLockActive);
   TEST_ASSERT_EQUAL_INT(2, events.count);
-  TEST_ASSERT_TRUE(hasEvent(events, TransitionEvents::Type::LowWaterLockout,
-                            true));
+  TEST_ASSERT_TRUE(
+      hasEvent(events, TransitionEvents::Type::LowWaterLockout, true));
   TEST_ASSERT_TRUE(hasEvent(events, TransitionEvents::Type::SafetyLock, true));
 }
 
@@ -156,10 +154,9 @@ void test_low_water_lockout_releases_at_release_threshold(void)
   TEST_ASSERT_FALSE(state.lowWaterLockoutActive);
   TEST_ASSERT_FALSE(state.safetyLockActive);
   TEST_ASSERT_EQUAL_INT(2, events.count);
-  TEST_ASSERT_TRUE(hasEvent(events, TransitionEvents::Type::LowWaterLockout,
-                            false));
-  TEST_ASSERT_TRUE(hasEvent(events, TransitionEvents::Type::SafetyLock,
-                            false));
+  TEST_ASSERT_TRUE(
+      hasEvent(events, TransitionEvents::Type::LowWaterLockout, false));
+  TEST_ASSERT_TRUE(hasEvent(events, TransitionEvents::Type::SafetyLock, false));
 }
 
 void test_low_water_hysteresis_no_flapping_inside_window(void)
@@ -189,9 +186,8 @@ void test_critical_overflow_alarm_activates_at_buffer_limit(void)
   TEST_ASSERT_TRUE(state.criticalOverflowAlarmActive);
   TEST_ASSERT_TRUE(state.safetyLockActive);
   TEST_ASSERT_EQUAL_INT(2, events.count);
-  TEST_ASSERT_TRUE(hasEvent(events,
-                            TransitionEvents::Type::CriticalOverflowAlarm,
-                            true));
+  TEST_ASSERT_TRUE(
+      hasEvent(events, TransitionEvents::Type::CriticalOverflowAlarm, true));
   TEST_ASSERT_TRUE(hasEvent(events, TransitionEvents::Type::SafetyLock, true));
 }
 
@@ -208,11 +204,9 @@ void test_critical_overflow_alarm_releases_at_release_limit(void)
   TEST_ASSERT_FALSE(state.criticalOverflowAlarmActive);
   TEST_ASSERT_FALSE(state.safetyLockActive);
   TEST_ASSERT_EQUAL_INT(2, events.count);
-  TEST_ASSERT_TRUE(hasEvent(events,
-                            TransitionEvents::Type::CriticalOverflowAlarm,
-                            false));
-  TEST_ASSERT_TRUE(hasEvent(events, TransitionEvents::Type::SafetyLock,
-                            false));
+  TEST_ASSERT_TRUE(
+      hasEvent(events, TransitionEvents::Type::CriticalOverflowAlarm, false));
+  TEST_ASSERT_TRUE(hasEvent(events, TransitionEvents::Type::SafetyLock, false));
 }
 
 void test_overflow_visual_state_activates_above_100_percent(void)
@@ -269,9 +263,8 @@ void test_safety_lock_remains_active_when_only_partial_condition_released(void)
   TEST_ASSERT_TRUE(state.lowWaterLockoutActive);
   TEST_ASSERT_TRUE(state.safetyLockActive);
   TEST_ASSERT_EQUAL_INT(1, events.count);
-  TEST_ASSERT_TRUE(hasEvent(events,
-                            TransitionEvents::Type::CriticalOverflowAlarm,
-                            false));
+  TEST_ASSERT_TRUE(
+      hasEvent(events, TransitionEvents::Type::CriticalOverflowAlarm, false));
 }
 
 // Mehrere Transition-Events koennen im selben Zyklus ausloesen
@@ -286,11 +279,10 @@ void test_multiple_transition_events_fire_in_same_cycle(void)
   TransitionEvents events = updateStateTransitions(state, WaterLevelConfig{});
 
   TEST_ASSERT_EQUAL_INT(3, events.count);
-  TEST_ASSERT_TRUE(hasEvent(events, TransitionEvents::Type::LowWaterLockout,
-                            true));
-  TEST_ASSERT_TRUE(hasEvent(events,
-                            TransitionEvents::Type::CriticalOverflowAlarm,
-                            true));
+  TEST_ASSERT_TRUE(
+      hasEvent(events, TransitionEvents::Type::LowWaterLockout, true));
+  TEST_ASSERT_TRUE(
+      hasEvent(events, TransitionEvents::Type::CriticalOverflowAlarm, true));
   TEST_ASSERT_TRUE(hasEvent(events, TransitionEvents::Type::SafetyLock, true));
   TEST_ASSERT_TRUE(state.lowWaterLockoutActive);
   TEST_ASSERT_TRUE(state.criticalOverflowAlarmActive);
@@ -298,8 +290,9 @@ void test_multiple_transition_events_fire_in_same_cycle(void)
 }
 
 // Injizierte Config-Schwellwerte werden korrekt verwendet (TDD-Pruefung)
-// Benutzt criticalPercent=20, lockoutRelease=25 statt der Produktionswerte 10/12.
-// Mit percent=15: < 20 → Lockout aktiviert (mit altem Code: 15 < 10 = false → wuerde FEHLSCHLAGEN)
+// Benutzt criticalPercent=20, lockoutRelease=25 statt der Produktionswerte
+// 10/12. Mit percent=15: < 20 → Lockout aktiviert (mit altem Code: 15 < 10 =
+// false → wuerde FEHLSCHLAGEN)
 void test_custom_config_thresholds_are_respected(void)
 {
   WaterLevelConfig cfg;
@@ -307,7 +300,8 @@ void test_custom_config_thresholds_are_respected(void)
   cfg.lockoutReleasePercent = 25.0f;
 
   WaterLevelState state;
-  state.percent = 15.0f; // liegt zwischen 10% (Prod-Critical) und 20% (Custom-Critical)
+  state.percent =
+      15.0f; // liegt zwischen 10% (Prod-Critical) und 20% (Custom-Critical)
 
   TransitionEvents events = updateStateTransitions(state, cfg);
 
@@ -315,8 +309,8 @@ void test_custom_config_thresholds_are_respected(void)
   TEST_ASSERT_TRUE(state.lowWaterLockoutActive);
   TEST_ASSERT_TRUE(state.safetyLockActive);
   TEST_ASSERT_EQUAL_INT(2, events.count);
-  TEST_ASSERT_TRUE(hasEvent(events, TransitionEvents::Type::LowWaterLockout,
-                            true));
+  TEST_ASSERT_TRUE(
+      hasEvent(events, TransitionEvents::Type::LowWaterLockout, true));
   TEST_ASSERT_TRUE(hasEvent(events, TransitionEvents::Type::SafetyLock, true));
 }
 
@@ -383,7 +377,8 @@ int main(int /*argc*/, char ** /*argv*/)
   RUN_TEST(test_overflow_visual_state_activates_above_100_percent);
   RUN_TEST(test_overflow_visual_state_clears_on_clear_threshold);
   RUN_TEST(test_no_event_when_state_does_not_change);
-  RUN_TEST(test_safety_lock_remains_active_when_only_partial_condition_released);
+  RUN_TEST(
+      test_safety_lock_remains_active_when_only_partial_condition_released);
   RUN_TEST(test_multiple_transition_events_fire_in_same_cycle);
   RUN_TEST(test_hysteresis_lockout_holds_across_multiple_cycles);
   RUN_TEST(test_custom_config_thresholds_are_respected);

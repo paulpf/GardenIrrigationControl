@@ -24,18 +24,13 @@ GardenControllerApp::GardenControllerApp(
     ConnectivityCoordinator &connectivityCoordinator,
     WifiConnectionAwaiter &wifiConnectionAwaiter, OtaLoopGuard &otaLoopGuard,
     LoopScheduler &loopScheduler)
-    : _irrigationConfig(irrigationConfig),
-      _systemConfig(systemConfig),
-      _hardwareConfig(hardwareConfig),
-      _wifiManager(wifiManager),
-      _mqttManager(mqttManager),
-      _otaManager(otaManager),
-      _irrigationZones(irrigationZones),
-      _waterLevelManager(waterLevelManager),
+    : _irrigationConfig(irrigationConfig), _systemConfig(systemConfig),
+      _hardwareConfig(hardwareConfig), _wifiManager(wifiManager),
+      _mqttManager(mqttManager), _otaManager(otaManager),
+      _irrigationZones(irrigationZones), _waterLevelManager(waterLevelManager),
       _connectivityCoordinator(connectivityCoordinator),
       _wifiConnectionAwaiter(wifiConnectionAwaiter),
-      _otaLoopGuard(otaLoopGuard),
-      _loopScheduler(loopScheduler)
+      _otaLoopGuard(otaLoopGuard), _loopScheduler(loopScheduler)
 {
   _clientName[0] = '\0';
 }

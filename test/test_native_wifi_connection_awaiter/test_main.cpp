@@ -46,7 +46,8 @@ public:
       return false;
     }
 
-    const size_t current = (index < sequence.size()) ? index : sequence.size() - 1;
+    const size_t current =
+        (index < sequence.size()) ? index : sequence.size() - 1;
     const bool value = sequence[current];
     if (index < sequence.size())
     {

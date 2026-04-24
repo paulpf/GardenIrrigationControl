@@ -7,13 +7,13 @@
 #include "connectivitycoordinator.h"
 #include "esp32waterlevelsensor.h"
 #include "hardwareconfig.h"
-#include "irrigationconfig.h"
 #include "irrigation_zone.h"
+#include "irrigationconfig.h"
 #include "irrigationzonefactory.h"
 #include "loopscheduler.h"
 #include "mqttmanager.h"
-#include "otamanager.h"
 #include "otaloopguard.h"
+#include "otamanager.h"
 #include "systemconfig.h"
 #include "waterlevelmanager.h"
 #include "wificonnectionawaiter.h"
@@ -30,8 +30,7 @@ public:
                       WaterLevelManager &waterLevelManager,
                       ConnectivityCoordinator &connectivityCoordinator,
                       WifiConnectionAwaiter &wifiConnectionAwaiter,
-                      OtaLoopGuard &otaLoopGuard,
-                      LoopScheduler &loopScheduler);
+                      OtaLoopGuard &otaLoopGuard, LoopScheduler &loopScheduler);
 
   void setup();
   void loop();

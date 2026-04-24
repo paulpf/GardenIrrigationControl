@@ -42,7 +42,8 @@ void test_bool_state_topics_publish_only_on_real_state_changes(void)
   TEST_ASSERT_EQUAL_INT(2, publisher.countTopic("device/waterlevel/status"));
 }
 
-void test_critical_alarm_and_overflow_topics_do_not_duplicate_without_changes(void)
+void test_critical_alarm_and_overflow_topics_do_not_duplicate_without_changes(
+    void)
 {
   WaterLevelConfig config;
   config.adcMin = 0;
@@ -97,7 +98,8 @@ int main(int /*argc*/, char ** /*argv*/)
   UNITY_BEGIN();
 
   RUN_TEST(test_bool_state_topics_publish_only_on_real_state_changes);
-  RUN_TEST(test_critical_alarm_and_overflow_topics_do_not_duplicate_without_changes);
+  RUN_TEST(
+      test_critical_alarm_and_overflow_topics_do_not_duplicate_without_changes);
   RUN_TEST(test_disconnected_publisher_suppresses_all_outputs);
 
   return UNITY_END();
