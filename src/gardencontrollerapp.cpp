@@ -58,7 +58,7 @@ void GardenControllerApp::setupOta()
 
 void GardenControllerApp::initWatchdog()
 {
-  esp_task_wdt_init(WDT_TIMEOUT_SEC, true);
+  esp_task_wdt_init(_systemConfig.watchdogTimeoutMs / 1000, true);
   esp_task_wdt_add(NULL);
 }
 
@@ -195,20 +195,20 @@ void GardenControllerApp::loop()
   updateLoopTimingPlot();
 
   if (_loopScheduler.shouldRun(_currentMillis, _previousMillisShortLoop,
-                               SHORT_INTERVAL))
+                               _systemConfig.shortIntervalMs))
   {
     handleShortIntervalTasks();
   }
 
   if (_loopScheduler.shouldRun(_currentMillis, _previousMillisMiddleLoop,
-                               MIDDLE_INTERVAL))
+                               _systemConfig.middleIntervalMs))
   {
     handleMiddleIntervalEvents();
     yield();
   }
 
   if (_loopScheduler.shouldRun(_currentMillis, _previousMillisLongLoop,
-                               LONG_INTERVAL))
+                               _systemConfig.longIntervalMs))
   {
     handleLongIntervalTasks();
   }
