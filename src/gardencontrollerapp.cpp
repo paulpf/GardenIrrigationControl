@@ -30,7 +30,8 @@ const std::array<GardenControllerApp::ZoneConfig, MAX_IRRIGATION_ZONES>
 
 GardenControllerApp::GardenControllerApp()
     : _waterLevelManager(_mqttManager, _waterLevelSensor),
-      _connectivityCoordinator(_wifiManager, _mqttManager)
+      _connectivityCoordinator(_wifiManager, _mqttManager),
+      _otaLoopGuard(_otaManager)
 {
   _clientName[0] = '\0';
 }
@@ -153,20 +154,6 @@ void GardenControllerApp::handleShortIntervalTasks()
   _waterLevelManager.loop(_currentMillis);
 }
 
-bool GardenControllerApp::handleOtaUpdate()
-{
-#if ENABLE_OTA
-  _otaManager.loop();
-
-  if (_otaManager.isUpdating())
-  {
-    return true;
-  }
-#endif
-
-  return false;
-}
-
 void GardenControllerApp::updateLoopTimingPlot()
 {
 #ifdef ENABLE_LOOP_TIME_PLOTTING
@@ -195,7 +182,7 @@ void GardenControllerApp::loop()
   esp_task_wdt_reset();
   _currentMillis = millis();
 
-  if (handleOtaUpdate())
+  if (_otaLoopGuard.process())
   {
     return;
   }

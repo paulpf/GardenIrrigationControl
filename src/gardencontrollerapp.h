@@ -9,6 +9,7 @@
 #include "loopscheduler.h"
 #include "mqttmanager.h"
 #include "otamanager.h"
+#include "otaloopguard.h"
 #include "waterlevelmanager.h"
 #include "wifimanager.h"
 
@@ -39,6 +40,7 @@ private:
   Esp32WaterLevelSensor _waterLevelSensor;
   WaterLevelManager _waterLevelManager;
   ConnectivityCoordinator _connectivityCoordinator;
+  OtaLoopGuard _otaLoopGuard;
   LoopScheduler _loopScheduler;
 
   unsigned long _currentMillis = 0;
@@ -54,7 +56,6 @@ private:
   void waitForWifiConnection();
   void plotZoneStates(unsigned long currentTime);
   void handleShortIntervalTasks();
-  bool handleOtaUpdate();
   void updateLoopTimingPlot();
   void handleMiddleIntervalEvents();
   void handleLongIntervalTasks();

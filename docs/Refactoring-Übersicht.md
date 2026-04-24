@@ -51,6 +51,10 @@ Stand: 2026-04-24
   - `ConnectivityCoordinator` kapselt WiFi-Event-Verbrauch und MQTT-Connect-Steuerung
   - `WifiManager` und `MqttManager` exponieren dafuer schlanke Interfaces
   - nativer Test deckt Disconnect-, Connect- und Ensure-Connect-Verhalten ab
+- OTA-Loop-Gating wurde fuer App-Level-Testbarkeit separiert:
+  - `OtaLoopGuard` kapselt die Entscheidung, ob ein laufendes OTA-Update den Rest des Loops sperrt
+  - `OtaManager` exponiert dafuer ein schlankes Loop-/State-Interface
+  - nativer Test deckt Loop-Aufruf und Skip-Entscheidung ab
 - Build und Tests waren bei den letzten Schritten erfolgreich (91/91).
 
 ### Letzte relevante Commits
