@@ -3,11 +3,15 @@
 
 #include "global_defines.h"
 #include "imessagepublisher.h"
+#include "iwaterlevelsensorreader.h"
+#include "waterlevelconfig.h"
 
 class WaterLevelManager
 {
 public:
-  explicit WaterLevelManager(IMessagePublisher &messagePublisher);
+  WaterLevelManager(IMessagePublisher &messagePublisher,
+                    IWaterLevelSensorReader &sensor,
+                    const WaterLevelConfig &config = WaterLevelConfig{});
 
   void setup(const char *clientName);
   void loop(unsigned long currentMillis);
@@ -49,6 +53,8 @@ private:
   };
 
   IMessagePublisher &_messagePublisher;
+  IWaterLevelSensorReader &_sensor;
+  WaterLevelConfig _config;
   unsigned long _previousRead = 0;
   State _state;
   Topics _topics;

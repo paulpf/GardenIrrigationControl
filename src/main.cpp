@@ -11,6 +11,7 @@
 #include "mqttmanager.h"
 #include "otamanager.h"
 #include "storage_manager.h"
+#include "esp32waterlevelsensor.h"
 #include "waterlevelmanager.h"
 #include "wifimanager.h"
 
@@ -61,7 +62,8 @@ unsigned long previousMillisMiddleLoop = 0; // For middle loop timing
 unsigned long previousMillisShortLoop = 0;  // For short loop timing
 unsigned long mainLoopStartTime = 0;        // For loop time plotting
 // Encapsulates water level sensing, thresholds, lock states, and MQTT updates.
-WaterLevelManager waterLevelManager(mqttManager);
+Esp32WaterLevelSensor waterLevelSensor;
+WaterLevelManager waterLevelManager(mqttManager, waterLevelSensor);
 
 void handleConnectivityEvents()
 {

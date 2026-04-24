@@ -2,8 +2,10 @@
 
 #include "irrigation_zone.h"
 
-WaterLevelManager::WaterLevelManager(IMessagePublisher &messagePublisher)
-    : _messagePublisher(messagePublisher)
+WaterLevelManager::WaterLevelManager(IMessagePublisher &messagePublisher,
+                   IWaterLevelSensorReader &sensor,
+                   const WaterLevelConfig &config)
+  : _messagePublisher(messagePublisher), _sensor(sensor), _config(config)
 {
 }
 
@@ -45,14 +47,13 @@ void WaterLevelManager::initTopics(const char *clientName)
 
 void WaterLevelManager::initSensor()
 {
-  pinMode(WATER_LEVEL_SENSOR_PIN, INPUT);
-  analogSetPinAttenuation(WATER_LEVEL_SENSOR_PIN, ADC_11db);
+  _sensor.setup();
 }
 
 bool WaterLevelManager::shouldRead(unsigned long currentMillis)
 {
-  if ((unsigned long)(currentMillis - _previousRead) <
-      WATER_LEVEL_READ_INTERVAL)
+    if ((unsigned long)(currentMillis - _previousRead) <
+      _config.readIntervalMs)
   {
     return false;
   }
@@ -63,12 +64,12 @@ bool WaterLevelManager::shouldRead(unsigned long currentMillis)
 
 void WaterLevelManager::updateMetrics()
 {
-  _state.rawValue = analogRead(WATER_LEVEL_SENSOR_PIN);
+  _state.rawValue = _sensor.readRaw();
 
-  if (WATER_LEVEL_ADC_MAX > WATER_LEVEL_ADC_MIN)
+  if (_config.adcMax > _config.adcMin)
   {
-    _state.percent = ((float)(_state.rawValue - WATER_LEVEL_ADC_MIN) * 100.0f) /
-                     (float)(WATER_LEVEL_ADC_MAX - WATER_LEVEL_ADC_MIN);
+    _state.percent = ((float)(_state.rawValue - _config.adcMin) * 100.0f) /
+                     (float)(_config.adcMax - _config.adcMin);
   }
   else
   {
@@ -80,10 +81,10 @@ void WaterLevelManager::updateMetrics()
     _state.percent = 0.0f;
   }
 
-  _state.liters = (_state.percent / 100.0f) * CISTERN_CAPACITY_LITERS;
+    _state.liters = (_state.percent / 100.0f) * _config.capacityLiters;
 
   const float overflowThresholdLiters =
-      (WATER_LEVEL_OVERFLOW_PERCENT / 100.0f) * CISTERN_CAPACITY_LITERS;
+      (_config.overflowPercent / 100.0f) * _config.capacityLiters;
   if (_state.liters > overflowThresholdLiters)
   {
     _state.overflowLiters = _state.liters - overflowThresholdLiters;
@@ -114,10 +115,10 @@ WaterLevelManager::TransitionEvents WaterLevelManager::updateStateTransitions()
 {
   TransitionEvents events;
 
-  const bool shouldEnableLowWaterLockout =
-      _state.percent < WATER_LEVEL_CRITICAL_PERCENT;
-  const bool shouldReleaseLowWaterLockout =
-      _state.percent >= WATER_LEVEL_LOCKOUT_RELEASE_PERCENT;
+    const bool shouldEnableLowWaterLockout =
+      _state.percent < _config.criticalPercent;
+    const bool shouldReleaseLowWaterLockout =
+      _state.percent >= _config.lockoutReleasePercent;
 
   if (!_state.lowWaterLockoutActive && shouldEnableLowWaterLockout)
   {
@@ -130,10 +131,10 @@ WaterLevelManager::TransitionEvents WaterLevelManager::updateStateTransitions()
     events.lowWaterLockoutChanged = true;
   }
 
-  const bool shouldEnableCriticalOverflowAlarm =
-      _state.overflowLiters >= WATER_LEVEL_CRITICAL_OVERFLOW_BUFFER_LITERS;
-  const bool shouldReleaseCriticalOverflowAlarm =
-      _state.overflowLiters <= WATER_LEVEL_CRITICAL_OVERFLOW_RELEASE_LITERS;
+    const bool shouldEnableCriticalOverflowAlarm =
+      _state.overflowLiters >= _config.criticalOverflowBufferLiters;
+    const bool shouldReleaseCriticalOverflowAlarm =
+      _state.overflowLiters <= _config.criticalOverflowReleaseLiters;
 
   if (!_state.criticalOverflowAlarmActive && shouldEnableCriticalOverflowAlarm)
   {
@@ -147,13 +148,13 @@ WaterLevelManager::TransitionEvents WaterLevelManager::updateStateTransitions()
     events.criticalOverflowAlarmChanged = true;
   }
 
-  if (!_state.overflowActive && _state.percent > WATER_LEVEL_OVERFLOW_PERCENT)
+  if (!_state.overflowActive && _state.percent > _config.overflowPercent)
   {
     _state.overflowActive = true;
     events.overflowChanged = true;
   }
   else if (_state.overflowActive &&
-           _state.percent <= WATER_LEVEL_OVERFLOW_CLEAR_PERCENT)
+           _state.percent <= _config.overflowClearPercent)
   {
     _state.overflowActive = false;
     events.overflowChanged = true;
