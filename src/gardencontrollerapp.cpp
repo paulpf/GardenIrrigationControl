@@ -30,6 +30,7 @@ void GardenControllerApp::initIrrigationZones()
 
   for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
   {
+    _irrigationZones[i].configure(_irrigationConfig);
     Helper::addIrrigationZone(_hardwareConfig.zones[i].buttonPin,
                               _hardwareConfig.zones[i].relayPin, _irrigationZones,
                               &_mqttManager, i, _clientName);
@@ -94,6 +95,7 @@ void GardenControllerApp::initializeSubsystems()
 {
   _waterLevelManager.setup(_clientName);
 
+  _mqttManager.configure(_irrigationConfig);
   _mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD,
                      _clientName);
   _connectivityCoordinator.ensureMqttConnected();

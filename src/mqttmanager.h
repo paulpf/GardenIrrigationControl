@@ -5,6 +5,7 @@
 #include "global_defines.h"
 #include "imqttconnectioncontrol.h"
 #include "imessagepublisher.h"
+#include "irrigationconfig.h"
 #include "irrigation_zone.h"
 #include "mqttsessionmanager.h"
 #include <PubSubClient.h>
@@ -14,6 +15,7 @@ class MqttManager : public IMessagePublisher, public IMqttConnectionControl
 
 public:
   MqttManager();
+  void configure(const IrrigationConfig &config);
   void setup(const char *mqttServer, int mqttPort, const char *mqttUser,
              const char *mqttPassword, const char *clientName);
   void loop();
@@ -74,6 +76,7 @@ private:
 
   // MQTT session and retry state management
   MqttSessionManager _sessionManager;
+  IrrigationConfig _irrigationConfig;
   // Array of irrigation zones
   IrrigationZone *_irrigationZones[MAX_IRRIGATION_ZONES];
   int _numIrrigationZones = 0; // Number of irrigation zones

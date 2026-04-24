@@ -3,9 +3,18 @@
 bool IrrigationZone::_globalStartInhibit = false;
 
 IrrigationZone::IrrigationZone()
+    : _defaultDurationMs(DEFAULT_DURATION_TIME),
+      _buttonDebounceMs(BUTTON_DEBOUNCE_TIME)
 {
   Trace::log(TraceLevel::DEBUG, "IrrigationZone constructor called.");
-  _durationTime = DEFAULT_DURATION_TIME;
+  _durationTime = _defaultDurationMs;
+}
+
+void IrrigationZone::configure(const IrrigationConfig &config)
+{
+  _defaultDurationMs = config.defaultDurationMs;
+  _buttonDebounceMs = config.buttonDebounceMs;
+  _durationTime = _defaultDurationMs;
 }
 
 void IrrigationZone::setGlobalStartInhibit(bool inhibit)
@@ -35,8 +44,8 @@ void IrrigationZone::setup(int hwBtnGpioChannel, int relayGpioChannel,
 void IrrigationZone::loadSettingsFromStorage(int zoneIndex)
 {
   _zoneIndex = zoneIndex;
-  // Load duration time from storage
-  _durationTime = StorageManager::getInstance().loadDurationTime(zoneIndex);
+  // Load duration time from storage, using configured default as fallback
+  _durationTime = StorageManager::getInstance().loadDurationTime(zoneIndex, _defaultDurationMs);
   Trace::log(TraceLevel::DEBUG,
              "Loaded settings for zone " + String(zoneIndex) +
                  " with duration time: " + String(_durationTime));
@@ -54,7 +63,7 @@ void IrrigationZone::setupHwButton(int hwBtnGpioChannel)
 void IRAM_ATTR IrrigationZone::onHwBtnPressed()
 {
   unsigned long now = millis();
-  if (now - _lastDebounceTime > BUTTON_DEBOUNCE_TIME)
+  if (now - _lastDebounceTime > _buttonDebounceMs)
   {
     _lastDebounceTime = now;
     _buttonEventPending = true;

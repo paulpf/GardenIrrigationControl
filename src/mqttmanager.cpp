@@ -12,6 +12,11 @@ MqttManager::MqttManager()
   _pubSubClient.setClient(_wifiClient);
 }
 
+void MqttManager::configure(const IrrigationConfig &config)
+{
+  _irrigationConfig = config;
+}
+
 void MqttManager::setup(const char *mqttServer, int mqttPort,
                         const char *mqttUser, const char *mqttPassword,
                         const char *clientName)
@@ -97,7 +102,7 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
           atoi(message); // Use atoi instead of String::toInt()
       int durationTimeMs =
           durationTimeMinutes * 60 * 1000; // Convert minutes to milliseconds
-      if (durationTimeMs > 0 && durationTimeMs <= MAX_DURATION_TIME)
+      if (durationTimeMs > 0 && durationTimeMs <= (int)_irrigationConfig.maxDurationMs)
       {
         // Update to use new method with zone index for storage
         _irrigationZones[i]->setDurationTime(durationTimeMs, i);
@@ -109,7 +114,7 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
       else
       {
         // Invalid duration time, reset to default
-        _irrigationZones[i]->setDurationTime(DEFAULT_DURATION_TIME, i);
+        _irrigationZones[i]->setDurationTime(_irrigationConfig.defaultDurationMs, i);
         Trace::log(TraceLevel::ERROR,
                    "Invalid duration time received for zone " + String(i) +
                        ": " + String(durationTimeMinutes) + " minutes");

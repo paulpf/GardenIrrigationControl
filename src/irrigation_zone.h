@@ -2,6 +2,7 @@
 #define IRRIGATION_ZONE_H
 
 #include "global_defines.h"
+#include "irrigationconfig.h"
 #include "storage_manager.h"
 
 class IrrigationZone
@@ -9,6 +10,7 @@ class IrrigationZone
 public:
   IrrigationZone();
 
+  void configure(const IrrigationConfig &config);
   void setup(int hwBtnGpioChannel, int relayGpioChannel,
              String mqttTopicForZone);
   void loadSettingsFromStorage(int zoneIndex);
@@ -96,6 +98,8 @@ private:
   bool _timerIsActive = false;
   unsigned long _startTime;
   int _durationTime;
+  unsigned long _defaultDurationMs;
+  unsigned long _buttonDebounceMs;
 
   // ================ Storage ================
   int _zoneIndex; // To track which zone index this is for storage

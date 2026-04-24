@@ -17,7 +17,7 @@ public:
 
   // Methods for irrigation zone settings
   void saveDurationTime(int zoneIndex, int durationTime);
-  int loadDurationTime(int zoneIndex);
+  int loadDurationTime(int zoneIndex, int defaultDurationMs = DEFAULT_DURATION_TIME);
 
   // Methods for button states - may not be needed as they're typically volatile
   void saveButtonState(int zoneIndex, bool state);
@@ -32,7 +32,7 @@ public:
   void clearAllSettings();
 
   // Factory reset - restore all zones to default configuration
-  void factoryReset();
+  void factoryReset(int defaultDurationMs = DEFAULT_DURATION_TIME);
 
 private:
   StorageManager()

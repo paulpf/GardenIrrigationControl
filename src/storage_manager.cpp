@@ -15,10 +15,10 @@ void StorageManager::saveDurationTime(int zoneIndex, int durationTime)
                                     String(durationTime));
 }
 
-int StorageManager::loadDurationTime(int zoneIndex)
+int StorageManager::loadDurationTime(int zoneIndex, int defaultDurationMs)
 {
   String key = getKey("duration", zoneIndex);
-  int durationTime = _preferences.getInt(key.c_str(), DEFAULT_DURATION_TIME);
+  int durationTime = _preferences.getInt(key.c_str(), defaultDurationMs);
   Trace::log(TraceLevel::DEBUG, "Loaded duration time for zone " +
                                     String(zoneIndex) + ": " +
                                     String(durationTime));
@@ -59,7 +59,7 @@ String StorageManager::getKey(const char *prefix, int zoneIndex)
 {
   return String(prefix) + String(zoneIndex);
 }
-void StorageManager::factoryReset()
+void StorageManager::factoryReset(int defaultDurationMs)
 {
   Trace::log(TraceLevel::ERROR, "!!! FACTORY RESET INITIATED !!!");
 
@@ -69,7 +69,7 @@ void StorageManager::factoryReset()
   // Restore all zones to default duration time
   for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
   {
-    saveDurationTime(i, DEFAULT_DURATION_TIME);
+    saveDurationTime(i, defaultDurationMs);
     saveButtonState(i, false);
     saveRelayState(i, false);
   }
