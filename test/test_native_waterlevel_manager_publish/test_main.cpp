@@ -4,7 +4,7 @@
 #include "../support/fakes/FakeWaterLevelSensor.h"
 #include "../support/fakes/WaterLevelManagerNativeBindings.h"
 
-#include "../../src/waterlevelmanager.cpp"
+#include "../../src/domain/waterlevelmanager.cpp"
 
 void setUp(void)
 {

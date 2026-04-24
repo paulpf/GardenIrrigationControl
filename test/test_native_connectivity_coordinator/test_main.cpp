@@ -1,6 +1,6 @@
 #include <unity.h>
 
-#include "../../src/connectivitycoordinator.h"
+#include "../../src/services/connectivitycoordinator.h"
 
 class FakeWifiConnectivity : public IWifiConnectivity
 {

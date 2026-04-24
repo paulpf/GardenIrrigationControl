@@ -37,18 +37,6 @@ void Helper::formatToBuffer(char* buffer, size_t bufferSize, const char* format,
     va_end(args);
 }
 
-// Example for using addIrrigationZone
-void Helper::addIrrigationZone(int buttonPin, int relayPin, IrrigationZone* irrigationZones, MqttManager* mqttManager, int index, const char* clientNameBuffer) 
-{
-    char topicBuffer[100];
-    snprintf(topicBuffer, sizeof(topicBuffer), "%s/irrigationZone%d", clientNameBuffer, index + 1);
-    
-    Trace::log(TraceLevel::INFO, "Helper::addIrrigationZone | New irrigation zone adding: " + String(topicBuffer) + " (Zone " + String(index) + ")");
-
-    irrigationZones[index].setup(buttonPin, relayPin, topicBuffer);
-    mqttManager->addIrrigationZone(&irrigationZones[index]);
-}
-
 // Format uptime from milliseconds to "Xd Yh Zm" format
 String Helper::formatUptime(unsigned long uptimeMillis) 
 {

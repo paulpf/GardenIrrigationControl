@@ -1,6 +1,6 @@
 #include <unity.h>
 
-#include "../../src/otaloopguard.h"
+#include "../../src/services/otaloopguard.h"
 
 class FakeOtaLoopControl : public IOtaLoopControl
 {

@@ -1,7 +1,7 @@
 #include <unity.h>
 
-#include "../../src/mqttsessionmanager.cpp"
-#include "../../src/mqttsessionmanager.h"
+#include "../../src/domain/mqttsessionmanager.cpp"
+#include "../../src/domain/mqttsessionmanager.h"
 
 void setUp(void)
 {

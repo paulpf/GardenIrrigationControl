@@ -1,6 +1,6 @@
 #include <unity.h>
 
-#include "../../src/loopscheduler.h"
+#include "../../src/services/loopscheduler.h"
 
 void setUp(void)
 {

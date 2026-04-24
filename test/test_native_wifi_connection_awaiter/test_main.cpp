@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "../../src/itimeprovider.h"
-#include "../../src/wificonnectionawaiter.h"
+#include "../../src/contracts/itimeprovider.h"
+#include "../../src/services/wificonnectionawaiter.h"
 
 class FakeTimeProvider : public ITimeProvider
 {

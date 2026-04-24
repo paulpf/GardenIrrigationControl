@@ -9,6 +9,7 @@
 #include "hardwareconfig.h"
 #include "irrigationconfig.h"
 #include "irrigation_zone.h"
+#include "irrigationzonefactory.h"
 #include "loopscheduler.h"
 #include "mqttmanager.h"
 #include "otamanager.h"

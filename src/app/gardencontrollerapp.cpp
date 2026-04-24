@@ -1,9 +1,9 @@
 #include "gardencontrollerapp.h"
 
-#include "../../_configs/MqttConfig.h"
-#include "../../_secrets/MqttSecret.h"
-#include "../../_secrets/OtaSecret.h"
-#include "../../_secrets/WifiSecret.h"
+#include "_config/MqttConfig.h"
+#include "_secrets/MqttSecret.h"
+#include "_secrets/OtaSecret.h"
+#include "_secrets/WifiSecret.h"
 
 #include "config.h"
 #include "global_defines.h"
@@ -30,10 +30,9 @@ void GardenControllerApp::initIrrigationZones()
 
   for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
   {
-    _irrigationZones[i].configure(_irrigationConfig);
-    Helper::addIrrigationZone(_hardwareConfig.zones[i].buttonPin,
-                              _hardwareConfig.zones[i].relayPin, _irrigationZones,
-                              &_mqttManager, i, _clientName);
+    IrrigationZoneFactory::initializeZone(
+        _irrigationZones[i], _irrigationConfig, _hardwareConfig.zones[i],
+        _mqttManager, i, _clientName);
     _irrigationZones[i].loadSettingsFromStorage(i);
   }
 }
