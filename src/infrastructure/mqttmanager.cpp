@@ -255,14 +255,19 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
          incomingTopic.endsWith("/durationTime/set")) &&
         incomingTopic.indexOf(_irrigationZones[i]->getMqttTopicForZone()) >= 0)
     {
-      int durationTimeSeconds =
-          atoi(message); // Use atoi instead of String::toInt()
-      int durationTimeMs =
-          durationTimeSeconds * 1000; // Convert seconds to milliseconds
+      // Ignore empty payloads (do nothing)
+      if (message == nullptr || strlen(message) == 0)
+      {
+        Trace::log(TraceLevel::INFO,
+                   "Ignoring empty payload for durationTime topic for zone " +
+                       String(i));
+        break;
+      }
+      int durationTimeSeconds = atoi(message);
+      int durationTimeMs = durationTimeSeconds * 1000;
       if (durationTimeMs > 0 &&
           durationTimeMs <= (int)_irrigationConfig.maxDurationMs)
       {
-        // Update to use new method with zone index for storage
         _irrigationZones[i]->setDurationTime(durationTimeMs, i);
         publish(durationTopic.c_str(), String(durationTimeSeconds).c_str());
         Trace::log(TraceLevel::INFO,
@@ -272,14 +277,13 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
       }
       else
       {
-        // Invalid duration time, reset to default
-        _irrigationZones[i]->setDurationTime(
-            _irrigationConfig.defaultDurationMs, i);
+        // Only log error if payload is not empty and not valid
         Trace::log(TraceLevel::ERROR,
                    "Invalid duration time received for zone " + String(i) +
                        ": " + String(durationTimeSeconds) + " seconds");
+        // Do not reset to default on invalid/empty input, just ignore
       }
-      break; // Exit the loop after processing the message
+      break;
     }
   }
 }
