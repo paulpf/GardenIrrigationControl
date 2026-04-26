@@ -7,14 +7,14 @@
 #   ..\_secrets\WifiSecret.h
 #   ..\_secrets\MqttSecret.h
 #   ..\_secrets\OtaSecret.h
-#   ..\_configs\MqttConfig.h
+#   ..\_config\MqttConfig.h
 # ============================================================
 
-$repoRoot    = Resolve-Path "$PSScriptRoot\.."
+$repoRoot = Resolve-Path "$PSScriptRoot\.."
 $secretsBase = Resolve-Path "$repoRoot\.."
 
-$secretsDir  = Join-Path $secretsBase "_secrets"
-$configsDir  = Join-Path $secretsBase "_configs"
+$secretsDir = Join-Path $secretsBase "_secrets"
+$configsDir = Join-Path $secretsBase "_config"
 
 Write-Host ""
 Write-Host "=== GardenIrrigationControl - Secret Setup ===" -ForegroundColor Cyan
@@ -28,7 +28,8 @@ foreach ($dir in @($secretsDir, $configsDir)) {
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Path $dir | Out-Null
         Write-Host "[CREATED] Directory: $dir" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "[EXISTS]  Directory: $dir" -ForegroundColor DarkGray
     }
 }
@@ -39,7 +40,8 @@ function Write-FileIfMissing([string]$path, [string[]]$lines, [int]$count) {
         $lines | Set-Content -Path $path -Encoding UTF8
         Write-Host "[CREATED] $path" -ForegroundColor Green
         return $count + 1
-    } else {
+    }
+    else {
         Write-Host "[SKIPPED] $path (already exists - not overwritten)" -ForegroundColor Yellow
         return $count
     }
@@ -100,7 +102,8 @@ $created = Write-FileIfMissing "$configsDir\MqttConfig.h"  $mqttConfigLines $cre
 Write-Host ""
 if ($created -gt 0) {
     Write-Host "Files created ($created). Please fill in your credentials." -ForegroundColor Cyan
-} else {
+}
+else {
     Write-Host "All files already exist. No changes made." -ForegroundColor DarkGray
 }
 

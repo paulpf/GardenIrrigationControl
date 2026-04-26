@@ -1,6 +1,10 @@
 #ifndef WIFI_SECRET_H
 #define WIFI_SECRET_H
 
+// TEMPLATE ONLY (documentation purpose).
+// Do not use values from this file in productive builds.
+// Real file location: ../_secrets/WifiSecret.h (outside repository).
+
 // WiFi Configuration Example
 // Copy this file to _secrets/WifiSecret.h and update with your WiFi credentials
 
