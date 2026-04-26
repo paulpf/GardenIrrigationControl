@@ -48,6 +48,33 @@ void GardenControllerApp::initIrrigationZones()
   }
 }
 
+void GardenControllerApp::resetZoneStateAfterColdStartIfNeeded()
+{
+  const esp_reset_reason_t resetReason = esp_reset_reason();
+  const bool shouldClearZoneState = resetReason == ESP_RST_EXT ||
+                                    resetReason == ESP_RST_POWERON ||
+                                    resetReason == ESP_RST_BROWNOUT;
+  if (!shouldClearZoneState)
+  {
+    return;
+  }
+
+  Trace::log(TraceLevel::INFO,
+             "Cold start detected, clearing zone state to zero. Reset reason=" +
+                 String(static_cast<int>(resetReason)));
+
+  for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
+  {
+    _irrigationZones[i].synchronizeButtonStates(false);
+    _irrigationZones[i].switchRelay(false);
+    _irrigationZones[i].resetTimer();
+    _irrigationZones[i].setDurationTime(0, i);
+
+    StorageManager::getInstance().saveButtonState(i, false);
+    StorageManager::getInstance().saveRelayState(i, false);
+  }
+}
+
 void GardenControllerApp::updateClientNameFromMac()
 {
   String macFormatted = Helper::replaceChars(WiFi.macAddress(), ':', '-');
@@ -104,14 +131,17 @@ void GardenControllerApp::initializeConnectivity()
 void GardenControllerApp::initializeSubsystems()
 {
   _waterLevelManager.setup(_clientName);
+  _mqttManager.setWaterLevelManager(&_waterLevelManager);
 
   _mqttManager.configure(_irrigationConfig);
   _mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD,
                      _clientName);
-  _connectivityCoordinator.ensureMqttConnected();
 
   setupOta();
   initIrrigationZones();
+  resetZoneStateAfterColdStartIfNeeded();
+
+  _connectivityCoordinator.ensureMqttConnected();
 }
 
 void GardenControllerApp::initializeRuntimeSafety()

@@ -1,6 +1,29 @@
 #include "mqttmanager.h"
 #include "helper.h"
+#include "waterlevelmanager.h"
 #include <cstring> // Phase 3.5: for memcpy and strcmp in hot-path optimization
+
+namespace
+{
+bool tryParseBool(const char *value, bool &out)
+{
+  if (strcmp(value, "true") == 0 || strcmp(value, "1") == 0 ||
+      strcmp(value, "on") == 0)
+  {
+    out = true;
+    return true;
+  }
+
+  if (strcmp(value, "false") == 0 || strcmp(value, "0") == 0 ||
+      strcmp(value, "off") == 0)
+  {
+    out = false;
+    return true;
+  }
+
+  return false;
+}
+} // namespace
 
 // Initialize the static instance pointer
 MqttManager *MqttManager::_instance = nullptr;
@@ -54,6 +77,23 @@ const char *MqttManager::sanitizeMqttServer(const char *mqttServer)
   return _mqttServerSanitized;
 }
 
+const char *MqttManager::getMqttClientId()
+{
+  if (_mqttClientId[0] != '\0')
+  {
+    return _mqttClientId;
+  }
+
+  uint64_t mac = ESP.getEfuseMac();
+  unsigned int suffix = static_cast<unsigned int>(mac & 0xFFFFFF);
+  snprintf(_mqttClientId, sizeof(_mqttClientId), "GC-%06X", suffix);
+
+  Trace::log(TraceLevel::INFO, "MqttManager::setup | Using MQTT client ID: " +
+                                   String(_mqttClientId));
+
+  return _mqttClientId;
+}
+
 void MqttManager::configure(const IrrigationConfig &config)
 {
   _irrigationConfig = config;
@@ -64,6 +104,7 @@ void MqttManager::setup(const char *mqttServer, int mqttPort,
                         const char *clientName)
 {
   _mqttServer = sanitizeMqttServer(mqttServer);
+  _mqttClientId[0] = '\0';
   _mqttPort = mqttPort;
   _mqttUser = mqttUser;
   _mqttPassword = mqttPassword;
@@ -77,18 +118,30 @@ void MqttManager::setup(const char *mqttServer, int mqttPort,
 
 void MqttManager::initPublish()
 {
+  if (_waterLevelManager != nullptr)
+  {
+    publish(GetLowWaterLockoutEnabledTopic().c_str(),
+            _waterLevelManager->isLowWaterLockoutEnabled() ? "true" : "false");
+  }
+
+  char remainingTimeBuffer[8];
   for (int i = 0; i < _numIrrigationZones; i++)
   {
-    // Set initial state on mqtt for relay as false
-    // This is necessary to ensure the relay state is known on startup
-    // and to avoid false positives in the UI
-    publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(), "false");
+    publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(),
+            _irrigationZones[i]->getRelayState() ? "true" : "false");
 
-    // Convert milliseconds to minutes for MQTT publishing
+    _irrigationZones[i]->getRemainingTimeAsString(remainingTimeBuffer,
+                                                  sizeof(remainingTimeBuffer));
+    publish(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str(),
+            remainingTimeBuffer);
+
+    publish(_irrigationZones[i]->getMqttTopicForSwButton().c_str(),
+            _irrigationZones[i]->getBtnState() ? "true" : "false");
+
     int durationTimeMs = _irrigationZones[i]->getDurationTime();
-    int durationTimeMinutes = durationTimeMs / (60 * 1000);
+    int durationTimeSeconds = durationTimeMs / 1000;
     publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
-            String(durationTimeMinutes).c_str());
+            String(durationTimeSeconds).c_str());
   }
 }
 
@@ -120,14 +173,74 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
   memcpy(message, payload, copyLength);
   message[copyLength] = '\0';
 
-  Trace::log(TraceLevel::DEBUG, "Message arrived [" + String(topic) +
-                                    "] Message: " + String(message));
+  String incomingTopic = String(topic);
+  Trace::log(TraceLevel::INFO, "MQTT message arrived [" + incomingTopic +
+                                   "] payload: " + String(message));
+
+  if (incomingTopic == GetFactoryResetTopic())
+  {
+    bool trigger = false;
+    if (tryParseBool(message, trigger) && trigger)
+    {
+      triggerFactoryReset();
+    }
+    return;
+  }
+
+  if (incomingTopic == GetResetDurationsTopic())
+  {
+    bool trigger = false;
+    if (tryParseBool(message, trigger) && trigger)
+    {
+      const int defaultMs = _irrigationConfig.defaultDurationMs;
+      const int defaultSeconds = defaultMs / 1000;
+      for (int i = 0; i < _numIrrigationZones; i++)
+      {
+        _irrigationZones[i]->setDurationTime(defaultMs, i);
+        publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
+                String(defaultSeconds).c_str());
+      }
+      Trace::log(TraceLevel::INFO,
+                 "All irrigation durations reset to default: " +
+                     String(defaultSeconds) + "s");
+      _resetDurationsPending = true;
+      _resetDurationsClearAt = millis() + 1000;
+    }
+    return;
+  }
+
+  if (_waterLevelManager != nullptr &&
+      (incomingTopic == GetLowWaterLockoutEnabledTopic() ||
+       incomingTopic == GetLowWaterLockoutEnabledSetTopic()))
+  {
+    bool requestedState = false;
+    if (tryParseBool(message, requestedState))
+    {
+      _waterLevelManager->setLowWaterLockoutEnabled(requestedState);
+      publish(GetLowWaterLockoutEnabledTopic().c_str(),
+              requestedState ? "true" : "false");
+
+      Trace::log(TraceLevel::INFO,
+                 "Updated lowWaterLockoutEnabled to " +
+                     String(requestedState ? "true" : "false"));
+    }
+    else
+    {
+      Trace::log(TraceLevel::ERROR,
+                 "Invalid payload for lowWaterLockoutEnabled: " +
+                     String(message));
+    }
+    return;
+  }
 
   // Check if the message is for the software button of any irrigation zone
   for (int i = 0; i < _numIrrigationZones; i++)
   {
-    if (String(topic).startsWith(
-            _irrigationZones[i]->getMqttTopicForSwButton()))
+    String swButtonTopic = _irrigationZones[i]->getMqttTopicForSwButton();
+    if (incomingTopic == swButtonTopic ||
+        incomingTopic.endsWith("/swBtn") &&
+            incomingTopic.indexOf(_irrigationZones[i]->getMqttTopicForZone()) >=
+                0)
     {
       Trace::log(TraceLevel::INFO,
                  "Processing software button message for zone " + String(i) +
@@ -137,29 +250,34 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
       break; // Exit the loop after processing the message
     }
 
-    if (String(topic).startsWith(
-            _irrigationZones[i]->getMqttTopicForDurationTime()))
+    String durationTopic = _irrigationZones[i]->getMqttTopicForDurationTime();
+    if ((incomingTopic.endsWith("/durationTime") ||
+         incomingTopic.endsWith("/durationTime/set")) &&
+        incomingTopic.indexOf(_irrigationZones[i]->getMqttTopicForZone()) >= 0)
     {
-      int durationTimeMinutes =
+      int durationTimeSeconds =
           atoi(message); // Use atoi instead of String::toInt()
       int durationTimeMs =
-          durationTimeMinutes * 60 * 1000; // Convert minutes to milliseconds
-      if (durationTimeMs > 0 && durationTimeMs <= (int)_irrigationConfig.maxDurationMs)
+          durationTimeSeconds * 1000; // Convert seconds to milliseconds
+      if (durationTimeMs > 0 &&
+          durationTimeMs <= (int)_irrigationConfig.maxDurationMs)
       {
         // Update to use new method with zone index for storage
         _irrigationZones[i]->setDurationTime(durationTimeMs, i);
-        Trace::log(TraceLevel::DEBUG,
+        publish(durationTopic.c_str(), String(durationTimeSeconds).c_str());
+        Trace::log(TraceLevel::INFO,
                    "Updated duration time for zone " + String(i) + ": " +
-                       String(durationTimeMinutes) + " minutes (" +
+                       String(durationTimeSeconds) + " seconds (" +
                        String(durationTimeMs) + " ms)");
       }
       else
       {
         // Invalid duration time, reset to default
-        _irrigationZones[i]->setDurationTime(_irrigationConfig.defaultDurationMs, i);
+        _irrigationZones[i]->setDurationTime(
+            _irrigationConfig.defaultDurationMs, i);
         Trace::log(TraceLevel::ERROR,
                    "Invalid duration time received for zone " + String(i) +
-                       ": " + String(durationTimeMinutes) + " minutes");
+                       ": " + String(durationTimeSeconds) + " seconds");
       }
       break; // Exit the loop after processing the message
     }
@@ -168,6 +286,13 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
 
 void MqttManager::loop()
 {
+  if (_resetDurationsPending && (long)(millis() - _resetDurationsClearAt) >= 0)
+  {
+    _resetDurationsPending = false;
+    publish(GetResetDurationsTopic().c_str(), "false");
+    Trace::log(TraceLevel::INFO, "resetDurations auto-cleared to false");
+  }
+
   if (WiFi.status() != WL_CONNECTED)
   {
     // Can't connect to MQTT without WiFi
@@ -207,12 +332,15 @@ void MqttManager::reconnect()
   // Single connection attempt
   Trace::log(TraceLevel::INFO,
              "MqttManager::reconnect | Attempting MQTT connection...");
+  Trace::log(TraceLevel::INFO,
+             "MqttManager::reconnect | Server=" + String(_mqttServer) + ":" +
+                 String(_mqttPort) + ", ClientId=" + String(getMqttClientId()));
   _sessionManager.onConnectAttemptStarted();
 
   // Phase 5.2: Last Will Testament (LWT) support for system stability
   // If device disconnects unexpectedly, broker will automatically publish
   // "offline" to status topic
-  if (_pubSubClient.connect(_clientName, _mqttUser, _mqttPassword,
+  if (_pubSubClient.connect(getMqttClientId(), _mqttUser, _mqttPassword,
                             getLwtTopic(), 1, true, getLwtOfflinePayload()))
   {
     Trace::log(TraceLevel::INFO, "MqttManager::reconnect | MQTT connected");
@@ -260,6 +388,12 @@ void MqttManager::subscribeIrrigationZones()
 {
   Trace::log(TraceLevel::INFO, "MqttManager::subscribeIrrigationZones | "
                                "Subscribing to irrigation zones...");
+
+  subscribe(GetLowWaterLockoutEnabledTopic().c_str());
+  subscribe(GetLowWaterLockoutEnabledSetTopic().c_str());
+  subscribe(GetResetDurationsTopic().c_str());
+  subscribe(GetFactoryResetTopic().c_str());
+
   // Subscribe to all irrigation zones
   for (int i = 0; i < _numIrrigationZones; i++)
   {
@@ -267,6 +401,9 @@ void MqttManager::subscribeIrrigationZones()
     subscribe(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str());
     subscribe(_irrigationZones[i]->getMqttTopicForSwButton().c_str());
     subscribe(_irrigationZones[i]->getMqttTopicForDurationTime().c_str());
+    String durationSetTopic =
+        _irrigationZones[i]->getMqttTopicForDurationTime() + "/set";
+    subscribe(durationSetTopic.c_str());
   }
 }
 
@@ -327,6 +464,10 @@ void MqttManager::publishAllIrrigationZones()
 
       publish(_irrigationZones[i]->getMqttTopicForSwButton().c_str(),
               _irrigationZones[i]->getBtnState() ? "true" : "false");
+
+      int durationTimeSeconds = _irrigationZones[i]->getDurationTime() / 1000;
+      publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
+              String(durationTimeSeconds).c_str());
     }
   }
 }
@@ -432,5 +573,59 @@ void MqttManager::publishOnlineStatus()
   {
     Trace::log(TraceLevel::INFO, "Publishing online status to MQTT broker");
     publish(getLwtTopic(), getLwtOnlinePayload());
+  }
+}
+
+void MqttManager::setWaterLevelManager(WaterLevelManager *waterLevelManager)
+{
+  _waterLevelManager = waterLevelManager;
+}
+
+void MqttManager::triggerFactoryReset()
+{
+  Trace::log(TraceLevel::ERROR, "!!! FACTORY RESET TRIGGERED VIA MQTT !!!");
+
+  // Reset all zones in memory and stop any active irrigation
+  const int defaultMs = _irrigationConfig.defaultDurationMs;
+  const int defaultSeconds = defaultMs / 1000;
+  for (int i = 0; i < _numIrrigationZones; i++)
+  {
+    _irrigationZones[i]->synchronizeButtonStates(false);
+    _irrigationZones[i]->switchRelay(false);
+    _irrigationZones[i]->resetTimer();
+    _irrigationZones[i]->setDurationTime(defaultMs, i);
+  }
+
+  // Reset lockout config to default
+  if (_waterLevelManager != nullptr)
+  {
+    _waterLevelManager->setLowWaterLockoutEnabled(
+        WATER_LEVEL_LOW_WATER_LOCKOUT_ENABLED);
+  }
+
+  // Persist all defaults to NVS
+  StorageManager::getInstance().factoryReset(defaultMs);
+
+  // Publish reset state to all topics
+  if (_sessionManager.isConnected())
+  {
+    for (int i = 0; i < _numIrrigationZones; i++)
+    {
+      publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(), "false");
+      publish(_irrigationZones[i]->getMqttTopicForSwButton().c_str(), "false");
+      publish(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str(),
+              "00:00");
+      publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
+              String(defaultSeconds).c_str());
+    }
+
+    if (_waterLevelManager != nullptr)
+    {
+      publish(GetLowWaterLockoutEnabledTopic().c_str(),
+              WATER_LEVEL_LOW_WATER_LOCKOUT_ENABLED ? "true" : "false");
+    }
+
+    publish(GetFactoryResetStatusTopic().c_str(), "complete");
+    Trace::log(TraceLevel::INFO, "Factory reset complete, status published");
   }
 }

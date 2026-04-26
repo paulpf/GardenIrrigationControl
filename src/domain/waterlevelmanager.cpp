@@ -3,9 +3,9 @@
 #include "irrigation_zone.h"
 
 WaterLevelManager::WaterLevelManager(IMessagePublisher &messagePublisher,
-                   IWaterLevelSensorReader &sensor,
-                   const WaterLevelConfig &config)
-  : _messagePublisher(messagePublisher), _sensor(sensor), _config(config)
+                                     IWaterLevelSensorReader &sensor,
+                                     const WaterLevelConfig &config)
+    : _messagePublisher(messagePublisher), _sensor(sensor), _config(config)
 {
 }
 
@@ -13,6 +13,30 @@ void WaterLevelManager::setup(const char *clientName)
 {
   initTopics(clientName);
   initSensor();
+}
+
+void WaterLevelManager::setLowWaterLockoutEnabled(bool enabled)
+{
+  if (_config.lowWaterLockoutEnabled == enabled)
+  {
+    return;
+  }
+
+  _config.lowWaterLockoutEnabled = enabled;
+
+  const TransitionEvents events = updateStateTransitions();
+  applyTransitionEffects(events);
+
+  if (_messagePublisher.isConnected())
+  {
+    _messagePublisher.publish(_topics.lowWaterLockoutEnabled.c_str(),
+                              enabled ? "true" : "false");
+  }
+}
+
+bool WaterLevelManager::isLowWaterLockoutEnabled() const
+{
+  return _config.lowWaterLockoutEnabled;
 }
 
 void WaterLevelManager::loop(unsigned long currentMillis)
@@ -36,6 +60,8 @@ void WaterLevelManager::initTopics(const char *clientName)
   _topics.raw = String(clientName) + "/waterlevel/raw";
   _topics.status = String(clientName) + "/waterlevel/status";
   _topics.lockout = String(clientName) + "/waterlevel/lockout";
+  _topics.lowWaterLockoutEnabled =
+      String(clientName) + "/waterlevel/lowWaterLockoutEnabled";
   _topics.criticalHighAlarm =
       String(clientName) + "/waterlevel/critical_high_alarm";
   _topics.overflow = String(clientName) + "/waterlevel/overflow";
@@ -52,8 +78,7 @@ void WaterLevelManager::initSensor()
 
 bool WaterLevelManager::shouldRead(unsigned long currentMillis)
 {
-  if ((unsigned long)(currentMillis - _previousRead) <
-      _config.readIntervalMs)
+  if ((unsigned long)(currentMillis - _previousRead) < _config.readIntervalMs)
   {
     return false;
   }
@@ -115,18 +140,27 @@ WaterLevelManager::TransitionEvents WaterLevelManager::updateStateTransitions()
 {
   TransitionEvents events;
 
-  const bool shouldEnableLowWaterLockout =
-      _state.percent < _config.criticalPercent;
-  const bool shouldReleaseLowWaterLockout =
-      _state.percent >= _config.lockoutReleasePercent;
-
-  if (!_state.lowWaterLockoutActive && shouldEnableLowWaterLockout)
+  if (_config.lowWaterLockoutEnabled)
   {
-    _state.lowWaterLockoutActive = true;
-    events.add(TransitionEvents::Type::LowWaterLockout,
-               _state.lowWaterLockoutActive);
+    const bool shouldEnableLowWaterLockout =
+        _state.percent < _config.criticalPercent;
+    const bool shouldReleaseLowWaterLockout =
+        _state.percent >= _config.lockoutReleasePercent;
+
+    if (!_state.lowWaterLockoutActive && shouldEnableLowWaterLockout)
+    {
+      _state.lowWaterLockoutActive = true;
+      events.add(TransitionEvents::Type::LowWaterLockout,
+                 _state.lowWaterLockoutActive);
+    }
+    else if (_state.lowWaterLockoutActive && shouldReleaseLowWaterLockout)
+    {
+      _state.lowWaterLockoutActive = false;
+      events.add(TransitionEvents::Type::LowWaterLockout,
+                 _state.lowWaterLockoutActive);
+    }
   }
-  else if (_state.lowWaterLockoutActive && shouldReleaseLowWaterLockout)
+  else if (_state.lowWaterLockoutActive)
   {
     _state.lowWaterLockoutActive = false;
     events.add(TransitionEvents::Type::LowWaterLockout,
@@ -267,6 +301,8 @@ void WaterLevelManager::publishData()
                             String(_state.liters, 1).c_str());
   _messagePublisher.publish(_topics.raw.c_str(),
                             String(_state.rawValue).c_str());
+  _messagePublisher.publish(_topics.lowWaterLockoutEnabled.c_str(),
+                            _config.lowWaterLockoutEnabled ? "true" : "false");
   _messagePublisher.publish(_topics.overflowLiters.c_str(),
                             String(_state.overflowLiters, 1).c_str());
   _messagePublisher.publish(_topics.litersToOverflow.c_str(),

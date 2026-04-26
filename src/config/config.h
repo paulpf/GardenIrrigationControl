@@ -57,6 +57,7 @@ constexpr float CISTERN_CAPACITY_LITERS =
     5000.0f; // Adjust to your real cistern capacity
 constexpr float WATER_LEVEL_CRITICAL_PERCENT = 10.0f;
 constexpr float WATER_LEVEL_LOCKOUT_RELEASE_PERCENT = 12.0f;
+constexpr bool WATER_LEVEL_LOW_WATER_LOCKOUT_ENABLED = true;
 constexpr float WATER_LEVEL_OVERFLOW_PERCENT = 100.0f;
 constexpr float WATER_LEVEL_OVERFLOW_CLEAR_PERCENT = 100.0f;
 constexpr float WATER_LEVEL_CRITICAL_OVERFLOW_BUFFER_LITERS = 300.0f;

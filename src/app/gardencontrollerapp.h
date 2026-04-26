@@ -66,6 +66,7 @@ private:
   void initializeRuntimeSafety();
 
   void initIrrigationZones();
+  void resetZoneStateAfterColdStartIfNeeded();
   void updateClientNameFromMac();
   void setupOta();
   void initWatchdog();

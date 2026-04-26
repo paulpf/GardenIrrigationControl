@@ -3,12 +3,14 @@
 #define MQTTMANAGER_H
 
 #include "global_defines.h"
-#include "imqttconnectioncontrol.h"
 #include "imessagepublisher.h"
-#include "irrigationconfig.h"
+#include "imqttconnectioncontrol.h"
 #include "irrigation_zone.h"
+#include "irrigationconfig.h"
 #include "mqttsessionmanager.h"
 #include <PubSubClient.h>
+
+class WaterLevelManager;
 
 class MqttManager : public IMessagePublisher, public IMqttConnectionControl
 {
@@ -37,6 +39,7 @@ public:
   // Factory Reset support - Phase 5.3
   void triggerFactoryReset();
   void publishOnlineStatus();
+  void setWaterLevelManager(WaterLevelManager *waterLevelManager);
 
   // Make this public and static so it can be used as a callback
   static void staticMqttCallback(char *topic, byte *payload,
@@ -44,6 +47,7 @@ public:
 
 private:
   const char *sanitizeMqttServer(const char *mqttServer);
+  const char *getMqttClientId();
   // Instance callback that will be called by the static callback
   void instanceMqttCallback(char *topic, byte *payload, unsigned int length);
   void reconnect();
@@ -68,6 +72,8 @@ private:
   const char *_mqttServer;
   static const int MQTT_SERVER_MAX_LEN = 128;
   char _mqttServerSanitized[MQTT_SERVER_MAX_LEN] = {0};
+  static const int MQTT_CLIENT_ID_MAX_LEN = 24;
+  char _mqttClientId[MQTT_CLIENT_ID_MAX_LEN] = {0};
   int _mqttPort;
   const char *_mqttUser;
   const char *_mqttPassword;
@@ -105,6 +111,24 @@ private:
   {
     return _clientName + String("/system/heartbeat");
   }
+  String GetLowWaterLockoutEnabledTopic() const
+  {
+    return _clientName + String("/waterlevel/lowWaterLockoutEnabled");
+  }
+  String GetLowWaterLockoutEnabledSetTopic() const
+  {
+    return _clientName + String("/waterlevel/lowWaterLockoutEnabled/set");
+  }
+  String GetResetDurationsTopic() const
+  {
+    return _clientName + String("/irrigation/resetDurations");
+  }
+
+  WaterLevelManager *_waterLevelManager = nullptr;
+
+  // Auto-clear timer for resetDurations topic
+  bool _resetDurationsPending = false;
+  unsigned long _resetDurationsClearAt = 0;
 };
 
 #endif // MQTTMANAGER_H

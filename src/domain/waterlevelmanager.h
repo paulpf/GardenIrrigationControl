@@ -15,6 +15,8 @@ public:
 
   void setup(const char *clientName);
   void loop(unsigned long currentMillis);
+  void setLowWaterLockoutEnabled(bool enabled);
+  bool isLowWaterLockoutEnabled() const;
 
 private:
   struct State
@@ -37,6 +39,7 @@ private:
     String raw;
     String status;
     String lockout;
+    String lowWaterLockoutEnabled;
     String criticalHighAlarm;
     String overflow;
     String safetyLock;
