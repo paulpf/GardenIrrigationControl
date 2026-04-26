@@ -7,6 +7,7 @@
 
 // MQTT Broker Configuration Example
 // Copy this file to _config/MqttConfig.h and update with your MQTT settings
+// Use only host/IP, for example "192.168.178.205" (no http:// and no trailing /)
 
 #define MQTT_SERVER_IP "192.168.x.x" // Replace with your MQTT broker IP
 #define MQTT_SERVER_PORT 1883        // Standard MQTT port

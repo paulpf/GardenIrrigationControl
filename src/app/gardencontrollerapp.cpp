@@ -96,9 +96,9 @@ void GardenControllerApp::initializeIdentity()
 
 void GardenControllerApp::initializeConnectivity()
 {
+  updateClientNameFromMac();
   _wifiManager.setup(WIFI_SSID, WIFI_PWD, _clientName);
   waitForWifiConnection();
-  updateClientNameFromMac();
 }
 
 void GardenControllerApp::initializeSubsystems()

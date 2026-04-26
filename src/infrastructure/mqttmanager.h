@@ -43,6 +43,7 @@ public:
                                  unsigned int length);
 
 private:
+  const char *sanitizeMqttServer(const char *mqttServer);
   // Instance callback that will be called by the static callback
   void instanceMqttCallback(char *topic, byte *payload, unsigned int length);
   void reconnect();
@@ -65,6 +66,8 @@ private:
   static MqttManager *_instance;
 
   const char *_mqttServer;
+  static const int MQTT_SERVER_MAX_LEN = 128;
+  char _mqttServerSanitized[MQTT_SERVER_MAX_LEN] = {0};
   int _mqttPort;
   const char *_mqttUser;
   const char *_mqttPassword;

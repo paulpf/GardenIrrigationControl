@@ -12,6 +12,48 @@ MqttManager::MqttManager()
   _pubSubClient.setClient(_wifiClient);
 }
 
+const char *MqttManager::sanitizeMqttServer(const char *mqttServer)
+{
+  if (mqttServer == nullptr)
+  {
+    _mqttServerSanitized[0] = '\0';
+    return _mqttServerSanitized;
+  }
+
+  const char *hostStart = mqttServer;
+  if (strncmp(hostStart, "http://", 7) == 0)
+  {
+    hostStart += 7;
+  }
+  else if (strncmp(hostStart, "https://", 8) == 0)
+  {
+    hostStart += 8;
+  }
+  else if (strncmp(hostStart, "mqtt://", 7) == 0)
+  {
+    hostStart += 7;
+  }
+
+  int i = 0;
+  while (hostStart[i] != '\0' && hostStart[i] != '/' &&
+         i < MQTT_SERVER_MAX_LEN - 1)
+  {
+    _mqttServerSanitized[i] = hostStart[i];
+    i++;
+  }
+  _mqttServerSanitized[i] = '\0';
+
+  if (strcmp(_mqttServerSanitized, mqttServer) != 0)
+  {
+    Trace::log(TraceLevel::INFO,
+               "MqttManager::setup | Normalized MQTT server from '" +
+                   String(mqttServer) + "' to '" +
+                   String(_mqttServerSanitized) + "'");
+  }
+
+  return _mqttServerSanitized;
+}
+
 void MqttManager::configure(const IrrigationConfig &config)
 {
   _irrigationConfig = config;
@@ -21,7 +63,7 @@ void MqttManager::setup(const char *mqttServer, int mqttPort,
                         const char *mqttUser, const char *mqttPassword,
                         const char *clientName)
 {
-  _mqttServer = mqttServer;
+  _mqttServer = sanitizeMqttServer(mqttServer);
   _mqttPort = mqttPort;
   _mqttUser = mqttUser;
   _mqttPassword = mqttPassword;
