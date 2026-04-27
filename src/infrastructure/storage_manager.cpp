@@ -19,6 +19,16 @@ int StorageManager::loadDurationTime(int zoneIndex, int defaultDurationMs)
 {
   String key = getKey("duration", zoneIndex);
   int durationTime = _preferences.getInt(key.c_str(), defaultDurationMs);
+  if (durationTime <= 0)
+  {
+    Trace::log(TraceLevel::ERROR,
+               "Invalid stored duration time for zone " + String(zoneIndex) +
+                   ": " + String(durationTime) +
+                   ". Restoring default: " + String(defaultDurationMs));
+    saveDurationTime(zoneIndex, defaultDurationMs);
+    return defaultDurationMs;
+  }
+
   Trace::log(TraceLevel::DEBUG, "Loaded duration time for zone " +
                                     String(zoneIndex) + ": " +
                                     String(durationTime));

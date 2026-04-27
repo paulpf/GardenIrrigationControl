@@ -51,6 +51,8 @@ private:
   // Instance callback that will be called by the static callback
   void instanceMqttCallback(char *topic, byte *payload, unsigned int length);
   void reconnect();
+  void publishRetained(const char *topic, const char *payload);
+  void clearRetainedDurationSetTopics();
 
   // LWT helper methods
   // Factory Reset topic and handling
@@ -129,6 +131,10 @@ private:
   // Auto-clear timer for resetDurations topic
   bool _resetDurationsPending = false;
   unsigned long _resetDurationsClearAt = 0;
+
+  // Auto-clear timer for factoryReset topic
+  bool _factoryResetPending = false;
+  unsigned long _factoryResetClearAt = 0;
 };
 
 #endif // MQTTMANAGER_H

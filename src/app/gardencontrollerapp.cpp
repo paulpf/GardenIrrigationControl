@@ -60,7 +60,7 @@ void GardenControllerApp::resetZoneStateAfterColdStartIfNeeded()
   }
 
   Trace::log(TraceLevel::INFO,
-             "Cold start detected, clearing zone state to zero. Reset reason=" +
+             "Cold start detected, clearing transient zone state. Reset reason=" +
                  String(static_cast<int>(resetReason)));
 
   for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
@@ -68,7 +68,6 @@ void GardenControllerApp::resetZoneStateAfterColdStartIfNeeded()
     _irrigationZones[i].synchronizeButtonStates(false);
     _irrigationZones[i].switchRelay(false);
     _irrigationZones[i].resetTimer();
-    _irrigationZones[i].setDurationTime(0, i);
 
     StorageManager::getInstance().saveButtonState(i, false);
     StorageManager::getInstance().saveRelayState(i, false);

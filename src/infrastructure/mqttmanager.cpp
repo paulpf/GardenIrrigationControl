@@ -1,6 +1,7 @@
 #include "mqttmanager.h"
 #include "helper.h"
 #include "waterlevelmanager.h"
+#include <climits>
 #include <cstring> // Phase 3.5: for memcpy and strcmp in hot-path optimization
 
 namespace
@@ -22,6 +23,37 @@ bool tryParseBool(const char *value, bool &out)
   }
 
   return false;
+}
+
+bool tryParsePositiveInt(const char *value, int &out)
+{
+  if (value == nullptr || value[0] == '\0')
+  {
+    return false;
+  }
+
+  long parsed = 0;
+  for (const char *cursor = value; *cursor != '\0'; cursor++)
+  {
+    if (*cursor < '0' || *cursor > '9')
+    {
+      return false;
+    }
+
+    parsed = parsed * 10 + (*cursor - '0');
+    if (parsed > INT_MAX)
+    {
+      return false;
+    }
+  }
+
+  if (parsed <= 0)
+  {
+    return false;
+  }
+
+  out = (int)parsed;
+  return true;
 }
 } // namespace
 
@@ -200,6 +232,7 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
         publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
                 String(defaultSeconds).c_str());
       }
+      clearRetainedDurationSetTopics();
       Trace::log(TraceLevel::INFO,
                  "All irrigation durations reset to default: " +
                      String(defaultSeconds) + "s");
@@ -251,24 +284,31 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
     }
 
     String durationTopic = _irrigationZones[i]->getMqttTopicForDurationTime();
-    if ((incomingTopic.endsWith("/durationTime") ||
-         incomingTopic.endsWith("/durationTime/set")) &&
-        incomingTopic.indexOf(_irrigationZones[i]->getMqttTopicForZone()) >= 0)
+    String durationSetTopic = durationTopic + "/set";
+    if (incomingTopic == durationSetTopic)
     {
       // Ignore empty payloads (do nothing)
-      if (message == nullptr || strlen(message) == 0)
+      if (strlen(message) == 0)
       {
         Trace::log(TraceLevel::INFO,
                    "Ignoring empty payload for durationTime topic for zone " +
                        String(i));
         break;
       }
-      int durationTimeSeconds = atoi(message);
-      int durationTimeMs = durationTimeSeconds * 1000;
-      if (durationTimeMs > 0 &&
-          durationTimeMs <= (int)_irrigationConfig.maxDurationMs)
+      int durationTimeSeconds = 0;
+      if (!tryParsePositiveInt(message, durationTimeSeconds))
       {
-        _irrigationZones[i]->setDurationTime(durationTimeMs, i);
+        Trace::log(TraceLevel::ERROR,
+                   "Invalid duration time received for zone " + String(i) +
+                       ": " + String(message) + " seconds");
+        break;
+      }
+
+      long durationTimeMs = (long)durationTimeSeconds * 1000L;
+      if (durationTimeMs > 0 &&
+          durationTimeMs <= (long)_irrigationConfig.maxDurationMs)
+      {
+        _irrigationZones[i]->setDurationTime((int)durationTimeMs, i);
         publish(durationTopic.c_str(), String(durationTimeSeconds).c_str());
         Trace::log(TraceLevel::INFO,
                    "Updated duration time for zone " + String(i) + ": " +
@@ -295,6 +335,13 @@ void MqttManager::loop()
     _resetDurationsPending = false;
     publish(GetResetDurationsTopic().c_str(), "false");
     Trace::log(TraceLevel::INFO, "resetDurations auto-cleared to false");
+  }
+
+  if (_factoryResetPending && (long)(millis() - _factoryResetClearAt) >= 0)
+  {
+    _factoryResetPending = false;
+    publishRetained(GetFactoryResetTopic().c_str(), "false");
+    Trace::log(TraceLevel::INFO, "factoryReset auto-cleared to false");
   }
 
   if (WiFi.status() != WL_CONNECTED)
@@ -388,6 +435,29 @@ void MqttManager::publish(const char *topic, const char *payload)
   }
 }
 
+void MqttManager::publishRetained(const char *topic, const char *payload)
+{
+  if (_sessionManager.isConnected())
+  {
+    _pubSubClient.publish(topic, payload, true);
+  }
+  else
+  {
+    Trace::log(TraceLevel::ERROR,
+               "Cannot publish retained MQTT message - not connected");
+  }
+}
+
+void MqttManager::clearRetainedDurationSetTopics()
+{
+  for (int i = 0; i < _numIrrigationZones; i++)
+  {
+    String durationSetTopic =
+        _irrigationZones[i]->getMqttTopicForDurationTime() + "/set";
+    publishRetained(durationSetTopic.c_str(), "");
+  }
+}
+
 void MqttManager::subscribeIrrigationZones()
 {
   Trace::log(TraceLevel::INFO, "MqttManager::subscribeIrrigationZones | "
@@ -401,10 +471,7 @@ void MqttManager::subscribeIrrigationZones()
   // Subscribe to all irrigation zones
   for (int i = 0; i < _numIrrigationZones; i++)
   {
-    subscribe(_irrigationZones[i]->getMqttTopicForRelay().c_str());
-    subscribe(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str());
     subscribe(_irrigationZones[i]->getMqttTopicForSwButton().c_str());
-    subscribe(_irrigationZones[i]->getMqttTopicForDurationTime().c_str());
     String durationSetTopic =
         _irrigationZones[i]->getMqttTopicForDurationTime() + "/set";
     subscribe(durationSetTopic.c_str());
@@ -613,6 +680,8 @@ void MqttManager::triggerFactoryReset()
   // Publish reset state to all topics
   if (_sessionManager.isConnected())
   {
+    clearRetainedDurationSetTopics();
+
     for (int i = 0; i < _numIrrigationZones; i++)
     {
       publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(), "false");
@@ -630,6 +699,8 @@ void MqttManager::triggerFactoryReset()
     }
 
     publish(GetFactoryResetStatusTopic().c_str(), "complete");
+    _factoryResetPending = true;
+    _factoryResetClearAt = millis() + 1000;
     Trace::log(TraceLevel::INFO, "Factory reset complete, status published");
   }
 }
