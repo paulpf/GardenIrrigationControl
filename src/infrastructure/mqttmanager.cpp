@@ -55,6 +55,11 @@ bool tryParsePositiveInt(const char *value, int &out)
   out = (int)parsed;
   return true;
 }
+
+bool isNoopDurationPayload(const char *value)
+{
+  return value == nullptr || value[0] == '\0' || strcmp(value, "null") == 0;
+}
 } // namespace
 
 // Initialize the static instance pointer
@@ -287,12 +292,16 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
     String durationSetTopic = durationTopic + "/set";
     if (incomingTopic == durationSetTopic)
     {
-      // Ignore empty payloads (do nothing)
-      if (strlen(message) == 0)
+      // Ignore retained clear payloads and Home Assistant JSON-null updates.
+      if (isNoopDurationPayload(message))
       {
+        int currentDurationSeconds =
+            _irrigationZones[i]->getDurationTime() / 1000;
+        publish(durationTopic.c_str(), String(currentDurationSeconds).c_str());
         Trace::log(TraceLevel::INFO,
-                   "Ignoring empty payload for durationTime topic for zone " +
-                       String(i));
+                   "Ignoring empty/null payload for durationTime topic for zone " +
+                       String(i) + ", republished current value: " +
+                       String(currentDurationSeconds) + " seconds");
         break;
       }
       int durationTimeSeconds = 0;
