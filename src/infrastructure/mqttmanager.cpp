@@ -289,24 +289,24 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
                        String(currentDurationSeconds) + " seconds");
         break;
       }
-      int durationTimeSeconds = 0;
-      if (!tryParsePositiveInt(message, durationTimeSeconds))
+      int durationTimeMinutes = 0;
+      if (!tryParsePositiveInt(message, durationTimeMinutes))
       {
         Trace::log(TraceLevel::ERROR,
                    "Invalid duration time received for zone " + String(i) +
-                       ": " + String(message) + " seconds");
+                       ": " + String(message) + " minutes");
         break;
       }
 
-      long durationTimeMs = (long)durationTimeSeconds * 1000L;
+      long durationTimeMs = (long)durationTimeMinutes * 60L * 1000L;
       if (durationTimeMs > 0 &&
           durationTimeMs <= (long)_irrigationConfig.maxDurationMs)
       {
         _irrigationZones[i]->setDurationTime((int)durationTimeMs, i);
-        publish(durationTopic.c_str(), String(durationTimeSeconds).c_str());
+        publish(durationTopic.c_str(), String(durationTimeMs / 1000L).c_str());
         Trace::log(TraceLevel::INFO,
                    "Updated duration time for zone " + String(i) + ": " +
-                       String(durationTimeSeconds) + " seconds (" +
+                       String(durationTimeMinutes) + " minutes (" +
                        String(durationTimeMs) + " ms)");
       }
       else
@@ -314,7 +314,7 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
         // Only log error if payload is not empty and not valid
         Trace::log(TraceLevel::ERROR,
                    "Invalid duration time received for zone " + String(i) +
-                       ": " + String(durationTimeSeconds) + " seconds");
+                       ": " + String(durationTimeMinutes) + " minutes");
         // Do not reset to default on invalid/empty input, just ignore
       }
       break;
