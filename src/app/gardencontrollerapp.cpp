@@ -184,18 +184,21 @@ void GardenControllerApp::handleShortIntervalTasks()
 {
   _connectivityCoordinator.handleEvents();
 
-  _mqttManager.publishAllIrrigationZones();
   _mqttManager.loop();
 
   for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
   {
     _irrigationZones[i].loop();
+    _mqttManager.publishIrrigationZoneEvent(
+        i, _irrigationZones[i].consumeEvents());
 
     if (i % 3 == 0)
     {
       yield();
     }
   }
+
+  _mqttManager.publishIrrigationZoneUpdates(_currentMillis);
 
   _waterLevelManager.loop(_currentMillis);
 }

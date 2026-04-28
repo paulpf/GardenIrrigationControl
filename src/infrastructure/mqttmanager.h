@@ -28,6 +28,9 @@ public:
   void subscribeIrrigationZones();
   bool isConnected() override;
   void publishAllIrrigationZones();
+  void publishIrrigationZoneEvent(
+      int zoneIndex, IrrigationZone::ZoneEventFlags eventFlags);
+  void publishIrrigationZoneUpdates(unsigned long currentMillis);
 
   // System status and heartbeat functionality
   void publishSystemStatus();
@@ -53,6 +56,8 @@ private:
   void reconnect();
   void publishRetained(const char *topic, const char *payload);
   void clearRetainedDurationSetTopics();
+  void publishIrrigationZoneState(int zoneIndex, bool forceAll,
+                                  bool includeRemainingTime);
 
   // LWT helper methods
   // Factory Reset topic and handling
@@ -91,6 +96,12 @@ private:
   // Array of irrigation zones
   IrrigationZone *_irrigationZones[MAX_IRRIGATION_ZONES];
   int _numIrrigationZones = 0; // Number of irrigation zones
+  bool _lastPublishedZoneInitialized[MAX_IRRIGATION_ZONES] = {false};
+  bool _lastPublishedRelayState[MAX_IRRIGATION_ZONES] = {false};
+  bool _lastPublishedButtonState[MAX_IRRIGATION_ZONES] = {false};
+  int _lastPublishedDurationSeconds[MAX_IRRIGATION_ZONES] = {0};
+  char _lastPublishedRemainingTime[MAX_IRRIGATION_ZONES][8] = {{0}};
+  unsigned long _lastRemainingTimePublishAt = 0;
 
   // Combine name for system topic with _clientName after setup
   String GetStatusTopic() const

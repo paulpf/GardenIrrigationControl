@@ -161,24 +161,9 @@ void MqttManager::initPublish()
             _waterLevelManager->isLowWaterLockoutEnabled() ? "true" : "false");
   }
 
-  char remainingTimeBuffer[8];
   for (int i = 0; i < _numIrrigationZones; i++)
   {
-    publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(),
-            _irrigationZones[i]->getRelayState() ? "true" : "false");
-
-    _irrigationZones[i]->getRemainingTimeAsString(remainingTimeBuffer,
-                                                  sizeof(remainingTimeBuffer));
-    publish(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str(),
-            remainingTimeBuffer);
-
-    publish(_irrigationZones[i]->getMqttTopicForSwButton().c_str(),
-            _irrigationZones[i]->getBtnState() ? "true" : "false");
-
-    int durationTimeMs = _irrigationZones[i]->getDurationTime();
-    int durationTimeSeconds = durationTimeMs / 1000;
-    publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
-            String(durationTimeSeconds).c_str());
+    publishIrrigationZoneState(i, true, true);
   }
 }
 
@@ -522,33 +507,112 @@ bool MqttManager::isConnected()
   return _sessionManager.isConnected();
 }
 
+void MqttManager::publishIrrigationZoneState(int zoneIndex, bool forceAll,
+                                             bool includeRemainingTime)
+{
+  if (zoneIndex < 0 || zoneIndex >= _numIrrigationZones)
+  {
+    return;
+  }
+
+  IrrigationZone *zone = _irrigationZones[zoneIndex];
+  bool initialized = _lastPublishedZoneInitialized[zoneIndex];
+
+  bool relayState = zone->getRelayState();
+  bool relayChanged = !initialized ||
+                      _lastPublishedRelayState[zoneIndex] != relayState;
+  if (forceAll || relayChanged)
+  {
+    publish(zone->getMqttTopicForRelay().c_str(),
+            relayState ? "true" : "false");
+    _lastPublishedRelayState[zoneIndex] = relayState;
+  }
+
+  if (includeRemainingTime || forceAll || relayChanged)
+  {
+    char remainingTimeBuffer[8];
+    zone->getRemainingTimeAsString(remainingTimeBuffer,
+                                   sizeof(remainingTimeBuffer));
+    if (forceAll || !initialized ||
+        strcmp(_lastPublishedRemainingTime[zoneIndex],
+               remainingTimeBuffer) != 0)
+    {
+      publish(zone->getMqttTopicForRemainingTime().c_str(),
+              remainingTimeBuffer);
+      strncpy(_lastPublishedRemainingTime[zoneIndex], remainingTimeBuffer,
+              sizeof(_lastPublishedRemainingTime[zoneIndex]) - 1);
+      _lastPublishedRemainingTime
+          [zoneIndex][sizeof(_lastPublishedRemainingTime[zoneIndex]) - 1] =
+              '\0';
+    }
+  }
+
+  bool buttonState = zone->getBtnState();
+  if (forceAll || !initialized ||
+      _lastPublishedButtonState[zoneIndex] != buttonState)
+  {
+    publish(zone->getMqttTopicForSwButton().c_str(),
+            buttonState ? "true" : "false");
+    _lastPublishedButtonState[zoneIndex] = buttonState;
+  }
+
+  int durationTimeSeconds = zone->getDurationTime() / 1000;
+  if (forceAll || !initialized ||
+      _lastPublishedDurationSeconds[zoneIndex] != durationTimeSeconds)
+  {
+    publish(zone->getMqttTopicForDurationTime().c_str(),
+            String(durationTimeSeconds).c_str());
+    _lastPublishedDurationSeconds[zoneIndex] = durationTimeSeconds;
+  }
+
+  _lastPublishedZoneInitialized[zoneIndex] = true;
+}
+
+void MqttManager::publishIrrigationZoneUpdates(unsigned long currentMillis)
+{
+  if (!isConnected())
+  {
+    return;
+  }
+
+  bool publishRemainingTimeTick =
+      (unsigned long)(currentMillis - _lastRemainingTimePublishAt) >= 1000;
+  if (publishRemainingTimeTick)
+  {
+    _lastRemainingTimePublishAt = currentMillis;
+  }
+
+  for (int i = 0; i < _numIrrigationZones; i++)
+  {
+    publishIrrigationZoneState(i, false, publishRemainingTimeTick);
+  }
+}
+
+void MqttManager::publishIrrigationZoneEvent(
+    int zoneIndex, IrrigationZone::ZoneEventFlags eventFlags)
+{
+  if (!isConnected() || eventFlags == IrrigationZone::EVENT_NONE)
+  {
+    return;
+  }
+
+  bool includeRemainingTime =
+      (eventFlags & (IrrigationZone::EVENT_RELAY_CHANGED |
+                     IrrigationZone::EVENT_DURATION_CHANGED |
+                     IrrigationZone::EVENT_TIMER_CHANGED)) != 0;
+  publishIrrigationZoneState(zoneIndex, false, includeRemainingTime);
+}
+
 void MqttManager::publishAllIrrigationZones()
 {
-  if (isConnected())
+  if (!isConnected())
   {
-    // Phase 3.5 optimization: Use stack-allocated char buffer instead of String
-    // objects This reduces heap fragmentation for frequent MQTT publish
-    // operations
-    char remainingTimeBuffer[8];
+    return;
+  }
 
-    for (int i = 0; i < _numIrrigationZones; i++)
-    {
-      publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(),
-              _irrigationZones[i]->getRelayState() ? "true" : "false");
-
-      // Use optimized buffer method instead of String conversion
-      _irrigationZones[i]->getRemainingTimeAsString(
-          remainingTimeBuffer, sizeof(remainingTimeBuffer));
-      publish(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str(),
-              remainingTimeBuffer);
-
-      publish(_irrigationZones[i]->getMqttTopicForSwButton().c_str(),
-              _irrigationZones[i]->getBtnState() ? "true" : "false");
-
-      int durationTimeSeconds = _irrigationZones[i]->getDurationTime() / 1000;
-      publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
-              String(durationTimeSeconds).c_str());
-    }
+  for (int i = 0; i < _numIrrigationZones; i++)
+  {
+    publishIrrigationZoneState(i, true, true);
   }
 }
 

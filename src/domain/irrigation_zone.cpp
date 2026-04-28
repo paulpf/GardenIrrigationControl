@@ -27,6 +27,18 @@ bool IrrigationZone::isGlobalStartInhibited()
   return _globalStartInhibit;
 }
 
+void IrrigationZone::markEvent(ZoneEventFlags eventFlags)
+{
+  _pendingEvents |= eventFlags;
+}
+
+IrrigationZone::ZoneEventFlags IrrigationZone::consumeEvents()
+{
+  ZoneEventFlags events = _pendingEvents;
+  _pendingEvents = EVENT_NONE;
+  return events;
+}
+
 void IrrigationZone::setup(int hwBtnGpioChannel, int relayGpioChannel,
                            String mqttTopicForZone)
 {
@@ -73,10 +85,15 @@ void IRAM_ATTR IrrigationZone::onHwBtnPressed()
 
 void IrrigationZone::synchronizeButtonStates(bool newState)
 {
+  bool oldState = _synchronizedBtnNewState;
   Trace::log(TraceLevel::INFO, "Synchronizing of irrigation zone " +
                                    String(_zoneIndex + 1) +
                                    " button states to " + String(newState));
   _synchronizedBtnNewState = _swBtnState = _hwBtnState = newState;
+  if (oldState != newState)
+  {
+    markEvent(EVENT_BUTTON_CHANGED);
+  }
   // We could save button state here, but it's usually transient
   // Uncomment below if you want to persist button states
   // StorageManager::getInstance().saveButtonState(_zoneIndex, newState);
@@ -98,6 +115,7 @@ void IrrigationZone::setupRelay(int relayGpioChannel)
 
 void IrrigationZone::switchRelay(bool state)
 {
+  bool oldState = _relaisState;
   _relaisState = state;
 
   if (state)
@@ -109,6 +127,11 @@ void IrrigationZone::switchRelay(bool state)
   {
     Trace::log(TraceLevel::DEBUG, "Switching relay OFF");
     digitalWrite(_relayGpioChannel, HIGH);
+  }
+
+  if (oldState != state)
+  {
+    markEvent(EVENT_RELAY_CHANGED);
   }
 }
 
@@ -169,19 +192,38 @@ void IrrigationZone::getRemainingTimeAsString(char *buffer, size_t bufsize)
 
 void IrrigationZone::startTimer()
 {
+  bool wasActive = _timerIsActive;
   _timerIsActive = true;
   _startTime = millis();
+  if (!wasActive)
+  {
+    markEvent(EVENT_TIMER_CHANGED);
+  }
 }
 
 void IrrigationZone::resetTimer()
 {
+  bool wasActive = _timerIsActive;
   _timerIsActive = false;
+  if (wasActive)
+  {
+    markEvent(EVENT_TIMER_CHANGED);
+  }
 }
 
 void IrrigationZone::setDurationTime(int durationTime, int zoneIndex)
 {
+  int oldDurationTime = _durationTime;
   _durationTime = durationTime;
   _zoneIndex = zoneIndex;
+  if (oldDurationTime != durationTime)
+  {
+    markEvent(EVENT_DURATION_CHANGED);
+    if (_timerIsActive)
+    {
+      markEvent(EVENT_TIMER_CHANGED);
+    }
+  }
   // Save duration time to permanent storage
   StorageManager::getInstance().saveDurationTime(zoneIndex, durationTime);
   Trace::log(TraceLevel::DEBUG,

@@ -8,6 +8,13 @@
 class IrrigationZone
 {
 public:
+  using ZoneEventFlags = uint8_t;
+  static constexpr ZoneEventFlags EVENT_NONE = 0;
+  static constexpr ZoneEventFlags EVENT_BUTTON_CHANGED = 1 << 0;
+  static constexpr ZoneEventFlags EVENT_RELAY_CHANGED = 1 << 1;
+  static constexpr ZoneEventFlags EVENT_DURATION_CHANGED = 1 << 2;
+  static constexpr ZoneEventFlags EVENT_TIMER_CHANGED = 1 << 3;
+
   IrrigationZone();
 
   void configure(const IrrigationConfig &config);
@@ -64,6 +71,7 @@ public:
   void getRemainingTimeAsString(
       char *buffer, size_t bufsize); // Phase 3.5: optimized buffer version
   void resetTimer();
+  ZoneEventFlags consumeEvents();
 
   static void setGlobalStartInhibit(bool inhibit);
   static bool isGlobalStartInhibited();
@@ -72,6 +80,8 @@ private:
   // ================ Mqtt topics ================
   String _mqttTopicForZone;
   String _mqttTopicForSwButton;
+  ZoneEventFlags _pendingEvents = EVENT_NONE;
+  void markEvent(ZoneEventFlags eventFlags);
 
   // ================ Hardware button ================
   int _hwBtnGpioChannel;
