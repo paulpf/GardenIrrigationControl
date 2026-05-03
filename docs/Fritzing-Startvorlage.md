@@ -171,6 +171,60 @@ Fuer `GPIO34`, `GPIO35`, `VP/GPIO36` und `VN/GPIO39` jeweils:
 
 Fuer `GPIO4`, `GPIO13`, `GPIO14`, `GPIO27`, `GPIO32`, `GPIO33` brauchst du diesen externen Pull-down nicht, wenn die Firmware den internen Pulldown verwendet.
 
+## Empfohlene Anordnung der Tastenverdrahtung
+
+Ja, die Taster lassen sich in Fritzing sauberer nebeneinander anordnen.
+Wenn die Verdrahtung optimal zu den Pins am ESP32 liegen soll, ist die physische Pin-Nahe wichtiger als die Reihenfolge `T1` bis `T10`.
+
+Beim ESP32 DevKit C V4 liegen fast alle hier genutzten Tasterpins auf derselben Header-Seite:
+
+- `GPIO13`, `GPIO14`, `GPIO27`, `GPIO32`, `GPIO33`, `GPIO34`, `GPIO35`, `VP/GPIO36`, `VN/GPIO39`
+- nur `GPIO4` liegt auf der gegenueberliegenden Header-Seite
+
+Darum ist diese Anordnung am saubersten:
+
+```text
+          ESP32 DevKit C V4
+
+linke Header-Seite, pin-nah:
+
+VP  -> T9  -> 10k -> GND
+VN  -> T10 -> 10k -> GND
+34  -> T7  -> 10k -> GND
+35  -> T8  -> 10k -> GND
+32  -> T5
+33  -> T6
+27  -> T4
+14  -> T3
+13  -> T2
+
+rechte Header-Seite:
+
+4   -> T1
+```
+
+Praktische Fritzing-Regel:
+
+- `T2` bis `T10` als senkrechte oder leicht versetzte Tasterleiste direkt links neben den ESP32 setzen
+- die Reihenfolge der Taster an die Reihenfolge der ESP32-Pins anpassen, nicht an die Tasternummern
+- `T1` separat rechts unten neben `GPIO4` setzen
+- eine gemeinsame `3V3`-Schiene parallel zur Tasterleiste fuehren
+- von `3V3` kurze Leitungen zu jeweils einer Tasterseite legen
+- von der anderen Tasterseite kurze Leitungen direkt zum naechsten ESP32-Pin fuehren
+- die vier Pull-down-Widerstaende fuer `T7`, `T8`, `T9` und `T10` direkt neben die jeweiligen Signalleitungen setzen
+- eine kurze gemeinsame `GND`-Schiene nur fuer diese vier Pull-downs verwenden
+- `T10` trotzdem gut beschriften, weil er die Funktionstaste ist und nicht zu Ventil 10 gehoert
+
+Wenn du die Taster unbedingt als horizontale Reihe darstellen moechtest, nimm nicht `T1, T2, T3...` als Reihenfolge.
+Nimm stattdessen die Pin-Reihenfolge:
+
+```text
+T9   T10  T7   T8   T5   T6   T4   T3   T2        T1 separat rechts
+VP   VN   G34  G35  G32  G33  G27  G14  G13       G4
+```
+
+So liegen die Taster elektrisch unveraendert, aber die Leitungen bleiben moeglichst kurz und kreuzen sich kaum.
+
 ## Bauteile in Fritzing
 
 Nutze nach Moeglichkeit diese Parts oder aehnliche:
@@ -383,6 +437,6 @@ Das ist hier so gewollt, weil in diesem Schritt nur Diagramm und Doku angepasst 
 
 Die passenden Diagramme liegen hier:
 
-- [_assets/_images/irrigation-wiring-9valves-10buttons.svg](/d:/DEV/GITHUB/GardenIrrigationControl/_assets/_images/irrigation-wiring-9valves-10buttons.svg)
-- [docs/Verdrahtung.drawio](/d:/DEV/GITHUB/GardenIrrigationControl/docs/Verdrahtung.drawio)
+- [_assets/_images/irrigation-wiring-9valves-10buttons.svg](../_assets/_images/irrigation-wiring-9valves-10buttons.svg)
+- [docs/Verdrahtung.drawio](Verdrahtung.drawio)
 
