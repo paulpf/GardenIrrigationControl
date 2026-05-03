@@ -1,9 +1,9 @@
 #include "gardencontrollerapp.h"
 
-#include "_config/MqttConfig.h"
-#include "_secrets/MqttSecret.h"
-#include "_secrets/OtaSecret.h"
-#include "_secrets/WifiSecret.h"
+#include "../../../_config/MqttConfig.h"
+#include "../../../_secrets/MqttSecret.h"
+#include "../../../_secrets/OtaSecret.h"
+#include "../../../_secrets/WifiSecret.h"
 
 #include "config.h"
 #include "global_defines.h"

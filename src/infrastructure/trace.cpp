@@ -18,6 +18,9 @@ void Trace::log(TraceLevel level, String message)
   case TraceLevel::INFO:
     prefix = "[INFO] ";
     break;
+  case TraceLevel::WARNING:
+    prefix = "[WARNING] ";
+    break;
   case TraceLevel::DEBUG:
     prefix = "[DEBUG] ";
     break;

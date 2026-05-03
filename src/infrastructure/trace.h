@@ -13,6 +13,7 @@ enum class TraceLevel
   TRACE, // Detailed trace information
   DEBUG, // Debug information for development
   INFO,  // General information messages
+  WARNING, // Warning messages for recoverable issues
   ERROR, // Error messages indicating issues
   NONE   // No logging
 };
@@ -34,6 +35,10 @@ public:
   static void debug(String message)
   {
     log(TraceLevel::DEBUG, message);
+  }
+  static void warning(String message)
+  {
+    log(TraceLevel::WARNING, message);
   }
   static void trace(String message)
   {

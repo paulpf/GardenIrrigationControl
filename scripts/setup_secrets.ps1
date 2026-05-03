@@ -3,11 +3,14 @@
 # Creates secret/config header files outside the repository
 # so they are never accidentally committed to version control.
 #
-# Generated files (two levels above the repo root):
-#   ..\_secrets\WifiSecret.h
-#   ..\_secrets\MqttSecret.h
-#   ..\_secrets\OtaSecret.h
-#   ..\_config\MqttConfig.h
+# Generated files in an external base directory:
+#   <base>\_secrets\WifiSecret.h
+#   <base>\_secrets\MqttSecret.h
+#   <base>\_secrets\OtaSecret.h
+#   <base>\_config\MqttConfig.h
+#
+# Base directory rule:
+# - always parent directory of repo root
 # ============================================================
 
 $repoRoot = Resolve-Path "$PSScriptRoot\.."
@@ -35,16 +38,23 @@ foreach ($dir in @($secretsDir, $configsDir)) {
 }
 
 # ---- Helper function ----------------------------------------------------------
-function Write-FileIfMissing([string]$path, [string[]]$lines, [int]$count) {
-    if (-not (Test-Path $path)) {
+function Write-FileWithBackup([string]$path, [string[]]$lines, [ref]$created, [ref]$updated, [ref]$backups) {
+    if (Test-Path $path) {
+        $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $backupPath = "$path.$timestamp.bak"
+        Copy-Item -Path $path -Destination $backupPath -Force
+        $backups.Value++
+        Write-Host "[BACKUP]  $backupPath" -ForegroundColor DarkYellow
+
         $lines | Set-Content -Path $path -Encoding UTF8
-        Write-Host "[CREATED] $path" -ForegroundColor Green
-        return $count + 1
+        $updated.Value++
+        Write-Host "[UPDATED] $path" -ForegroundColor Yellow
+        return
     }
-    else {
-        Write-Host "[SKIPPED] $path (already exists - not overwritten)" -ForegroundColor Yellow
-        return $count
-    }
+
+    $lines | Set-Content -Path $path -Encoding UTF8
+    $created.Value++
+    Write-Host "[CREATED] $path" -ForegroundColor Green
 }
 
 # ---- File templates -----------------------------------------------------------
@@ -92,20 +102,18 @@ $mqttConfigLines = @(
     '#endif // MQTT_CONFIG_H'
 )
 
-# ---- Write files (skip if already present) ------------------------------------
+# ---- Write files (backup + overwrite if already present) ----------------------
 $created = 0
-$created = Write-FileIfMissing "$secretsDir\WifiSecret.h"  $wifiLines       $created
-$created = Write-FileIfMissing "$secretsDir\MqttSecret.h"  $mqttSecretLines $created
-$created = Write-FileIfMissing "$secretsDir\OtaSecret.h"   $otaLines        $created
-$created = Write-FileIfMissing "$configsDir\MqttConfig.h"  $mqttConfigLines $created
+$updated = 0
+$backups = 0
+
+Write-FileWithBackup "$secretsDir\WifiSecret.h"  $wifiLines       ([ref]$created) ([ref]$updated) ([ref]$backups)
+Write-FileWithBackup "$secretsDir\MqttSecret.h"  $mqttSecretLines ([ref]$created) ([ref]$updated) ([ref]$backups)
+Write-FileWithBackup "$secretsDir\OtaSecret.h"   $otaLines        ([ref]$created) ([ref]$updated) ([ref]$backups)
+Write-FileWithBackup "$configsDir\MqttConfig.h"  $mqttConfigLines ([ref]$created) ([ref]$updated) ([ref]$backups)
 
 Write-Host ""
-if ($created -gt 0) {
-    Write-Host "Files created ($created). Please fill in your credentials." -ForegroundColor Cyan
-}
-else {
-    Write-Host "All files already exist. No changes made." -ForegroundColor DarkGray
-}
+Write-Host "Summary: created=$created, updated=$updated, backups=$backups" -ForegroundColor Cyan
 
 # ---- Open Explorer so the user can edit the files ----------------------------
 Write-Host ""

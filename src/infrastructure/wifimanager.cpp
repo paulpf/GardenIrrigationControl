@@ -115,7 +115,7 @@ void WifiManager::manageConnection()
   }
   else
   {
-    Trace::log(TraceLevel::INFO,
+    Trace::log(TraceLevel::WARNING,
                "Max reconnection attempts reached, restarting...");
     delay(1000);
     ESP.restart();

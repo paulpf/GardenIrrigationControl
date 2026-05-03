@@ -6,6 +6,7 @@
 
 - [Introduction](#introduction)
 - [Requirements](#requirements)
+- [Environment Setup](#environment-setup)
 - [Hardware](#hardware)
   - [ESP-32 Dev Kit C V4](#esp-32-dev-kit-c-v4)
     - [Pinout](#pinout)
@@ -38,6 +39,32 @@ The system should:
 - be able to receive commands via physical buttons
 - be able to work without WLAN connection (in case if irrigation is started via physical buttons)
 - be able to measure the water level in the tank via capacitive sensor. This sensor has 4-20mA output.
+
+## Environment Setup
+
+This project expects secret/config header files outside the repository.
+
+Run the setup script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup_secrets.ps1
+```
+
+Or on Windows:
+
+```bat
+scripts\setup_secrets.bat
+```
+
+The script creates or updates these files one folder above the repository root:
+
+- `_secrets/WifiSecret.h`
+- `_secrets/MqttSecret.h`
+- `_secrets/OtaSecret.h`
+- `_config/MqttConfig.h`
+
+If one of these files already exists, the script creates a timestamped backup
+next to it (for example `WifiSecret.h.20260503-153000.bak`) before overwriting.
 
 ## Hardware
 
