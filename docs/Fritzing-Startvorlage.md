@@ -28,19 +28,16 @@ Gerade `VP` und `VN` sind wichtig, weil dort auf dem Board nicht einfach `36` od
 - 9 Ventile gesamt
 - davon 8 Beregnungsventile
 - davon 1 Zusatzventil
-- 10 Taster gesamt
-- davon 9 Ventiltaster
-- davon 1 Funktionstaste, z. B. `Abort / Alles aus`
+- 9 Taster gesamt, je einer pro Ventil
 - kein DHT11 in dieser Variante
 
-## Zielarchitektur 9+10
+## Zielarchitektur 9+9
 
 Die geplante Aufteilung ist:
 
 - Ventil 1 bis 8: Beregnungszonen
 - Ventil 9: Zusatzventil
 - Taste 1 bis 9: direkte Zuordnung zu Ventil 1 bis 9
-- Taste 10: Funktionstaste, z. B. `Abort / Alles aus`
 
 ## Empfohlene Pinbelegung
 
@@ -72,8 +69,7 @@ Diese Belegung ist fuer direkten Betrieb ohne Expander sinnvoll und moeglichst s
 | Taste 6 | Ventil 6 | 33 | `33` | interner Pulldown nutzbar |
 | Taste 7 | Ventil 7 | 34 | `34` | externer Pulldown noetig |
 | Taste 8 | Ventil 8 | 35 | `35` | externer Pulldown noetig |
-| Taste 9 | Ventil 9 | 36 | `VP` | externer Pulldown noetig |
-| Taste 10 | Funktionstaste / Abort | 39 | `VN` | externer Pulldown noetig |
+| Taste 9 | Ventil 9 | 39 | `VN` | externer Pulldown noetig |
 
 ## Gesamttabelle fuer Verdrahtung und Code
 
@@ -98,32 +94,31 @@ Diese Tabelle ist die praktischste Referenz beim Aufbau.
 | 6 | Taste | Eingang | 33 | `33` |
 | 7 | Taste | Eingang | 34 | `34` |
 | 8 | Taste | Eingang | 35 | `35` |
-| 9 | Taste | Eingang | 36 | `VP` |
-| 10 | Taste / Funktion | Eingang | 39 | `VN` |
+| 9 | Taste | Eingang | 39 | `VN` |
 
 ## Warum diese Belegung sinnvoll ist
 
 - Die Ventile liegen auf gut nutzbaren Ausgangspins.
-- Die Taster nutzen die input-only Pins `34`, `35`, `36`, `39` sinnvoll aus.
+- Die Taster nutzen die input-only Pins `34`, `35`, `39` sinnvoll aus. `GPIO36` (VP) ist dem Wassersensor vorbehalten.
 - Die problematischeren Strapping-Pins `0`, `2`, `5`, `12`, `15` bleiben frei.
 - `GPIO1` und `GPIO3` bleiben fuer USB-Serial und Debugging frei.
 - `GPIO6` bis `GPIO11` werden nicht verwendet, da sie fuer Flash reserviert sind.
 
 ## Wichtiger Hinweis zu Tastern an GPIO34 bis GPIO39
 
-Die Pins `GPIO34`, `GPIO35`, `GPIO36` und `GPIO39` sind nur Eingaenge und besitzen keine internen Pull-up- oder Pull-down-Widerstaende.
+Die Pins `GPIO34`, `GPIO35` und `GPIO39` sind nur Eingaenge und besitzen keine internen Pull-up- oder Pull-down-Widerstaende.
 Dort brauchst du pro Taste einen externen Pull-down, wenn der Taster gegen `3V3` geschaltet wird.
 
 Empfehlung:
 
 - Taster gegen `3V3`
-- je `10k` Pull-down nach `GND` fuer `GPIO34`, `GPIO35`, `GPIO36`, `GPIO39`
+- je `10k` Pull-down nach `GND` fuer `GPIO34`, `GPIO35`, `GPIO39`
 - `10k` ist hier der Standardwert und fuer Taster an ESP-Eingaengen eine gute, stabile Wahl
 - sinnvoller Bereich waere auch etwa `4.7k` bis `10k`, aber ich wuerde fuer dieses Projekt einfach durchgaengig `10k` nehmen
 
 ## Anschluss-Skizze fuer externen Pull-down
 
-So wird ein Taster an einem Pin ohne internen Pull-down angeschlossen, zum Beispiel an `GPIO34`, `GPIO35`, `VP/GPIO36` oder `VN/GPIO39`:
+So wird ein Taster an einem Pin ohne internen Pull-down angeschlossen, zum Beispiel an `GPIO34`, `GPIO35` oder `VN/GPIO39`:
 
 ```text
 3.3V
@@ -146,13 +141,13 @@ Bedeutung:
 
 ## Verdrahtung des externen Pull-downs Schritt fuer Schritt
 
-Pro Taste an `GPIO34`, `GPIO35`, `GPIO36` oder `GPIO39`:
+Pro Taste an `GPIO34`, `GPIO35` oder `GPIO39`:
 
 1. Einen Kontakt des Tasters an `3V3`
 2. Den anderen Kontakt des Tasters an den gewuenschten GPIO
 3. Einen `10k` Widerstand zwischen genau diesem GPIO und `GND`
 
-Also konkret zum Beispiel fuer `Taste 10` an `VN / GPIO39`:
+Also konkret zum Beispiel fuer `Taste 9` an `VN / GPIO39`:
 
 ```text
 ESP32 3V3 ---- Taster ---- GPIO39 (VN)
@@ -164,7 +159,7 @@ ESP32 GND -----------------+
 
 ## Was in Fritzing gezeichnet werden sollte
 
-Fuer `GPIO34`, `GPIO35`, `VP/GPIO36` und `VN/GPIO39` jeweils:
+Fuer `GPIO34`, `GPIO35` und `VN/GPIO39` jeweils:
 
 - 1x Taster zwischen `3V3` und GPIO
 - 1x Widerstand `10k` zwischen GPIO und `GND`
@@ -174,11 +169,11 @@ Fuer `GPIO4`, `GPIO13`, `GPIO14`, `GPIO27`, `GPIO32`, `GPIO33` brauchst du diese
 ## Empfohlene Anordnung der Tastenverdrahtung
 
 Ja, die Taster lassen sich in Fritzing sauberer nebeneinander anordnen.
-Wenn die Verdrahtung optimal zu den Pins am ESP32 liegen soll, ist die physische Pin-Nahe wichtiger als die Reihenfolge `T1` bis `T10`.
+Wenn die Verdrahtung optimal zu den Pins am ESP32 liegen soll, ist die physische Pin-Nahe wichtiger als die Reihenfolge `T1` bis `T9`.
 
 Beim ESP32 DevKit C V4 liegen fast alle hier genutzten Tasterpins auf derselben Header-Seite:
 
-- `GPIO13`, `GPIO14`, `GPIO27`, `GPIO32`, `GPIO33`, `GPIO34`, `GPIO35`, `VP/GPIO36`, `VN/GPIO39`
+- `GPIO13`, `GPIO14`, `GPIO27`, `GPIO32`, `GPIO33`, `GPIO34`, `GPIO35`, `VN/GPIO39`
 - nur `GPIO4` liegt auf der gegenueberliegenden Header-Seite
 
 Darum ist diese Anordnung am saubersten:
@@ -188,8 +183,7 @@ Darum ist diese Anordnung am saubersten:
 
 linke Header-Seite, pin-nah:
 
-VP  -> T9  -> 10k -> GND
-VN  -> T10 -> 10k -> GND
+VN  -> T9  -> 10k -> GND
 34  -> T7  -> 10k -> GND
 35  -> T8  -> 10k -> GND
 32  -> T5
@@ -205,22 +199,21 @@ rechte Header-Seite:
 
 Praktische Fritzing-Regel:
 
-- `T2` bis `T10` als senkrechte oder leicht versetzte Tasterleiste direkt links neben den ESP32 setzen
+- `T2` bis `T9` als senkrechte oder leicht versetzte Tasterleiste direkt links neben den ESP32 setzen
 - die Reihenfolge der Taster an die Reihenfolge der ESP32-Pins anpassen, nicht an die Tasternummern
 - `T1` separat rechts unten neben `GPIO4` setzen
 - eine gemeinsame `3V3`-Schiene parallel zur Tasterleiste fuehren
 - von `3V3` kurze Leitungen zu jeweils einer Tasterseite legen
 - von der anderen Tasterseite kurze Leitungen direkt zum naechsten ESP32-Pin fuehren
-- die vier Pull-down-Widerstaende fuer `T7`, `T8`, `T9` und `T10` direkt neben die jeweiligen Signalleitungen setzen
-- eine kurze gemeinsame `GND`-Schiene nur fuer diese vier Pull-downs verwenden
-- `T10` trotzdem gut beschriften, weil er die Funktionstaste ist und nicht zu Ventil 10 gehoert
+- die drei Pull-down-Widerstaende fuer `T7`, `T8` und `T9` direkt neben die jeweiligen Signalleitungen setzen
+- eine kurze gemeinsame `GND`-Schiene nur fuer diese drei Pull-downs verwenden
 
 Wenn du die Taster unbedingt als horizontale Reihe darstellen moechtest, nimm nicht `T1, T2, T3...` als Reihenfolge.
 Nimm stattdessen die Pin-Reihenfolge:
 
 ```text
-T9   T10  T7   T8   T5   T6   T4   T3   T2        T1 separat rechts
-VP   VN   G34  G35  G32  G33  G27  G14  G13       G4
+T9   T7   T8   T5   T6   T4   T3   T2        T1 separat rechts
+VN   G34  G35  G32  G33  G27  G14  G13       G4
 ```
 
 So liegen die Taster elektrisch unveraendert, aber die Leitungen bleiben moeglichst kurz und kreuzen sich kaum.
@@ -263,10 +256,9 @@ Alle Taster werden zwischen GPIO und `3V3` angeschlossen.
 
 - Taste 7 an GPIO34, Board-Label `34`
 - Taste 8 an GPIO35, Board-Label `35`
-- Taste 9 an GPIO36, Board-Label `VP`
-- Taste 10 an GPIO39, Board-Label `VN`
+- Taste 9 an GPIO39, Board-Label `VN`
 
-Fuer diese vier Taster gilt jeweils:
+Fuer diese drei Taster gilt jeweils:
 
 - eine Seite des Tasters an `3V3`
 - andere Seite an GPIO
@@ -302,7 +294,7 @@ Ordne die Teile in Fritzing in vier Bloecken an:
 1. Links oben: Versorgung
 2. Mitte: ESP32
 3. Rechts: 8-Kanal SSR-Modul plus Einzelkanal fuer Ventil 9
-4. Unten: Tasterleiste mit Funktionstaste
+4. Unten: Tasterleiste
 
 ## Minimale Verbindungen
 
@@ -320,15 +312,6 @@ Ordne die Teile in Fritzing in vier Bloecken an:
 - Ventil 1 bis 8 auf dem 8-Kanal-SSR-Modul
 - Ventil 9 auf dem Einzelkanal-Modul
 
-### Funktionstaste
-
-Taste 10 ist nicht einem Ventil zugeordnet.
-Sie ist als allgemeine Funktionstaste vorgesehen, zum Beispiel fuer:
-
-- `Abort / Alles aus`
-- `Modus wechseln`
-- `Reset laufender Bewaesserung`
-
 ## Darstellungshinweise fuer Fritzing
 
 - Versorgungsleitungen rot fuer `5V`, orange fuer `3V3`, schwarz fuer `GND`
@@ -336,8 +319,7 @@ Sie ist als allgemeine Funktionstaste vorgesehen, zum Beispiel fuer:
 - SSR-Steuerleitungen als gebuendelte Signalleitungen rechts herausfuehren
 - Ventil 1 bis 8 als zusammengehoerigen Beregnungsblock darstellen
 - Ventil 9 als separaten Zusatzkanal darstellen
-- Taste 10 optisch absetzen und als Funktionstaste beschriften
-- Pull-down-Widerstaende fuer `GPIO34`, `GPIO35`, `GPIO36`, `GPIO39` sichtbar einzeichnen
+- Pull-down-Widerstaende fuer `GPIO34`, `GPIO35`, `GPIO39` sichtbar einzeichnen
 
 ## Pull-up oder Pull-down?
 
@@ -408,7 +390,7 @@ Elektrisch sind beide Varianten voellig in Ordnung, solange Hardware und Softwar
 Fuer diese Dokumentation und die vorgeschlagene Belegung empfehle ich:
 
 - fuer `GPIO4`, `GPIO13`, `GPIO14`, `GPIO27`, `GPIO32`, `GPIO33`: internen **Pull-down**, wenn die Firmware das so nutzt
-- fuer `GPIO34`, `GPIO35`, `GPIO36`, `GPIO39`: externen **Pull-down** mit `10k`
+- fuer `GPIO34`, `GPIO35`, `GPIO39`: externen **Pull-down** mit `10k`
 
 Der Hauptgrund ist Konsistenz:
 
@@ -428,15 +410,12 @@ Fuer den aktuellen Vorschlag hier gilt deshalb klar:
 
 ## Abgleich mit der aktuellen Firmware
 
-Diese Vorlage bildet die empfohlene Hardwarebelegung ab.
-Die aktuelle Firmware im Repo verwendet derzeit noch andere Pins.
-
-Das ist hier so gewollt, weil in diesem Schritt nur Diagramm und Doku angepasst werden sollen, nicht die Firmware.
+Diese Vorlage und die Firmware im Repo (`src/config/config.h`) verwenden dieselbe Pinbelegung.
 
 ## Verknuepfte Grafiken
 
 Die passenden Diagramme liegen hier:
 
-- [_assets/_images/irrigation-wiring-9valves-10buttons.svg](../_assets/_images/irrigation-wiring-9valves-10buttons.svg)
+- [_assets/_images/irrigation-wiring-9valves-9buttons.svg](../_assets/_images/irrigation-wiring-9valves-9buttons.svg)
 - [docs/Verdrahtung.drawio](Verdrahtung.drawio)
 

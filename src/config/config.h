@@ -2,50 +2,52 @@
 #define CONFIG_H
 
 // Pins configuration for ESP32
+//
+// Strapping-Pins (0, 2, 5, 12, 15) bleiben frei.
+// GPIO 1, 3: UART TX/RX (Serial/OTA).
+// GPIO 6-11: intern fuer Flash reserviert.
+// GPIO 34, 35, 39: input-only, externer Pull-down noetig.
+// GPIO 36 (VP): input-only, Wassersensor.
 
-// GPIO 0 - usually used for boot mode selection, should not be used for other
-// purposes GPIO 2 - usually used for boot mode selection, but can be used for
-// other purposes GPIO 5 - usually used for SPI flash, but can be used for other
-// purposes GPIO 34, 35, 36, 39 - input only pins, but they will not be used in
-// this project because they are not have internal pull-down resistors
+// Hardware configuration for 9 irrigation zones
+// Relais: low-level triggered (LOW = aktiv, HIGH = aus)
+// Taster: HIGH wenn gedrueckt (interner oder externer Pull-down)
 
-// Hardware configuration for 8 irrigation zones
 // Pins for Zone 1
-constexpr int ZONE1_BUTTON_PIN = 14;
-constexpr int ZONE1_RELAY_PIN = 27;
+constexpr int ZONE1_BUTTON_PIN = 4;
+constexpr int ZONE1_RELAY_PIN = 16;
 
 // Pins for Zone 2
 constexpr int ZONE2_BUTTON_PIN = 13;
-constexpr int ZONE2_RELAY_PIN = 26;
+constexpr int ZONE2_RELAY_PIN = 17;
 
 // Pins for Zone 3
-constexpr int ZONE3_BUTTON_PIN = 15;
-constexpr int ZONE3_RELAY_PIN = 25;
+constexpr int ZONE3_BUTTON_PIN = 14;
+constexpr int ZONE3_RELAY_PIN = 18;
 
 // Pins for Zone 4
-constexpr int ZONE4_BUTTON_PIN = 2;
-constexpr int ZONE4_RELAY_PIN = 33;
+constexpr int ZONE4_BUTTON_PIN = 27;
+constexpr int ZONE4_RELAY_PIN = 19;
 
 // Pins for Zone 5
-constexpr int ZONE5_BUTTON_PIN = 4;
-constexpr int ZONE5_RELAY_PIN = 32;
+constexpr int ZONE5_BUTTON_PIN = 32;
+constexpr int ZONE5_RELAY_PIN = 21;
 
 // Pins for Zone 6
-constexpr int ZONE6_BUTTON_PIN = 16;
-constexpr int ZONE6_RELAY_PIN = 23;
+constexpr int ZONE6_BUTTON_PIN = 33;
+constexpr int ZONE6_RELAY_PIN = 22;
 
-// Pins for Zone 7
-constexpr int ZONE7_BUTTON_PIN = 17;
-constexpr int ZONE7_RELAY_PIN = 22;
+// Pins for Zone 7 - externer Pull-down noetig (input-only Pin)
+constexpr int ZONE7_BUTTON_PIN = 34;
+constexpr int ZONE7_RELAY_PIN = 23;
 
-// Pins for Zone 8
-constexpr int ZONE8_BUTTON_PIN = 5;
-constexpr int ZONE8_RELAY_PIN = 21;
+// Pins for Zone 8 - externer Pull-down noetig (input-only Pin)
+constexpr int ZONE8_BUTTON_PIN = 35;
+constexpr int ZONE8_RELAY_PIN = 25;
 
-// Hardware configuration for special pins
-// Pin for drainage
-constexpr int ZONE9_BUTTON_PIN = 18;
-constexpr int ZONE9_RELAY_PIN = 19;
+// Pins for Zone 9 (Zusatzventil) - externer Pull-down noetig (input-only Pin)
+constexpr int ZONE9_BUTTON_PIN = 39; // GPIO39 / VN
+constexpr int ZONE9_RELAY_PIN = 26;
 
 // Water level sensor (4-20mA via shunt resistor to ADC voltage)
 constexpr int WATER_LEVEL_SENSOR_PIN = 36; // GPIO36 / VP (ADC1)
