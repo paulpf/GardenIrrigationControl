@@ -93,6 +93,7 @@ private:
   // bool _synconizedBtnOldState = false;
 
   void setupHwButton(int hwBtnGpioChannel);
+  int getHwButtonPinMode(int hwBtnGpioChannel) const;
   void IRAM_ATTR onHwBtnPressed();
 
   // ================ Software button (via MQTT) ================

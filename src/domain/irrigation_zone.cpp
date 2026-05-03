@@ -65,11 +65,24 @@ void IrrigationZone::loadSettingsFromStorage(int zoneIndex)
 
 void IrrigationZone::setupHwButton(int hwBtnGpioChannel)
 {
-  pinMode(hwBtnGpioChannel, INPUT_PULLDOWN);
+  pinMode(hwBtnGpioChannel, getHwButtonPinMode(hwBtnGpioChannel));
   // Using ESP32's built-in support for std::function in attachInterruptArg
   attachInterruptArg(
       digitalPinToInterrupt(hwBtnGpioChannel), [](void *arg)
       { static_cast<IrrigationZone *>(arg)->onHwBtnPressed(); }, this, RISING);
+}
+
+int IrrigationZone::getHwButtonPinMode(int hwBtnGpioChannel) const
+{
+  switch (hwBtnGpioChannel)
+  {
+  case 34:
+  case 35:
+  case 39:
+    return INPUT;
+  default:
+    return INPUT_PULLDOWN;
+  }
 }
 
 void IRAM_ATTR IrrigationZone::onHwBtnPressed()
@@ -245,6 +258,14 @@ void IrrigationZone::loop()
   if (_buttonEventPending)
   {
     _buttonEventPending = false;
+    if (digitalRead(_hwBtnGpioChannel) != HIGH)
+    {
+      Trace::log(TraceLevel::DEBUG,
+                 "Ignoring transient hardware button interrupt on irrigation zone " +
+                     String(_zoneIndex + 1));
+      return;
+    }
+
     _hwBtnState = !_hwBtnState; // Toggle here instead of in ISR
     Trace::log(TraceLevel::INFO, "Hardware button of irrigation zone " +
                                      String(_zoneIndex + 1) + " pressed.");
