@@ -114,16 +114,11 @@ void IrrigationZone::synchronizeButtonStates(bool newState)
 
 void IrrigationZone::setupRelay(int relayGpioChannel)
 {
-  // Setup code for the relay
-  // This is a workaround to avoid flickering of the relay when the ESP32 boots
-  // up by setting the pin to LOW (active) and then to HIGH (off) after setup
-  // This is a common practice to ensure the relay is in a known state
-  // before the actual control logic starts
-  pinMode(relayGpioChannel, INPUT);
-  digitalWrite(relayGpioChannel,
-               LOW); // Set relay to LOW (active) to avoid flickering
+  // LOW-active relay inputs must be driven HIGH before the GPIO becomes an
+  // output, otherwise the output latch can briefly enable the relay at boot.
+  digitalWrite(relayGpioChannel, HIGH);
   pinMode(relayGpioChannel, OUTPUT);
-  digitalWrite(relayGpioChannel, HIGH); // Set relay to HIGH (off) by default
+  digitalWrite(relayGpioChannel, HIGH);
 }
 
 void IrrigationZone::switchRelay(bool state)

@@ -52,8 +52,8 @@ graph TD
 
     V5 -->|"5 V DC"| ESP32
     V5 -->|"5 V DC (Steuerseite)"| SSR
-    ESP32 -->|"GPIO 27,26,25,33,32,23,22,21,19\n(LOW = aktiv)"| SSR
-    BTN -->|"GPIO 14,13,15,2,4,16,17,5,18\n(INPUT_PULLDOWN, RISING)"| ESP32
+    ESP32 -->|"GPIO 16,17,18,19,21,22,23,25,26\n(LOW = aktiv)"| SSR
+    BTN -->|"GPIO 4,13,14,27,32,33,34,35,39\n(INPUT_PULLDOWN bzw. externer Pull-down, RISING)"| ESP32
     V24 -->|"24 V AC (Gemeinsame Leitung COM)"| SSR
     SSR -->|"24 V AC geschaltet"| V1
     SSR -->|"24 V AC geschaltet"| V2
@@ -77,35 +77,43 @@ Fallback-Grafik ohne Mermaid-Renderer: [system_overview.svg](system_overview.svg
 
 | Zone   | GPIO    | Board-Label | Hinweis                                                              |
 | ------ | ------- | ----------- | -------------------------------------------------------------------- |
-| Zone 1 | GPIO 14 | D14         | ✅ Sicher                                                             |
+| Zone 1 | GPIO 4  | D4          | ✅ Sicher                                                             |
 | Zone 2 | GPIO 13 | D13         | ✅ Sicher                                                             |
-| Zone 3 | GPIO 15 | D15         | ⚠️ Strapping-Pin (MTDO) – mit internem PULLDOWN unproblematisch       |
-| Zone 4 | GPIO 2  | D2          | ⚠️ Strapping-Pin (Boot-LED) – mit PULLDOWN OK, aber sorgfältig testen |
-| Zone 5 | GPIO 4  | D4          | ✅ Sicher                                                             |
-| Zone 6 | GPIO 16 | RX2         | ✅ Sicher                                                             |
-| Zone 7 | GPIO 17 | TX2         | ✅ Sicher                                                             |
-| Zone 8 | GPIO 5  | D5          | ⚠️ Strapping-Pin (SPI VSPI CS) – mit PULLDOWN OK                      |
-| Zone 9 | GPIO 18 | D18         | ✅ Sicher                                                             |
+| Zone 3 | GPIO 14 | D14         | ✅ Sicher                                                             |
+| Zone 4 | GPIO 27 | D27         | ✅ Sicher                                                             |
+| Zone 5 | GPIO 32 | D32         | ✅ Sicher                                                             |
+| Zone 6 | GPIO 33 | D33         | ✅ Sicher                                                             |
+| Zone 7 | GPIO 34 | D34         | Input-only; externer Pull-down nötig                                 |
+| Zone 8 | GPIO 35 | D35         | Input-only; externer Pull-down nötig                                 |
+| Zone 9 | GPIO 39 | VN          | Input-only; externer Pull-down nötig                                 |
 
-**Verdrahtung Taster:** Ein Pin des Tasters → GPIO-Pin des ESP32. Der andere Pin → **GND**. Der interne PULLDOWN zieht den Pin auf LOW; beim Drücken wird die Leitung auf 3,3 V gezogen (RISING-Flanke auslösen → ESP32 hat jedoch PULLDOWN konfiguriert, nicht PULLUP). 
-
-> **Korrektur:** Mit `INPUT_PULLDOWN` und `RISING`-Interrupt muss der Taster zwischen GPIO und **3,3 V** geschaltet werden (nicht GND). Taster: ein Pin → GPIO, anderer Pin → **3V3**.
+**Verdrahtung Taster:** Ein Pin des Tasters → GPIO-Pin des ESP32. Der andere
+Pin → **3V3**. Der Pull-down zieht den Pin im Ruhezustand auf LOW; beim
+Drücken wird die Leitung auf 3,3 V gezogen und löst eine RISING-Flanke aus.
+GPIO 34, 35 und 39 haben keinen internen Pull-down und benötigen daher je einen
+externen Pull-down, z. B. **10 kΩ nach GND**.
 
 ### Ausgänge – SSR-Modul (LOW-Level-Trigger)
 
 | Zone   | GPIO    | Board-Label | SSR-Kanal    | Hinweis                         |
 | ------ | ------- | ----------- | ------------ | ------------------------------- |
-| Zone 1 | GPIO 27 | D27         | IN1          | Kurzzeitig LOW beim Boot (<1 s) |
-| Zone 2 | GPIO 26 | D26         | IN2          | ✅                               |
-| Zone 3 | GPIO 25 | D25         | IN3          | ✅                               |
-| Zone 4 | GPIO 33 | D33         | IN4          | ✅                               |
-| Zone 5 | GPIO 32 | D32         | IN5          | Kurzzeitig LOW beim Boot (<1 s) |
-| Zone 6 | GPIO 23 | D23         | IN6          | ✅                               |
-| Zone 7 | GPIO 22 | D22         | IN7          | ✅                               |
-| Zone 8 | GPIO 21 | D21         | IN8          | ✅                               |
-| Zone 9 | GPIO 19 | D19         | Zusatzrelais | ✅                               |
+| Zone 1 | GPIO 16 | RX2         | IN1          | ✅                               |
+| Zone 2 | GPIO 17 | TX2         | IN2          | ✅                               |
+| Zone 3 | GPIO 18 | D18         | IN3          | ✅                               |
+| Zone 4 | GPIO 19 | D19         | IN4          | ✅                               |
+| Zone 5 | GPIO 21 | D21         | IN5          | ✅                               |
+| Zone 6 | GPIO 22 | D22         | IN6          | ✅                               |
+| Zone 7 | GPIO 23 | D23         | IN7          | ✅                               |
+| Zone 8 | GPIO 25 | D25         | IN8          | ✅                               |
+| Zone 9 | GPIO 26 | D26         | Zusatzrelais | ✅                               |
 
 **LOW = Relais schließt → Ventil öffnet. HIGH = Relais öffnet → Ventil geschlossen.**
+
+Die Relais-Pins werden in der Firmware direkt beim Setup zuerst auf HIGH
+vorbelegt und erst danach als OUTPUT geschaltet. Damit startet der Output-Latch
+im inaktiven Zustand. Für besonders robuste Hardware kann zusätzlich pro
+SSR-Eingang ein **10-kΩ-Pull-up nach 3V3** vorgesehen werden, sofern das
+SSR-Modul 3,3 V am Eingang sicher als HIGH erkennt.
 
 ### Status-LED direkt am Relais-Ausgang
 
@@ -144,7 +152,7 @@ verdrahtet.
 ## Verdrahtungsschema – SSR-Modul
 
 ```
-ESP32 GPIO (z.B. GPIO27) ──────────────────► SSR IN1
+ESP32 GPIO (z.B. GPIO16) ──────────────────► SSR IN1
                                               SSR GND ── ESP32 GND
 
 24 V AC Trafo Klemme L1 ──────────────────► SSR COM (gemeinsame Eingangsleitung)
@@ -183,7 +191,6 @@ Steckdose 230V AC
 | #   | Problem                                                 | Schwere  | Empfehlung                                                                                                                 |
 | --- | ------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
 | 1   | 8-Kanal SSR + 1 Zusatzrelais: Modul hat nur 8 Kanäle    | ✅ Gelöst | Separates Relais für Zone 9 vorhanden                                                                                      |
-| 2   | GPIO 27 + 32 kurzzeitig LOW beim Boot                   | ⚠️ Mittel | Entweder Kondensator am SSR-Eingang oder Firmware-seitig Relay erst nach Setup-Ende initialisieren (bereits implementiert) |
-| 3   | GPIO 2 als Taster-Input (Boot-Pin)                      | ⚠️ Mittel | Funktioniert mit PULLDOWN, aber beim Flashen Taster loslassen                                                              |
-| 4   | Hunter PGV-101 ist 24V AC, SSR muss AC-fähig sein       | ✅ Gelöst | 24V AC Netzteil vorhanden; SSR auf AC-Eignung geprüft                                                                      |
-| 5   | Kein Schutz gegen Überstrom/Kurzschluss der Ventilseite | ⚠️ Mittel | Feinsicherung 1A pro Ventilkreis oder Gruppenabsicherung                                                                   |
+| 2   | LOW-active SSR-Eingänge können während ESP32-Reset floaten | ⚠️ Niedrig | Firmware setzt Relaispins vor `pinMode(OUTPUT)` auf HIGH; optional 10-kΩ-Pull-up je SSR-Eingang nach 3V3 prüfen |
+| 3   | Hunter PGV-101 ist 24V AC, SSR muss AC-fähig sein          | ✅ Gelöst | 24V AC Netzteil vorhanden; SSR auf AC-Eignung geprüft                                                           |
+| 4   | Kein Schutz gegen Überstrom/Kurzschluss der Ventilseite    | ⚠️ Mittel | Feinsicherung 1A pro Ventilkreis oder Gruppenabsicherung                                                        |
