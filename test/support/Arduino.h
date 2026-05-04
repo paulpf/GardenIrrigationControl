@@ -3,6 +3,7 @@
 #include "ArduinoFake.h"
 
 #include <map>
+#include <vector>
 
 #define IRAM_ATTR
 
@@ -26,6 +27,31 @@ inline std::map<int, int> &arduinoFakeDigitalPinStateStorage()
   return pinStates;
 }
 
+inline std::map<int, int> &arduinoFakePinModeStorage()
+{
+  static std::map<int, int> pinModes;
+  return pinModes;
+}
+
+inline std::map<int, int> &arduinoFakeDigitalWriteStorage()
+{
+  static std::map<int, int> pinStates;
+  return pinStates;
+}
+
+struct ArduinoFakeDigitalWriteCall
+{
+  int pin;
+  int value;
+};
+
+inline std::vector<ArduinoFakeDigitalWriteCall> &
+arduinoFakeDigitalWriteHistoryStorage()
+{
+  static std::vector<ArduinoFakeDigitalWriteCall> calls;
+  return calls;
+}
+
 inline void arduinoFakeSetMillis(unsigned long value)
 {
   arduinoFakeMillisStorage() = value;
@@ -40,13 +66,39 @@ inline void arduinoFakeReset()
 {
   arduinoFakeMillisStorage() = 0;
   arduinoFakeDigitalPinStateStorage().clear();
+  arduinoFakePinModeStorage().clear();
+  arduinoFakeDigitalWriteStorage().clear();
+  arduinoFakeDigitalWriteHistoryStorage().clear();
 }
 
-inline void pinMode(int, int)
+inline int arduinoFakeGetPinMode(int pin)
 {
+  auto &pinModes = arduinoFakePinModeStorage();
+  auto it = pinModes.find(pin);
+  return it == pinModes.end() ? INPUT : it->second;
 }
-inline void digitalWrite(int, int)
+
+inline int arduinoFakeGetDigitalWriteState(int pin)
 {
+  auto &pinStates = arduinoFakeDigitalWriteStorage();
+  auto it = pinStates.find(pin);
+  return it == pinStates.end() ? LOW : it->second;
+}
+
+inline const std::vector<ArduinoFakeDigitalWriteCall> &
+arduinoFakeGetDigitalWriteHistory()
+{
+  return arduinoFakeDigitalWriteHistoryStorage();
+}
+
+inline void pinMode(int pin, int mode)
+{
+  arduinoFakePinModeStorage()[pin] = mode;
+}
+inline void digitalWrite(int pin, int value)
+{
+  arduinoFakeDigitalWriteStorage()[pin] = value;
+  arduinoFakeDigitalWriteHistoryStorage().push_back({pin, value});
 }
 inline int digitalPinToInterrupt(int pin)
 {
