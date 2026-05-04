@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820" role="img" aria-labelledby="title desc">
+  <title id="title">24 V AC LED Statusanzeige mit Schutzdiode</title>
+  <desc id="desc">Schaltplan fuer eine 5 mm LED an 24 V AC mit 6,8 kOhm Vorwiderstand und antiparalleler Schutzdiode.</desc>
+  <defs>
+    <style>
+      .bg { fill: #fbfbf8; }
+      .wire { stroke: #202020; stroke-width: 5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .thin { stroke: #202020; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .part { stroke: #202020; stroke-width: 4; fill: #ffffff; stroke-linecap: round; stroke-linejoin: round; }
+      .label { font-family: Arial, Helvetica, sans-serif; fill: #202020; font-size: 28px; }
+      .small { font-family: Arial, Helvetica, sans-serif; fill: #202020; font-size: 22px; }
+      .note { font-family: Arial, Helvetica, sans-serif; fill: #3b3b3b; font-size: 20px; }
+      .callout { fill: #ffffff; stroke: #8a8a8a; stroke-width: 1.5; rx: 6; }
+      .pin { fill: #202020; }
+      .led-fill { fill: #e53b31; stroke: #202020; stroke-width: 4; }
+      .blue { fill: #1f6feb; }
+      .muted { fill: #666; }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#202020"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1400" height="820"/>
+
+  <text class="label" x="60" y="70">24 V AC Status-LED, DIY</text>
+  <text class="note" x="60" y="105">Vorwiderstand begrenzt den Strom, Schutzdiode begrenzt die Sperrspannung der LED.</text>
+
+  <!-- AC terminals -->
+  <circle class="part" cx="120" cy="300" r="16"/>
+  <circle class="part" cx="120" cy="625" r="16"/>
+  <text class="label" x="55" y="230">24 V AC</text>
+  <text class="small" x="70" y="308">~</text>
+  <text class="small" x="70" y="633">~</text>
+
+  <!-- Main upper wire to resistor -->
+  <path class="wire" d="M136 300 H290"/>
+
+  <!-- Resistor body -->
+  <path class="wire" d="M290 300 h30"/>
+  <path class="part" d="M320 300 l18 -32 l36 64 l36 -64 l36 64 l36 -64 l36 64 l18 -32"/>
+  <path class="wire" d="M536 300 h124"/>
+  <text class="label" x="340" y="220">R1</text>
+  <text class="small" x="340" y="252">6,8 kΩ / 0,5 W</text>
+
+  <!-- Junctions and right node -->
+  <circle class="pin" cx="660" cy="300" r="7"/>
+  <path class="wire" d="M660 300 V450"/>
+  <path class="wire" d="M1000 300 H1190"/>
+  <path class="wire" d="M1190 300 V625 H136"/>
+  <circle class="pin" cx="1000" cy="300" r="7"/>
+  <circle class="pin" cx="1000" cy="450" r="7"/>
+
+  <!-- LED branch -->
+  <path class="wire" d="M660 300 H740"/>
+  <polygon class="led-fill" points="740,255 740,345 825,300"/>
+  <path class="part" d="M840 255 V345"/>
+  <path class="wire" d="M840 300 H1000"/>
+  <text class="label" x="735" y="210">LED1</text>
+  <text class="small" x="725" y="380">5 mm LED</text>
+
+  <!-- LED light arrows -->
+  <path class="thin" d="M805 240 l45 -45" marker-end="url(#arrow)"/>
+  <path class="thin" d="M842 248 l45 -45" marker-end="url(#arrow)"/>
+
+  <!-- Protection diode branch -->
+  <path class="wire" d="M660 450 H740"/>
+  <path class="part" d="M740 405 V495"/>
+  <polygon class="part" points="835,405 835,495 750,450"/>
+  <path class="wire" d="M835 450 H1000"/>
+  <text class="label" x="735" y="545">D1</text>
+  <text class="small" x="735" y="575">1N4148 oder 1N4007</text>
+  <text class="note" x="735" y="605">antiparallel zur LED</text>
+
+  <!-- Polarity hints -->
+  <rect class="callout" x="570" y="170" width="135" height="38"/>
+  <text class="note" x="585" y="196">LED Anode</text>
+  <path class="thin" d="M670 208 L732 282"/>
+
+  <rect class="callout" x="905" y="170" width="150" height="38"/>
+  <text class="note" x="920" y="196">LED Kathode</text>
+  <path class="thin" d="M940 208 L845 282"/>
+
+  <rect class="callout" x="495" y="495" width="180" height="38"/>
+  <text class="note" x="510" y="521">Dioden-Kathode</text>
+  <path class="thin" d="M635 495 L742 454"/>
+
+  <rect class="callout" x="910" y="495" width="165" height="38"/>
+  <text class="note" x="925" y="521">Dioden-Anode</text>
+  <path class="thin" d="M950 495 L840 454"/>
+
+  <!-- Build notes -->
+  <rect x="60" y="700" width="1280" height="90" rx="8" fill="#eef4ff" stroke="#1f6feb" stroke-width="2"/>
+  <text class="note" x="85" y="735">Hinweis: Der Ring/Strich auf der Schutzdiode ist die Kathode und kommt an die LED-Anode.</text>
+  <text class="note" x="85" y="765">Bei 24 V AC ist die Polung der beiden AC-Anschlussleitungen egal, die Bauteil-Polung im LED/Diode-Zweig aber nicht.</text>
+</svg>
