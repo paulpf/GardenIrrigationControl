@@ -32,7 +32,7 @@ graph TD
     end
 
     subgraph IO ["Ein-/Ausgabe"]
-        BTN["9× Drucktaster\n(NO, gegen GND)"]
+        BTN["9× Drucktaster\n(NO, gegen 3V3)"]
         DHT["DHT11 Sensor"]
     end
 
@@ -69,6 +69,8 @@ graph TD
     SSR -->|"24 V AC geschaltet"| V9
     V24 -->|"24 V AC (zweite Ader jedes Ventils)"| V1 & V2 & V3 & V4 & V5X & V6 & V7 & V8 & V9
 ```
+
+Fallback-Grafik ohne Mermaid-Renderer: [system_overview.svg](system_overview.svg)
 
 ---
 
@@ -107,6 +109,33 @@ graph TD
 | Zone 9 | GPIO 19 | D19         | Zusatzrelais | ✅                               |
 
 **LOW = Relais schließt → Ventil öffnet. HIGH = Relais öffnet → Ventil geschlossen.**
+
+### Status-LED direkt am Relais-Ausgang
+
+Wenn die LED den realen Schaltzustand je Zone zeigen soll, wird sie an der
+24-V-AC-Lastseite des jeweiligen Relaiskanals angeschlossen. Dadurch entspricht
+die Anzeige dem tatsächlich geschalteten Ausgang, nicht nur dem GPIO-Zustand.
+
+Pro Zone wird eine kleine DIY-LED-Schaltung verwendet:
+
+| Bauteil | Wert / Typ | Zweck |
+| ------- | ---------- | ----- |
+| LED1    | 5-mm-LED, Farbe nach Wunsch | Statusanzeige |
+| R1      | 6,8 kΩ / 0,5 W | Strombegrenzung |
+| D1      | 1N4148 oder 1N4007 | Schutzdiode antiparallel zur LED |
+
+![24 V AC Status-LED mit Vorwiderstand und Schutzdiode](led_24vac_schematic.svg)
+
+Verdrahtung pro Zone:
+
+- R1 liegt in Reihe zur LED.
+- D1 liegt antiparallel zur LED.
+- Die Kathode von D1, markiert durch den Ring/Strich, kommt an die LED-Anode.
+- Die LED-Schaltung wird parallel zum jeweiligen 24-V-AC-Ventilausgang angeschlossen.
+- Bei aktivem Relaiskanal leuchtet die LED zusammen mit dem Ventil.
+
+Die komplette Detailbeschreibung steht in
+[led_24vac_diy.md](led_24vac_diy.md).
 
 ### Sensorik
 
