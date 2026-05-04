@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1500" height="900" viewBox="0 0 1500 900" role="img" aria-labelledby="title desc">
   <title id="title">Systemuebersicht GardenIrrigationControl</title>
-  <desc id="desc">Blockdiagramm fuer ESP32, 5 V Versorgung, 24 V AC Trafo, Taster, DHT11, SSR-Modul und neun Hunter PGV-101 Ventile.</desc>
+  <desc id="desc">Blockdiagramm fuer ESP32, 5 V Versorgung, 24 V AC Trafo, Taster, SSR-Modul und neun Hunter PGV-101 Ventile.</desc>
   <defs>
     <style>
       .bg { fill: #fbfbf8; }
@@ -67,10 +67,6 @@
   <text class="text" x="125" y="567">9× Drucktaster</text>
   <text class="small" x="125" y="593">NO, gegen 3V3</text>
 
-  <rect class="box" x="95" y="650" width="240" height="75"/>
-  <text class="text" x="125" y="682">DHT11 Sensor</text>
-  <text class="small" x="125" y="708">optional / GPIO prüfen</text>
-
   <rect class="box" x="900" y="195" width="220" height="110"/>
   <text class="text" x="940" y="232">8-Kanal SSR</text>
   <text class="small" x="922" y="260">+ 1 Zusatzrelais</text>
@@ -109,10 +105,6 @@
   <path class="wireio" d="M335 572 C410 560 450 340 500 270" marker-end="url(#arrowio)"/>
   <rect class="label-bg" x="355" y="512" width="125" height="24"/>
   <text class="small" x="360" y="530">Taster-GPIOs</text>
-
-  <path class="wireio" d="M335 688 C430 675 455 330 500 285" marker-end="url(#arrowio)"/>
-  <rect class="label-bg" x="360" y="640" width="90" height="24"/>
-  <text class="small" x="366" y="658">DHT GPIO</text>
 
   <path class="wire24" d="M335 208 C560 135 760 130 900 220" marker-end="url(#arrow24)"/>
   <rect class="label-bg" x="575" y="126" width="130" height="24"/>

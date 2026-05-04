@@ -12,7 +12,6 @@
 | Relaismodul     | 8-Kanal SSR 5V DC Low-Level      | 1 (+1 Relais separat) | Steuerseite 5 V DC; Lastseite 24 V AC |
 | Magnetventil    | Hunter PGV-101                   | 9                     | 24 V AC                               |
 | Taster          | Drucktaster, NO (normally open)  | 9                     | 3,3 V (GPIO intern)                   |
-| Sensor          | DHT11 Temperatur/Feuchte         | 1                     | 3,3 V                                 |
 | Netzteil        | 24 V AC Trafo                    | 1                     | 24 V AC                               |
 | Netzteil        | 5 V USB-Adapter                  | 1                     | 5 V DC                                |
 
@@ -33,7 +32,6 @@ graph TD
 
     subgraph IO ["Ein-/Ausgabe"]
         BTN["9× Drucktaster\n(NO, gegen 3V3)"]
-        DHT["DHT11 Sensor"]
     end
 
     subgraph REL ["Relaismodul"]
@@ -56,7 +54,6 @@ graph TD
     V5 -->|"5 V DC (Steuerseite)"| SSR
     ESP32 -->|"GPIO 27,26,25,33,32,23,22,21,19\n(LOW = aktiv)"| SSR
     BTN -->|"GPIO 14,13,15,2,4,16,17,5,18\n(INPUT_PULLDOWN, RISING)"| ESP32
-    DHT -->|"GPIO 12 (3,3 V)"| ESP32
     V24 -->|"24 V AC (Gemeinsame Leitung COM)"| SSR
     SSR -->|"24 V AC geschaltet"| V1
     SSR -->|"24 V AC geschaltet"| V2
@@ -139,11 +136,8 @@ Die komplette Detailbeschreibung steht in
 
 ### Sensorik
 
-| Sensor | GPIO    | Board-Label | VCC   | GND |
-| ------ | ------- | ----------- | ----- | --- |
-| DHT11  | GPIO 12 | D12         | 3,3 V | GND |
-
-> ⚠️ **GPIO 12 Risiko:** GPIO 12 ist Strapping-Pin für die Flash-Spannung. HIGH beim Boot = 1,8 V Flash-Modus (kann ESP32 mit 3,3 V Flash beschädigen). DHT11 ist im Code deaktiviert. **Empfehlung: GPIO 12 durch GPIO 34, 35, 36 oder 39 ersetzen** (Input-only, aber für DHT11 ausreichend) oder auf GPIO 34 umstellen.
+Der DHT11 wird in dieser Hardware-Variante nicht verwendet und ist daher nicht
+verdrahtet.
 
 ---
 
@@ -190,7 +184,6 @@ Steckdose 230V AC
 | --- | ------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
 | 1   | 8-Kanal SSR + 1 Zusatzrelais: Modul hat nur 8 Kanäle    | ✅ Gelöst | Separates Relais für Zone 9 vorhanden                                                                                      |
 | 2   | GPIO 27 + 32 kurzzeitig LOW beim Boot                   | ⚠️ Mittel | Entweder Kondensator am SSR-Eingang oder Firmware-seitig Relay erst nach Setup-Ende initialisieren (bereits implementiert) |
-| 3   | GPIO 12 für DHT11 (Strapping-Pin)                       | 🔴 Hoch   | GPIO ändern (z. B. GPIO 34 für Input-only)                                                                                 |
-| 4   | GPIO 2 als Taster-Input (Boot-Pin)                      | ⚠️ Mittel | Funktioniert mit PULLDOWN, aber beim Flashen Taster loslassen                                                              |
-| 5   | Hunter PGV-101 ist 24V AC, SSR muss AC-fähig sein       | ✅ Gelöst | 24V AC Netzteil vorhanden; SSR auf AC-Eignung geprüft                                                                      |
-| 6   | Kein Schutz gegen Überstrom/Kurzschluss der Ventilseite | ⚠️ Mittel | Feinsicherung 1A pro Ventilkreis oder Gruppenabsicherung                                                                   |
+| 3   | GPIO 2 als Taster-Input (Boot-Pin)                      | ⚠️ Mittel | Funktioniert mit PULLDOWN, aber beim Flashen Taster loslassen                                                              |
+| 4   | Hunter PGV-101 ist 24V AC, SSR muss AC-fähig sein       | ✅ Gelöst | 24V AC Netzteil vorhanden; SSR auf AC-Eignung geprüft                                                                      |
+| 5   | Kein Schutz gegen Überstrom/Kurzschluss der Ventilseite | ⚠️ Mittel | Feinsicherung 1A pro Ventilkreis oder Gruppenabsicherung                                                                   |
