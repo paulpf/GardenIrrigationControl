@@ -1,67 +1,75 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520" role="img" aria-labelledby="title desc">
-  <title id="title">4-20 mA water level sensor with shunt resistor on ESP32 GPIO36</title>
-  <desc id="desc">Schematic showing a 4-20 mA sensor loop converted to an ADC voltage by a 165 ohm shunt resistor connected from GPIO36 VP to GND.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="620" viewBox="0 0 1180 620" role="img" aria-labelledby="title desc">
+  <title id="title">4-20 mA Wasserstandssensor mit Shunt-Widerstand an ESP32 GPIO36</title>
+  <desc id="desc">Schaltplan eines 4-20-mA-Sensors, dessen Messstrom ueber einen 165-Ohm-Shunt nach GND fliesst. Der ESP32 misst die Shunt-Spannung an GPIO36 VP.</desc>
   <defs>
     <style>
-      .box { fill: #f8fafc; stroke: #334155; stroke-width: 2; rx: 10; }
-      .sensor { fill: #ecfeff; stroke: #0891b2; stroke-width: 2; rx: 10; }
-      .esp { fill: #f0fdf4; stroke: #16a34a; stroke-width: 2; rx: 10; }
+      .bg { fill: #fbfbf8; }
+      .box { fill: #f8fafc; stroke: #334155; stroke-width: 2.2; rx: 10; }
+      .sensor { fill: #ecfeff; stroke: #0891b2; stroke-width: 2.2; rx: 10; }
+      .esp { fill: #f0fdf4; stroke: #16a34a; stroke-width: 2.2; rx: 10; }
       .wire { fill: none; stroke: #1f2937; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
       .pos { stroke: #dc2626; }
       .sig { stroke: #2563eb; }
       .gnd { stroke: #475569; }
-      .label { font-family: Arial, Helvetica, sans-serif; font-size: 22px; fill: #0f172a; }
+      .label { font-family: Arial, Helvetica, sans-serif; font-size: 23px; fill: #0f172a; }
       .small { font-family: Arial, Helvetica, sans-serif; font-size: 17px; fill: #334155; }
       .tiny { font-family: Arial, Helvetica, sans-serif; font-size: 15px; fill: #475569; }
-      .pin { fill: #fff; stroke: #334155; stroke-width: 2; }
+      .pin { fill: #fff; stroke: #334155; stroke-width: 2.2; }
       .node { fill: #111827; }
-      .resistor { fill: none; stroke: #111827; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .resistor { fill: none; stroke: #111827; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+      .note-box { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; rx: 8; }
     </style>
   </defs>
 
-  <rect x="30" y="40" width="190" height="125" class="box"/>
-  <text x="125" y="85" text-anchor="middle" class="label">DC Versorgung</text>
-  <text x="125" y="118" text-anchor="middle" class="small">laut Sensor-Datenblatt</text>
-  <circle cx="210" cy="80" r="8" class="pin"/>
-  <text x="178" y="73" class="small">+</text>
-  <circle cx="210" cy="130" r="8" class="pin"/>
-  <text x="171" y="137" class="small">GND</text>
+  <rect class="bg" x="0" y="0" width="1180" height="620"/>
 
-  <rect x="365" y="42" width="230" height="150" class="sensor"/>
-  <text x="480" y="88" text-anchor="middle" class="label">4-20 mA Sensor</text>
-  <text x="480" y="121" text-anchor="middle" class="small">Fuellstand / Zisterne</text>
-  <circle cx="375" cy="80" r="8" class="pin"/>
-  <text x="392" y="86" class="small">+</text>
-  <circle cx="585" cy="150" r="8" class="pin"/>
-  <text x="501" y="156" class="small">Iout / Sensor -</text>
+  <!-- DC supply -->
+  <rect x="45" y="50" width="240" height="150" class="box"/>
+  <text x="165" y="96" text-anchor="middle" class="label">DC Versorgung</text>
+  <text x="165" y="132" text-anchor="middle" class="small">laut Sensor-Datenblatt</text>
+  <circle cx="285" cy="92" r="8" class="pin"/>
+  <text x="246" y="86" class="small">+V</text>
+  <circle cx="285" cy="165" r="8" class="pin"/>
+  <text x="230" y="171" class="small">GND</text>
 
-  <rect x="720" y="80" width="210" height="145" class="esp"/>
-  <text x="825" y="126" text-anchor="middle" class="label">ESP32</text>
-  <text x="825" y="158" text-anchor="middle" class="small">ADC1 Eingang</text>
-  <circle cx="730" cy="190" r="8" class="pin"/>
-  <text x="748" y="196" class="small">GPIO36 / VP</text>
-  <circle cx="730" cy="120" r="8" class="pin"/>
-  <text x="748" y="126" class="small">GND</text>
+  <!-- Sensor -->
+  <rect x="440" y="50" width="290" height="165" class="sensor"/>
+  <text x="585" y="98" text-anchor="middle" class="label">4-20 mA Sensor</text>
+  <text x="585" y="136" text-anchor="middle" class="small">Fuellstand / Zisterne</text>
+  <circle cx="440" cy="92" r="8" class="pin"/>
+  <text x="458" y="98" class="small">+</text>
+  <circle cx="730" cy="178" r="8" class="pin"/>
+  <text x="596" y="184" class="small">Iout / Sensor -</text>
 
-  <path d="M210 80 H375" class="wire pos"/>
-  <text x="292" y="66" text-anchor="middle" class="tiny">Sensor +</text>
+  <!-- ESP32 -->
+  <rect x="925" y="95" width="220" height="250" class="esp"/>
+  <text x="1035" y="145" text-anchor="middle" class="label">ESP32</text>
+  <text x="1035" y="184" text-anchor="middle" class="small">ADC1 Eingang</text>
+  <circle cx="925" cy="255" r="8" class="pin"/>
+  <text x="944" y="261" class="small">GPIO36 / VP</text>
+  <circle cx="925" cy="320" r="8" class="pin"/>
+  <text x="944" y="326" class="small">GND</text>
 
-  <path d="M210 130 V380 H535" class="wire gnd"/>
-  <path d="M535 380 H730 V120" class="wire gnd"/>
-  <text x="352" y="405" text-anchor="middle" class="tiny">gemeinsame Masse</text>
+  <!-- Sensor supply and ground -->
+  <path d="M285 92 H440" class="wire pos"/>
+  <path d="M285 165 V465 H990" class="wire gnd"/>
+  <path d="M925 320 V465" class="wire gnd"/>
 
-  <path d="M585 150 H650 V190 H730" class="wire sig"/>
-  <circle cx="650" cy="190" r="7" class="node"/>
-  <text x="648" y="176" text-anchor="middle" class="tiny">ADC-Knoten</text>
+  <!-- Sensor current output, ADC node, and ESP32 ADC input -->
+  <path d="M730 178 H790 V255 H925" class="wire sig"/>
+  <circle cx="790" cy="255" r="7" class="node"/>
+  <text x="790" y="238" text-anchor="middle" class="tiny">ADC-Knoten</text>
 
-  <path d="M650 190 V235" class="wire sig"/>
-  <path d="M650 235 l-25 14 l50 28 l-50 28 l50 28 l-50 28 l25 14" class="resistor"/>
-  <path d="M650 375 V380 H535" class="wire gnd"/>
-  <text x="705" y="305" class="label">Rshunt</text>
-  <text x="705" y="333" class="small">165 Ohm</text>
-  <text x="705" y="361" class="tiny">0,66-3,3 V bei 4-20 mA</text>
+  <!-- Shunt resistor from ADC node to common ground -->
+  <path d="M790 255 V295" class="wire sig"/>
+  <path d="M790 295 l-30 18 l60 36 l-60 36 l60 36 l-30 18" class="resistor"/>
+  <path d="M790 439 V465" class="wire gnd"/>
+  <text x="835" y="344" class="label">Rshunt</text>
+  <text x="835" y="376" class="small">165 Ohm</text>
+  <text x="835" y="408" class="tiny">0,66-3,3 V bei 4-20 mA</text>
 
-  <text x="490" y="255" text-anchor="middle" class="small">Der Strom des Sensors fliesst durch den Shunt.</text>
-  <text x="490" y="282" text-anchor="middle" class="small">Der ESP32 misst die Spannung ueber dem Shunt.</text>
-  <text x="490" y="470" text-anchor="middle" class="tiny">Wichtig: GPIO36 darf maximal 3,3 V sehen. Keine 24 V AC an den ADC anschliessen.</text>
+  <!-- Explanatory notes -->
+  <rect x="140" y="505" width="900" height="82" class="note-box"/>
+  <text x="590" y="538" text-anchor="middle" class="small">Der Sensorstrom fliesst vom Sensorausgang ueber Rshunt nach gemeinsamer Masse.</text>
+  <text x="590" y="566" text-anchor="middle" class="small">GPIO36 / VP misst die Spannung am ADC-Knoten gegen GND. Keine 24 V AC an den ADC anschliessen.</text>
 </svg>

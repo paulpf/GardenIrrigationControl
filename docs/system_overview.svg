@@ -55,7 +55,7 @@
   <text class="small" x="125" y="228">Ventilversorgung</text>
 
   <rect class="box" x="95" y="285" width="240" height="75"/>
-  <text class="text" x="125" y="317">5 V USB-Adapter</text>
+  <text class="text" x="125" y="317">HDR-15-5</text>
   <text class="small" x="125" y="343">ESP32 + SSR-Steuerseite</text>
 
   <rect class="box" x="500" y="195" width="220" height="110"/>

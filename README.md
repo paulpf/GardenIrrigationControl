@@ -87,13 +87,13 @@ Existierende Dateien werden vorher mit Zeitstempel gesichert, z. B.
 | 9 | Magnetventil | Hunter PGV-101 | 24-V-AC-Bewaesserungsventile |
 | 9 | Drucktaster | NO, normally open | Manuelle Zonensteuerung |
 | 1 | Trafo | 24 V AC, ausreichend dimensioniert | Versorgung der Magnetventile |
-| 1 | USB-Netzteil | 5 V DC | Versorgung des ESP32 |
+| 1 | Hutschienennetzteil | Mean Well HDR-15-5, 5 V DC | Versorgung von ESP32 und SSR-Steuerseite |
 | 1 | 4-20-mA-Sensor | kapazitiver Fuellstandssensor | Zisternenfuellstand |
 | 1 | Shunt-Widerstand | ca. 165 Ohm | Wandelt 4-20 mA auf ADC-Spannung |
 | 3 | Pull-down-Widerstand | 10 kOhm | Fuer GPIO 34, 35 und 39 |
 | optional 9 | Pull-up-Widerstand | 10 kOhm | Je SSR-Eingang nach 3V3, wenn noetig |
 | optional 9 | Status-LED | 5 mm, Farbe nach Wunsch | Anzeige des echten 24-V-AC-Ausgangs |
-| optional 9 | LED-Vorwiderstand | 6,8 kOhm / 0,5 W | Strombegrenzung fuer 24 V AC |
+| optional 9 | LED-Vorwiderstand | 10 kOhm / 0,5 W | Strombegrenzung fuer 24 V AC |
 | optional 9 | Schutzdiode | 1N4148 oder 1N4007 | Antiparallel zur Status-LED |
 | optional 9 | LED-Halter | 5-mm-Frontclip | Montage in der Gehaeusefront |
 | optional | Schrumpfschlauch / Litze | 0,14-0,25 mm2 | Isolation und Verdrahtung |
@@ -104,7 +104,7 @@ Existierende Dateien werden vorher mit Zeitstempel gesichert, z. B.
 
 - Produkt: ESP32 Dev Kit C V4
 - Anbieter: AZ-Delivery
-- Versorgung: 5 V ueber USB, intern 3,3 V Logikpegel
+- Versorgung: 5 V ueber USB oder VIN/5V-Pin, intern 3,3 V Logikpegel
 
 Pinout:
 
@@ -137,7 +137,7 @@ Wichtig: LOW am SSR-Eingang aktiviert den Kanal, HIGH deaktiviert ihn.
 graph TD
     subgraph PSU ["Stromversorgung"]
         V24["24 V AC Trafo"]
-        V5["5 V USB-Adapter"]
+        V5["5 V DC Netzteil\nMean Well HDR-15-5"]
     end
 
     subgraph CTRL ["Steuerung"]
@@ -198,14 +198,21 @@ Steckdose 230 V AC
 |   +-- L1 -> SSR COM / gemeinsame Eingangsleitung
 |   +-- L2 -> gemeinsame Rueckleitung aller Ventile
 |
-+-- 5 V USB-Netzteil
-    +-- USB -> ESP32
++-- 5 V DC Netzteil Mean Well HDR-15-5
+    +-- +V -> ESP32 VIN/5V
     +-- 5 V -> SSR VCC / Steuerseite
-    +-- GND -> ESP32 GND und SSR GND
+    +-- -V/GND -> ESP32 GND und SSR GND
 ```
 
 Wichtig: ESP32-GND und SSR-Steuer-GND muessen verbunden sein. Die 24-V-AC-Seite
 bleibt galvanisch von der Steuerseite getrennt.
+
+Das ESP32 Dev Kit C V4 wird mit 5 V am VIN/5V-Pin versorgt. Der
+Spannungsregler auf dem Devboard erzeugt daraus die interne 3,3-V-Versorgung
+fuer den ESP32 und kleine 3,3-V-Verbraucher. Niemals 5 V direkt an einen
+3V3-Pin anschliessen. Bei gleichzeitiger USB-Verbindung zum PC pruefen, ob das
+konkrete Devboard eine Rueckspeisung zwischen externer 5-V-Versorgung und USB
+verhindert.
 
 ### SSR-Modul und Ventile
 
@@ -252,7 +259,7 @@ jeweiligen 24-V-AC-Ventilausgang angeschlossen. Dadurch zeigt sie den tatsaechli
 geschalteten Ausgang, nicht nur den GPIO-Zustand.
 
 <figure>
-  <img src="docs/led_24vac_schematic.svg" alt="24 V AC Status-LED mit 6,8 kOhm Vorwiderstand und antiparalleler Schutzdiode" width="100%">
+  <img src="docs/led_24vac_schematic.svg" alt="24 V AC Status-LED mit 10 kOhm Vorwiderstand und antiparalleler Schutzdiode" width="100%">
   <figcaption>24 V AC Status-LED mit Vorwiderstand R1 und antiparalleler Schutzdiode D1.</figcaption>
 </figure>
 
@@ -261,7 +268,7 @@ Stueckliste pro LED:
 | Menge | Bauteil | Wert / Typ | Hinweis |
 | ---: | --- | --- | --- |
 | 1 | LED | 5 mm, Farbe nach Wunsch | Lange Anschlussfahne ist meist Anode |
-| 1 | Widerstand R1 | 6,8 kOhm / 0,5 W | 10 kOhm geht, wenn es dezenter leuchten soll |
+| 1 | Widerstand R1 | 10 kOhm / 0,5 W | 0,25 W reicht rechnerisch, 0,5 W ist robuster |
 | 1 | Diode D1 | 1N4148 oder 1N4007 | Ring / Strich markiert die Kathode |
 | 1 | LED-Halter | 5-mm-Frontclip | Passend zur Gehaeusefront |
 | 1 | Schrumpfschlauch | passend | Alle blanken Kontakte isolieren |
@@ -280,11 +287,13 @@ Dimensionierung:
 
 ```text
 24 V AC * 1,414 = ca. 34 V Spitzenspannung
-I = (34 V - ca. 2 V) / 6800 Ohm = ca. 4,7 mA Spitzenstrom
+I = (34 V - ca. 2 V) / 10000 Ohm = ca. 3,2 mA Spitzenstrom
+P = 24 V * 24 V / 10000 Ohm = ca. 0,058 W
 ```
 
-Ein 0,5-W-Widerstand ist empfehlenswert, weil er kuehler bleibt und mechanisch
-robuster ist.
+Ein 0,25-W-Widerstand reicht rechnerisch aus. Ein 0,5-W-Widerstand ist
+empfehlenswert, weil er kuehler bleibt, mechanisch robuster ist und mehr Reserve
+im Gehaeuse bietet.
 
 ### Wasserstandssensor mit Shunt-Widerstand
 
