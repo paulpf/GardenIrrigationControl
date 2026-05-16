@@ -21,6 +21,7 @@ GardenControllerApp::GardenControllerApp(
     MqttManager &mqttManager, OtaManager &otaManager,
     IrrigationZone (&irrigationZones)[MAX_IRRIGATION_ZONES],
     ScheduledIrrigation (&scheduledIrrigations)[MAX_IRRIGATION_ZONES],
+    IWallClock &wallClock,
     WaterLevelManager &waterLevelManager,
     ConnectivityCoordinator &connectivityCoordinator,
     WifiConnectionAwaiter &wifiConnectionAwaiter, OtaLoopGuard &otaLoopGuard,
@@ -30,6 +31,7 @@ GardenControllerApp::GardenControllerApp(
       _mqttManager(mqttManager), _otaManager(otaManager),
       _irrigationZones(irrigationZones),
       _scheduledIrrigations(scheduledIrrigations),
+      _wallClock(wallClock),
       _waterLevelManager(waterLevelManager),
       _connectivityCoordinator(connectivityCoordinator),
       _wifiConnectionAwaiter(wifiConnectionAwaiter),
@@ -146,6 +148,11 @@ void GardenControllerApp::initializeConnectivity()
   waitForWifiConnection();
 }
 
+void GardenControllerApp::initializeTime()
+{
+  _wallClock.setup();
+}
+
 void GardenControllerApp::initializeSubsystems()
 {
   _waterLevelManager.setup(_clientName);
@@ -176,6 +183,7 @@ void GardenControllerApp::setup()
   initializeStorage();
   initializeIdentity();
   initializeConnectivity();
+  initializeTime();
   initializeSubsystems();
   initializeRuntimeSafety();
 

@@ -7,7 +7,7 @@ GardenControllerBootstrap::GardenControllerBootstrap()
       _otaLoopGuard(_otaManager),
       _app(_irrigationConfig, _systemConfig, _hardwareConfig, _wifiManager,
            _mqttManager, _otaManager, _irrigationZones, _scheduledIrrigations,
-           _waterLevelManager,
+           _wallClock, _waterLevelManager,
            _connectivityCoordinator, _wifiConnectionAwaiter, _otaLoopGuard,
            _loopScheduler)
 {

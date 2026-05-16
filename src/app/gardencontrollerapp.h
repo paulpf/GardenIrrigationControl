@@ -10,6 +10,7 @@
 #include "irrigation_zone.h"
 #include "irrigationconfig.h"
 #include "irrigationzonefactory.h"
+#include "iwallclock.h"
 #include "loopscheduler.h"
 #include "mqttmanager.h"
 #include "otaloopguard.h"
@@ -30,6 +31,7 @@ public:
                       IrrigationZone (&irrigationZones)[MAX_IRRIGATION_ZONES],
                       ScheduledIrrigation (&scheduledIrrigations)
                           [MAX_IRRIGATION_ZONES],
+                      IWallClock &wallClock,
                       WaterLevelManager &waterLevelManager,
                       ConnectivityCoordinator &connectivityCoordinator,
                       WifiConnectionAwaiter &wifiConnectionAwaiter,
@@ -51,6 +53,7 @@ private:
   OtaManager &_otaManager;
   IrrigationZone (&_irrigationZones)[MAX_IRRIGATION_ZONES];
   ScheduledIrrigation (&_scheduledIrrigations)[MAX_IRRIGATION_ZONES];
+  IWallClock &_wallClock;
   WaterLevelManager &_waterLevelManager;
   ConnectivityCoordinator &_connectivityCoordinator;
   WifiConnectionAwaiter &_wifiConnectionAwaiter;
@@ -66,6 +69,7 @@ private:
   void initializeStorage();
   void initializeIdentity();
   void initializeConnectivity();
+  void initializeTime();
   void initializeSubsystems();
   void initializeRuntimeSafety();
 

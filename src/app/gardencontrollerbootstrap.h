@@ -10,6 +10,7 @@
 #include "irrigationconfig.h"
 #include "loopscheduler.h"
 #include "mqttmanager.h"
+#include "ntpwallclock.h"
 #include "otaloopguard.h"
 #include "otamanager.h"
 #include "scheduled_irrigation.h"
@@ -33,6 +34,7 @@ private:
   WifiManager _wifiManager;
   MqttManager _mqttManager;
   OtaManager _otaManager;
+  NtpWallClock _wallClock;
   IrrigationZone _irrigationZones[MAX_IRRIGATION_ZONES];
   ScheduledIrrigation _scheduledIrrigations[MAX_IRRIGATION_ZONES];
   Esp32WaterLevelSensor _waterLevelSensor;

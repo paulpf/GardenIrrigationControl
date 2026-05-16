@@ -94,6 +94,13 @@ constexpr int OTA_PORT = 3232; // OTA port (default: 3232)
 // Scheduled irrigation configuration
 constexpr bool ENABLE_SCHEDULED_IRRIGATION = false;
 
+// Time synchronization configuration
+constexpr bool ENABLE_NTP_TIME_SYNC = true;
+constexpr const char *NTP_TIME_ZONE = "CET-1CEST,M3.5.0/2,M10.5.0/3";
+constexpr const char *NTP_SERVER_1 = "pool.ntp.org";
+constexpr const char *NTP_SERVER_2 = "time.nist.gov";
+constexpr const char *NTP_SERVER_3 = "time.google.com";
+
 // Serial plotting configuration
 // #define ENABLE_ZONE_PLOTTING
 // #define ENABLE_LOOP_TIME_PLOTTING // Enable loop time plotting for debugging

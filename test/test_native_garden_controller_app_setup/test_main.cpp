@@ -11,6 +11,7 @@ public:
     STORAGE,
     IDENTITY,
     CONNECTIVITY,
+    TIME,
     SUBSYSTEMS,
     RUNTIME_SAFETY
   };
@@ -67,10 +68,11 @@ void test_all_setup_phases_are_executed()
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::IDENTITY);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::CONNECTIVITY);
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::TIME);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::SUBSYSTEMS);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::RUNTIME_SAFETY);
 
-  TEST_ASSERT_EQUAL_UINT(5, SetupPhaseTracker::phaseCount());
+  TEST_ASSERT_EQUAL_UINT(6, SetupPhaseTracker::phaseCount());
 }
 
 void test_setup_phases_execute_in_correct_order()
@@ -80,6 +82,7 @@ void test_setup_phases_execute_in_correct_order()
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::IDENTITY);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::CONNECTIVITY);
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::TIME);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::SUBSYSTEMS);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::RUNTIME_SAFETY);
 
@@ -91,6 +94,10 @@ void test_setup_phases_execute_in_correct_order()
   TEST_ASSERT_TRUE(SetupPhaseTracker::phaseExecutedBefore(
       SetupPhaseTracker::CONNECTIVITY, SetupPhaseTracker::SUBSYSTEMS));
   TEST_ASSERT_TRUE(SetupPhaseTracker::phaseExecutedBefore(
+      SetupPhaseTracker::CONNECTIVITY, SetupPhaseTracker::TIME));
+  TEST_ASSERT_TRUE(SetupPhaseTracker::phaseExecutedBefore(
+      SetupPhaseTracker::TIME, SetupPhaseTracker::SUBSYSTEMS));
+  TEST_ASSERT_TRUE(SetupPhaseTracker::phaseExecutedBefore(
       SetupPhaseTracker::SUBSYSTEMS, SetupPhaseTracker::RUNTIME_SAFETY));
 }
 
@@ -101,6 +108,7 @@ void test_identity_phase_executes_before_connectivity()
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::IDENTITY);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::CONNECTIVITY);
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::TIME);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::SUBSYSTEMS);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::RUNTIME_SAFETY);
 
@@ -116,12 +124,30 @@ void test_connectivity_phase_executes_before_subsystems()
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::IDENTITY);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::CONNECTIVITY);
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::TIME);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::SUBSYSTEMS);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::RUNTIME_SAFETY);
 
   // Connectivity must complete before MQTT/subsystem setup
   TEST_ASSERT_TRUE(SetupPhaseTracker::phaseExecutedBefore(
       SetupPhaseTracker::CONNECTIVITY, SetupPhaseTracker::SUBSYSTEMS));
+}
+
+void test_time_phase_executes_after_connectivity_before_subsystems()
+{
+  SetupPhaseTracker::reset();
+
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::IDENTITY);
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::CONNECTIVITY);
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::TIME);
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::SUBSYSTEMS);
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::RUNTIME_SAFETY);
+
+  TEST_ASSERT_TRUE(SetupPhaseTracker::phaseExecutedBefore(
+      SetupPhaseTracker::CONNECTIVITY, SetupPhaseTracker::TIME));
+  TEST_ASSERT_TRUE(SetupPhaseTracker::phaseExecutedBefore(
+      SetupPhaseTracker::TIME, SetupPhaseTracker::SUBSYSTEMS));
 }
 
 void test_subsystems_phase_executes_before_runtime_safety()
@@ -131,6 +157,7 @@ void test_subsystems_phase_executes_before_runtime_safety()
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::IDENTITY);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::CONNECTIVITY);
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::TIME);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::SUBSYSTEMS);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::RUNTIME_SAFETY);
 
@@ -146,6 +173,7 @@ void test_storage_phase_is_first()
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::IDENTITY);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::CONNECTIVITY);
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::TIME);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::SUBSYSTEMS);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::RUNTIME_SAFETY);
 
@@ -161,12 +189,13 @@ void test_runtime_safety_phase_is_last()
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::STORAGE);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::IDENTITY);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::CONNECTIVITY);
+  SetupPhaseTracker::recordPhase(SetupPhaseTracker::TIME);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::SUBSYSTEMS);
   SetupPhaseTracker::recordPhase(SetupPhaseTracker::RUNTIME_SAFETY);
 
   // Runtime safety must always be the last phase
   TEST_ASSERT_EQUAL_INT(SetupPhaseTracker::RUNTIME_SAFETY,
-                        SetupPhaseTracker::executionOrder[4]);
+                        SetupPhaseTracker::executionOrder[5]);
 }
 
 // Setup and teardown
@@ -188,6 +217,7 @@ int main(int argc, char **argv)
   RUN_TEST(test_setup_phases_execute_in_correct_order);
   RUN_TEST(test_identity_phase_executes_before_connectivity);
   RUN_TEST(test_connectivity_phase_executes_before_subsystems);
+  RUN_TEST(test_time_phase_executes_after_connectivity_before_subsystems);
   RUN_TEST(test_subsystems_phase_executes_before_runtime_safety);
   RUN_TEST(test_storage_phase_is_first);
   RUN_TEST(test_runtime_safety_phase_is_last);
