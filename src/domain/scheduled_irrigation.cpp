@@ -2,46 +2,76 @@
 #include "trace.h"
 
 ScheduledIrrigation::ScheduledIrrigation()
-    : _zoneIndex(-1), _scheduleCount(0), _lastTriggerTime(0)
+    : _zoneIndex(-1), _wallClock(nullptr), _scheduleCount(0),
+      _lastTriggerKey(0), _hasLastTriggerKey(false)
 {
 }
 
 void ScheduledIrrigation::setup(int zoneIndex)
 {
+  setup(zoneIndex, nullptr);
+}
+
+void ScheduledIrrigation::setup(int zoneIndex, IWallClock *wallClock)
+{
   _zoneIndex = zoneIndex;
+  _wallClock = wallClock;
   _scheduleCount = 0;
-  _lastTriggerTime = 0;
+  _lastTriggerKey = 0;
+  _hasLastTriggerKey = false;
   Trace::log(TraceLevel::INFO,
              "ScheduledIrrigation initialized for zone " + String(zoneIndex));
 }
 
 void ScheduledIrrigation::loop(unsigned long currentTime)
 {
-  if (_zoneIndex < 0 || _scheduleCount == 0)
+  IrrigationSchedule dueSchedule;
+  if (!consumeDueSchedule(currentTime, dueSchedule))
   {
-    return; // Not initialized or no schedules
+    return;
   }
 
-  // Check all enabled schedules
+  Trace::log(TraceLevel::INFO,
+             "Schedule triggered for zone " + String(_zoneIndex) +
+                 " - running for " + String(dueSchedule.durationMinutes) +
+                 " minutes");
+  // Trigger action is intentionally handled by the caller in a later step.
+}
+
+bool ScheduledIrrigation::consumeDueSchedule(
+    unsigned long currentTime, IrrigationSchedule &dueSchedule)
+{
+  if (_zoneIndex < 0 || _scheduleCount == 0 || _wallClock == nullptr)
+  {
+    return false;
+  }
+
+  (void)currentTime;
+
+  WallClockTime now;
+  if (!_wallClock->getLocalTime(now))
+  {
+    return false;
+  }
+
+  const uint64_t triggerKey = getTriggerKey(now);
+  if (_hasLastTriggerKey && triggerKey == _lastTriggerKey)
+  {
+    return false;
+  }
+
   for (int i = 0; i < _scheduleCount; i++)
   {
-    if (_schedules[i].enabled &&
-        isScheduleTimeMatch(_schedules[i], currentTime))
+    if (_schedules[i].enabled && isScheduleTimeMatch(_schedules[i], now))
     {
-      // Check if enough time has passed since last trigger (prevent
-      // retriggering in same minute)
-      if ((currentTime - _lastTriggerTime) > 60000) // More than 1 minute
-      {
-        _lastTriggerTime = currentTime;
-        Trace::log(TraceLevel::INFO,
-                   "Schedule triggered for zone " + String(_zoneIndex) +
-                       " - running for " +
-                       String(_schedules[i].durationMinutes) + " minutes");
-        // Trigger action would be handled by caller (e.g., start irrigation
-        // zone)
-      }
+      _lastTriggerKey = triggerKey;
+      _hasLastTriggerKey = true;
+      dueSchedule = _schedules[i];
+      return true;
     }
   }
+
+  return false;
 }
 
 void ScheduledIrrigation::addSchedule(const IrrigationSchedule &schedule)
@@ -128,10 +158,15 @@ bool ScheduledIrrigation::isScheduleEnabled(int scheduleIndex) const
 
 bool ScheduledIrrigation::shouldRunNow(unsigned long currentTime) const
 {
+  (void)currentTime;
+  return shouldRunNow();
+}
+
+bool ScheduledIrrigation::shouldRunNow() const
+{
   for (int i = 0; i < _scheduleCount; i++)
   {
-    if (_schedules[i].enabled &&
-        isScheduleTimeMatch(_schedules[i], currentTime))
+    if (_schedules[i].enabled && isScheduleTimeMatch(_schedules[i]))
     {
       return true;
     }
@@ -152,17 +187,41 @@ String ScheduledIrrigation::getScheduleStatusTopic() const
 }
 
 bool ScheduledIrrigation::isScheduleTimeMatch(
-    const IrrigationSchedule &schedule, unsigned long currentTime) const
+    const IrrigationSchedule &schedule) const
 {
-  // NOT IMPLEMENTED: requires NTP integration.
-  // Always returns false until a real time source is wired in.
-  return false;
+  if (_wallClock == nullptr)
+  {
+    return false;
+  }
+
+  WallClockTime now;
+  if (!_wallClock->getLocalTime(now))
+  {
+    return false;
+  }
+
+  return isScheduleTimeMatch(schedule, now);
 }
 
-int ScheduledIrrigation::getDayOfWeek(unsigned long currentTime) const
+bool ScheduledIrrigation::isScheduleTimeMatch(
+    const IrrigationSchedule &schedule, const WallClockTime &time) const
 {
-  // Convert Unix timestamp to day of week (0=Monday, 6=Sunday)
-  // This requires time library integration
-  // TODO: Implement with proper time library
-  return 0;
+  if (time.dayOfWeek < 0 || time.dayOfWeek > 6)
+  {
+    return false;
+  }
+
+  const uint8_t dayMask = static_cast<uint8_t>(1U << time.dayOfWeek);
+  return schedule.hour == time.hour && schedule.minute == time.minute &&
+         (schedule.daysOfWeek & dayMask) != 0;
+}
+
+uint64_t ScheduledIrrigation::getTriggerKey(const WallClockTime &time) const
+{
+  return (((((uint64_t)time.year * 100ULL + (uint64_t)time.month) * 100ULL +
+            (uint64_t)time.day) *
+               100ULL +
+           (uint64_t)time.hour) *
+              100ULL +
+          (uint64_t)time.minute);
 }

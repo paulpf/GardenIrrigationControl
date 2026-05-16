@@ -2,16 +2,13 @@
 #define SCHEDULED_IRRIGATION_H
 
 #include "global_defines.h"
-
-// NOTE: ScheduledIrrigation is NOT yet functional.
-// isScheduleTimeMatch() returns false unconditionally until NTP integration
-// is implemented. Do not treat this as a production-ready feature.
+#include "iwallclock.h"
 
 // Schedule structure for one irrigation event
 struct IrrigationSchedule
 {
   bool enabled;        // Is this schedule active?
-  int hour;            // 0-23 (UTC)
+  int hour;            // 0-23 local time
   int minute;          // 0-59
   int durationMinutes; // How long to run (1-60 minutes)
   uint8_t daysOfWeek;  // Bitmask: bit0=Mon, bit1=Tue, ... bit6=Sun
@@ -30,8 +27,9 @@ class ScheduledIrrigation
 public:
   ScheduledIrrigation();
 
-  // Setup with zone index and MQTT manager reference
+  // Setup with zone index. A wall clock is required for time matching.
   void setup(int zoneIndex);
+  void setup(int zoneIndex, IWallClock *wallClock);
 
   // Call this frequently to check if irrigation should trigger
   void loop(unsigned long currentTime);
@@ -50,6 +48,9 @@ public:
 
   // Check if it's time to run
   bool shouldRunNow(unsigned long currentTime) const;
+  bool shouldRunNow() const;
+  bool consumeDueSchedule(unsigned long currentTime,
+                          IrrigationSchedule &dueSchedule);
 
   // MQTT topics for schedule commands
   String getScheduleCommandTopic() const;
@@ -57,13 +58,16 @@ public:
 
 private:
   int _zoneIndex;
+  IWallClock *_wallClock;
   IrrigationSchedule _schedules[MAX_SCHEDULES_PER_ZONE];
   int _scheduleCount;
-  unsigned long _lastTriggerTime; // Prevent multiple triggers in same minute
+  uint64_t _lastTriggerKey; // Prevent duplicate triggers in same minute
+  bool _hasLastTriggerKey;
 
+  bool isScheduleTimeMatch(const IrrigationSchedule &schedule) const;
   bool isScheduleTimeMatch(const IrrigationSchedule &schedule,
-                           unsigned long currentTime) const;
-  int getDayOfWeek(unsigned long currentTime) const; // 0=Mon, 6=Sun
+                           const WallClockTime &time) const;
+  uint64_t getTriggerKey(const WallClockTime &time) const;
 };
 
 #endif // SCHEDULED_IRRIGATION_H

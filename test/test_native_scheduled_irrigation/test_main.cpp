@@ -1,143 +1,167 @@
-#include "ArduinoFake.h"
+#include "Arduino.h"
 #include "unity.h"
 
-// Phase 5.4 Scheduled Irrigation Integration Tests
-// These tests verify the scheduled irrigation infrastructure is in place
+#include "../../src/domain/scheduled_irrigation.cpp"
+
+void Trace::log(TraceLevel level, String message)
+{
+  (void)level;
+  (void)message;
+}
+
+class FakeWallClock : public IWallClock
+{
+public:
+  bool valid = true;
+  WallClockTime current;
+
+  void setup() override
+  {
+  }
+
+  bool isTimeValid() const override
+  {
+    return valid;
+  }
+
+  bool getLocalTime(WallClockTime &time) const override
+  {
+    if (!valid)
+    {
+      return false;
+    }
+
+    time = current;
+    return true;
+  }
+};
+
+static IrrigationSchedule makeSchedule(int hour, int minute, int dayOfWeek)
+{
+  IrrigationSchedule schedule;
+  schedule.enabled = true;
+  schedule.hour = hour;
+  schedule.minute = minute;
+  schedule.durationMinutes = 7;
+  schedule.daysOfWeek = static_cast<uint8_t>(1U << dayOfWeek);
+  return schedule;
+}
 
 void setUp(void)
 {
+  arduinoFakeReset();
 }
 
 void tearDown(void)
 {
 }
 
-void test_scheduled_irrigation_header_exists(void)
+void test_default_schedule_is_disabled(void)
 {
-  // Phase 5.4: Scheduled irrigation header must be defined
-  TEST_PASS();
+  IrrigationSchedule schedule;
+  TEST_ASSERT_FALSE(schedule.enabled);
 }
 
-void test_irrigation_schedule_structure_defined(void)
+void test_should_run_now_matches_enabled_schedule_time_and_day(void)
 {
-  // IrrigationSchedule struct with:
-  // - enabled: bool
-  // - hour: 0-23
-  // - minute: 0-59
-  // - durationMinutes: 1-60
-  // - daysOfWeek: bitmask (0x01=Mon, 0x02=Tue, etc)
-  TEST_PASS();
+  FakeWallClock clock;
+  clock.current = {2026, 5, 18, 6, 30, 0, 0}; // Monday
+
+  ScheduledIrrigation scheduler;
+  scheduler.setup(0, &clock);
+  scheduler.addSchedule(makeSchedule(6, 30, 0));
+
+  TEST_ASSERT_TRUE(scheduler.shouldRunNow());
 }
 
-void test_scheduled_irrigation_class_defined(void)
+void test_should_not_run_when_day_does_not_match(void)
 {
-  // ScheduledIrrigation class for per-zone scheduling
-  TEST_PASS();
+  FakeWallClock clock;
+  clock.current = {2026, 5, 19, 6, 30, 0, 1}; // Tuesday
+
+  ScheduledIrrigation scheduler;
+  scheduler.setup(0, &clock);
+  scheduler.addSchedule(makeSchedule(6, 30, 0));
+
+  TEST_ASSERT_FALSE(scheduler.shouldRunNow());
 }
 
-void test_max_schedules_per_zone_constant(void)
+void test_should_not_run_without_valid_time(void)
 {
-  // MAX_SCHEDULES_PER_ZONE = 4 (max 4 schedules per irrigation zone)
-  TEST_PASS();
+  FakeWallClock clock;
+  clock.valid = false;
+  clock.current = {2026, 5, 18, 6, 30, 0, 0};
+
+  ScheduledIrrigation scheduler;
+  scheduler.setup(0, &clock);
+  scheduler.addSchedule(makeSchedule(6, 30, 0));
+
+  TEST_ASSERT_FALSE(scheduler.shouldRunNow());
 }
 
-void test_schedule_management_methods(void)
+void test_disabled_schedule_does_not_run(void)
 {
-  // Required methods:
-  // - addSchedule(schedule)
-  // - removeSchedule(index)
-  // - updateSchedule(index, schedule)
-  // - getSchedule(index)
-  // - getScheduleCount()
-  TEST_PASS();
+  FakeWallClock clock;
+  clock.current = {2026, 5, 18, 6, 30, 0, 0};
+
+  IrrigationSchedule schedule = makeSchedule(6, 30, 0);
+  schedule.enabled = false;
+
+  ScheduledIrrigation scheduler;
+  scheduler.setup(0, &clock);
+  scheduler.addSchedule(schedule);
+
+  TEST_ASSERT_FALSE(scheduler.shouldRunNow());
 }
 
-void test_schedule_enable_disable(void)
+void test_consume_due_schedule_returns_schedule_once_per_wall_clock_minute(void)
 {
-  // Required methods:
-  // - enableSchedule(index)
-  // - disableSchedule(index)
-  // - isScheduleEnabled(index)
-  TEST_PASS();
+  FakeWallClock clock;
+  clock.current = {2026, 5, 18, 6, 30, 0, 0};
+
+  ScheduledIrrigation scheduler;
+  scheduler.setup(0, &clock);
+  scheduler.addSchedule(makeSchedule(6, 30, 0));
+
+  IrrigationSchedule dueSchedule;
+  TEST_ASSERT_TRUE(scheduler.consumeDueSchedule(1000, dueSchedule));
+  TEST_ASSERT_EQUAL_INT(7, dueSchedule.durationMinutes);
+  TEST_ASSERT_FALSE(scheduler.consumeDueSchedule(2000, dueSchedule));
 }
 
-void test_schedule_time_matching(void)
+void test_legacy_should_run_now_signature_uses_wall_clock(void)
 {
-  // Method shouldRunNow(currentTime) checks if any schedule matches
-  // Returns true if time matches enabled schedule
-  TEST_PASS();
+  FakeWallClock clock;
+  clock.current = {2026, 5, 18, 6, 30, 0, 0};
+
+  ScheduledIrrigation scheduler;
+  scheduler.setup(0, &clock);
+  scheduler.addSchedule(makeSchedule(6, 30, 0));
+
+  TEST_ASSERT_TRUE(scheduler.shouldRunNow(123456));
 }
 
-void test_mqtt_topic_generation(void)
+void test_scheduler_without_wall_clock_never_runs(void)
 {
-  // Schedule command topic: zone{i}/schedule/command
-  // Schedule status topic: zone{i}/schedule/status
-  TEST_PASS();
-}
+  ScheduledIrrigation scheduler;
+  scheduler.setup(0);
+  scheduler.addSchedule(makeSchedule(6, 30, 0));
 
-void test_schedule_prevents_retriggering(void)
-{
-  // Schedules use _lastTriggerTime to prevent multiple triggers within same
-  // minute
-  TEST_PASS();
-}
-
-void test_phase_5_4_scheduled_irrigation_framework(void)
-{
-  // Phase 5.4 Framework Checklist:
-  // ✓ ScheduledIrrigation.h header defined
-  // ✓ IrrigationSchedule structure with all fields
-  // ✓ scheduled_irrigation.cpp implementation
-  // ✓ Setup method for zone initialization
-  // ✓ Schedule CRUD operations (add/remove/update/get)
-  // ✓ Enable/disable per schedule
-  // ✓ Time matching logic (placeholder for NTP integration)
-  // ✓ MQTT topic generation
-  // ✓ Retrigger prevention via time window
-  // ✓ All builds pass (ESP32 successful)
-  TEST_PASS();
-}
-
-void test_phase_5_4_ready_for_ntp_integration(void)
-{
-  // Phase 5.4 is framework-ready for:
-  // - NTP time synchronization
-  // - isScheduleTimeMatch() implementation with real timestamps
-  // - getDayOfWeek() implementation with time library
-  // - MQTT command parsing for schedule updates
-  // - Persistent storage of schedules in EEPROM
-  TEST_PASS();
-}
-
-void test_phase_5_4_documentation(void)
-{
-  // Scheduled irrigation implemented with:
-  // - Up to 4 schedules per zone
-  // - Time-based triggering (hour:minute)
-  // - Day-of-week bitmask for recurring schedules
-  // - Configurable duration per schedule
-  // - Enable/disable per schedule
-  // - MQTT command interface ready
-  // - Production-ready architecture
-  TEST_PASS();
+  TEST_ASSERT_FALSE(scheduler.shouldRunNow());
 }
 
 int main(int argc, char **argv)
 {
   UNITY_BEGIN();
 
-  RUN_TEST(test_scheduled_irrigation_header_exists);
-  RUN_TEST(test_irrigation_schedule_structure_defined);
-  RUN_TEST(test_scheduled_irrigation_class_defined);
-  RUN_TEST(test_max_schedules_per_zone_constant);
-  RUN_TEST(test_schedule_management_methods);
-  RUN_TEST(test_schedule_enable_disable);
-  RUN_TEST(test_schedule_time_matching);
-  RUN_TEST(test_mqtt_topic_generation);
-  RUN_TEST(test_schedule_prevents_retriggering);
-  RUN_TEST(test_phase_5_4_scheduled_irrigation_framework);
-  RUN_TEST(test_phase_5_4_ready_for_ntp_integration);
-  RUN_TEST(test_phase_5_4_documentation);
+  RUN_TEST(test_default_schedule_is_disabled);
+  RUN_TEST(test_should_run_now_matches_enabled_schedule_time_and_day);
+  RUN_TEST(test_should_not_run_when_day_does_not_match);
+  RUN_TEST(test_should_not_run_without_valid_time);
+  RUN_TEST(test_disabled_schedule_does_not_run);
+  RUN_TEST(test_consume_due_schedule_returns_schedule_once_per_wall_clock_minute);
+  RUN_TEST(test_legacy_should_run_now_signature_uses_wall_clock);
+  RUN_TEST(test_scheduler_without_wall_clock_never_runs);
 
   return UNITY_END();
 }
