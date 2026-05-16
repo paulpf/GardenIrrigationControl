@@ -19,6 +19,7 @@
 #include "otaloopguard.h"
 #include "otamanager.h"
 #include "scheduled_irrigation.h"
+#include "scheduledirrigationpublisher.h"
 #include "systemconfig.h"
 #include "waterlevelmanager.h"
 #include "wallclockpublisher.h"
@@ -41,6 +42,8 @@ public:
                           &automaticIrrigationController,
                       AutomaticIrrigationPublisher
                           &automaticIrrigationPublisher,
+                      ScheduledIrrigationPublisher
+                          &scheduledIrrigationPublisher,
                       DiagnosticsReporter &diagnosticsReporter,
                       WaterLevelManager &waterLevelManager,
                       ConnectivityCoordinator &connectivityCoordinator,
@@ -67,6 +70,7 @@ private:
   WallClockPublisher &_wallClockPublisher;
   AutomaticIrrigationController &_automaticIrrigationController;
   AutomaticIrrigationPublisher &_automaticIrrigationPublisher;
+  ScheduledIrrigationPublisher &_scheduledIrrigationPublisher;
   DiagnosticsReporter &_diagnosticsReporter;
   WaterLevelManager &_waterLevelManager;
   ConnectivityCoordinator &_connectivityCoordinator;

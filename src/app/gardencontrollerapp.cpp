@@ -25,6 +25,7 @@ GardenControllerApp::GardenControllerApp(
     WallClockPublisher &wallClockPublisher,
     AutomaticIrrigationController &automaticIrrigationController,
     AutomaticIrrigationPublisher &automaticIrrigationPublisher,
+    ScheduledIrrigationPublisher &scheduledIrrigationPublisher,
     DiagnosticsReporter &diagnosticsReporter,
     WaterLevelManager &waterLevelManager,
     ConnectivityCoordinator &connectivityCoordinator,
@@ -39,6 +40,7 @@ GardenControllerApp::GardenControllerApp(
       _wallClockPublisher(wallClockPublisher),
       _automaticIrrigationController(automaticIrrigationController),
       _automaticIrrigationPublisher(automaticIrrigationPublisher),
+      _scheduledIrrigationPublisher(scheduledIrrigationPublisher),
       _diagnosticsReporter(diagnosticsReporter),
       _waterLevelManager(waterLevelManager),
       _connectivityCoordinator(connectivityCoordinator),
@@ -175,6 +177,7 @@ void GardenControllerApp::initializeDiagnostics()
   _diagnosticsReporter.setup(_clientName);
   _wallClockPublisher.setup(_clientName);
   _automaticIrrigationPublisher.setup(_clientName);
+  _scheduledIrrigationPublisher.setup(_clientName);
 }
 
 void GardenControllerApp::initializeSubsystems()
@@ -287,6 +290,7 @@ void GardenControllerApp::handleMiddleIntervalEvents()
   _mqttManager.publishSystemStatus();
   _wallClockPublisher.publishTime();
   _automaticIrrigationPublisher.publishState();
+  _scheduledIrrigationPublisher.publishState(_currentMillis);
   _diagnosticsReporter.publishReport();
   handleScheduledIrrigation();
 }
