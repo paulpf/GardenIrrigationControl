@@ -3,6 +3,7 @@
 
 #include <array>
 
+#include "automaticirrigationcontroller.h"
 #include "arduinotimeprovider.h"
 #include "connectivitycoordinator.h"
 #include "diagnosticsreporter.h"
@@ -35,6 +36,8 @@ public:
                           [MAX_IRRIGATION_ZONES],
                       IWallClock &wallClock,
                       WallClockPublisher &wallClockPublisher,
+                      AutomaticIrrigationController
+                          &automaticIrrigationController,
                       DiagnosticsReporter &diagnosticsReporter,
                       WaterLevelManager &waterLevelManager,
                       ConnectivityCoordinator &connectivityCoordinator,
@@ -59,6 +62,7 @@ private:
   ScheduledIrrigation (&_scheduledIrrigations)[MAX_IRRIGATION_ZONES];
   IWallClock &_wallClock;
   WallClockPublisher &_wallClockPublisher;
+  AutomaticIrrigationController &_automaticIrrigationController;
   DiagnosticsReporter &_diagnosticsReporter;
   WaterLevelManager &_waterLevelManager;
   ConnectivityCoordinator &_connectivityCoordinator;
@@ -82,6 +86,7 @@ private:
 
   void initIrrigationZones();
   void initScheduledIrrigation();
+  void initAutomaticIrrigation();
   void resetZoneStateAfterColdStartIfNeeded();
   void updateClientNameFromMac();
   void setupOta();

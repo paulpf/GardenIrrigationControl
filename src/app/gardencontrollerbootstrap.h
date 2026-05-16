@@ -1,6 +1,7 @@
 #ifndef GARDENCONTROLLERBOOTSTRAP_H
 #define GARDENCONTROLLERBOOTSTRAP_H
 
+#include "automaticirrigationcontroller.h"
 #include "arduinotimeprovider.h"
 #include "connectivitycoordinator.h"
 #include "diagnosticsreporter.h"
@@ -38,6 +39,7 @@ private:
   OtaManager _otaManager;
   NtpWallClock _wallClock;
   WallClockPublisher _wallClockPublisher;
+  AutomaticIrrigationController _automaticIrrigationController;
   DiagnosticsReporter _diagnosticsReporter;
   IrrigationZone _irrigationZones[MAX_IRRIGATION_ZONES];
   ScheduledIrrigation _scheduledIrrigations[MAX_IRRIGATION_ZONES];

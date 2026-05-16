@@ -23,6 +23,7 @@ GardenControllerApp::GardenControllerApp(
     ScheduledIrrigation (&scheduledIrrigations)[MAX_IRRIGATION_ZONES],
     IWallClock &wallClock,
     WallClockPublisher &wallClockPublisher,
+    AutomaticIrrigationController &automaticIrrigationController,
     DiagnosticsReporter &diagnosticsReporter,
     WaterLevelManager &waterLevelManager,
     ConnectivityCoordinator &connectivityCoordinator,
@@ -35,6 +36,7 @@ GardenControllerApp::GardenControllerApp(
       _scheduledIrrigations(scheduledIrrigations),
       _wallClock(wallClock),
       _wallClockPublisher(wallClockPublisher),
+      _automaticIrrigationController(automaticIrrigationController),
       _diagnosticsReporter(diagnosticsReporter),
       _waterLevelManager(waterLevelManager),
       _connectivityCoordinator(connectivityCoordinator),
@@ -58,6 +60,12 @@ void GardenControllerApp::initScheduledIrrigation()
     Trace::log(TraceLevel::INFO,
                "Scheduled irrigation disabled by configuration");
   }
+}
+
+void GardenControllerApp::initAutomaticIrrigation()
+{
+  _automaticIrrigationController.setup(false);
+  Trace::log(TraceLevel::INFO, "Automatic irrigation disabled by default");
 }
 
 void GardenControllerApp::initIrrigationZones()
@@ -178,6 +186,7 @@ void GardenControllerApp::initializeSubsystems()
   setupOta();
   initIrrigationZones();
   initScheduledIrrigation();
+  initAutomaticIrrigation();
   resetZoneStateAfterColdStartIfNeeded();
 
   _connectivityCoordinator.ensureMqttConnected();
@@ -255,6 +264,11 @@ void GardenControllerApp::updateLoopTimingPlot()
 void GardenControllerApp::handleScheduledIrrigation()
 {
   if (!ENABLE_SCHEDULED_IRRIGATION)
+  {
+    return;
+  }
+
+  if (!_automaticIrrigationController.canRunSchedules())
   {
     return;
   }
