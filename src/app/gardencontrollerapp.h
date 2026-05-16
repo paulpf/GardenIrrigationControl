@@ -19,6 +19,7 @@
 #include "scheduled_irrigation.h"
 #include "systemconfig.h"
 #include "waterlevelmanager.h"
+#include "wallclockpublisher.h"
 #include "wificonnectionawaiter.h"
 #include "wifimanager.h"
 
@@ -33,6 +34,7 @@ public:
                       ScheduledIrrigation (&scheduledIrrigations)
                           [MAX_IRRIGATION_ZONES],
                       IWallClock &wallClock,
+                      WallClockPublisher &wallClockPublisher,
                       DiagnosticsReporter &diagnosticsReporter,
                       WaterLevelManager &waterLevelManager,
                       ConnectivityCoordinator &connectivityCoordinator,
@@ -56,6 +58,7 @@ private:
   IrrigationZone (&_irrigationZones)[MAX_IRRIGATION_ZONES];
   ScheduledIrrigation (&_scheduledIrrigations)[MAX_IRRIGATION_ZONES];
   IWallClock &_wallClock;
+  WallClockPublisher &_wallClockPublisher;
   DiagnosticsReporter &_diagnosticsReporter;
   WaterLevelManager &_waterLevelManager;
   ConnectivityCoordinator &_connectivityCoordinator;

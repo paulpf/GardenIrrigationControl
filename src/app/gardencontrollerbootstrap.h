@@ -17,6 +17,7 @@
 #include "scheduled_irrigation.h"
 #include "systemconfig.h"
 #include "waterlevelmanager.h"
+#include "wallclockpublisher.h"
 #include "wificonnectionawaiter.h"
 #include "wifimanager.h"
 
@@ -36,6 +37,7 @@ private:
   MqttManager _mqttManager;
   OtaManager _otaManager;
   NtpWallClock _wallClock;
+  WallClockPublisher _wallClockPublisher;
   DiagnosticsReporter _diagnosticsReporter;
   IrrigationZone _irrigationZones[MAX_IRRIGATION_ZONES];
   ScheduledIrrigation _scheduledIrrigations[MAX_IRRIGATION_ZONES];

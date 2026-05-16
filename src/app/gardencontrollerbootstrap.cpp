@@ -1,14 +1,16 @@
 #include "gardencontrollerbootstrap.h"
 
 GardenControllerBootstrap::GardenControllerBootstrap()
-    : _diagnosticsReporter(_mqttManager),
+    : _wallClockPublisher(_mqttManager, _wallClock),
+      _diagnosticsReporter(_mqttManager),
       _waterLevelManager(_mqttManager, _waterLevelSensor),
       _connectivityCoordinator(_wifiManager, _mqttManager),
       _wifiConnectionAwaiter(_wifiManager, _timeProvider),
       _otaLoopGuard(_otaManager),
       _app(_irrigationConfig, _systemConfig, _hardwareConfig, _wifiManager,
            _mqttManager, _otaManager, _irrigationZones, _scheduledIrrigations,
-           _wallClock, _diagnosticsReporter, _waterLevelManager,
+           _wallClock, _wallClockPublisher, _diagnosticsReporter,
+           _waterLevelManager,
            _connectivityCoordinator, _wifiConnectionAwaiter, _otaLoopGuard,
            _loopScheduler)
 {
