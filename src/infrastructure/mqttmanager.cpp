@@ -190,10 +190,15 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
   // concatenation in hot path This reduces heap fragmentation on ESP32 for
   // high-frequency MQTT messages
   char message[256];
-  int copyLength =
-      (length < (int)sizeof(message) - 1) ? length : (int)sizeof(message) - 1;
-  memcpy(message, payload, copyLength);
-  message[copyLength] = '\0';
+  if (length >= sizeof(message))
+  {
+    Trace::log(TraceLevel::ERROR,
+               "MQTT payload too long (" + String(length) +
+                   " bytes) on topic [" + String(topic) + "] – ignored");
+    return;
+  }
+  memcpy(message, payload, length);
+  message[length] = '\0';
 
   String incomingTopic = String(topic);
   Trace::log(TraceLevel::INFO, "MQTT message arrived [" + incomingTopic +
@@ -268,8 +273,17 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
       Trace::log(TraceLevel::INFO,
                  "Processing software button message for zone " + String(i) +
                      ": " + String(message));
-      _irrigationZones[i]->synchronizeButtonStates(strcmp(message, "true") ==
-                                                   0);
+      bool requestedState = false;
+      if (tryParseBool(message, requestedState))
+      {
+        _irrigationZones[i]->synchronizeButtonStates(requestedState);
+      }
+      else
+      {
+        Trace::log(TraceLevel::ERROR,
+                   "Invalid payload for swBtn topic for zone " + String(i) +
+                       ": " + String(message));
+      }
       break; // Exit the loop after processing the message
     }
 

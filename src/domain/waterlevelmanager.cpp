@@ -1,6 +1,7 @@
 #include "waterlevelmanager.h"
 
 #include "irrigation_zone.h"
+#include <algorithm>
 
 WaterLevelManager::WaterLevelManager(IMessagePublisher &messagePublisher,
                                      IWaterLevelSensorReader &sensor,
@@ -296,7 +297,7 @@ void WaterLevelManager::publishData()
   }
 
   _messagePublisher.publish(_topics.percent.c_str(),
-                            String(_state.percent, 1).c_str());
+                            String(std::min(_state.percent, 100.0f), 1).c_str());
   _messagePublisher.publish(_topics.liters.c_str(),
                             String(_state.liters, 1).c_str());
   _messagePublisher.publish(_topics.raw.c_str(),

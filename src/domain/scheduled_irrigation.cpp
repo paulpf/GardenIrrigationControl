@@ -154,10 +154,8 @@ String ScheduledIrrigation::getScheduleStatusTopic() const
 bool ScheduledIrrigation::isScheduleTimeMatch(
     const IrrigationSchedule &schedule, unsigned long currentTime) const
 {
-  // For now, implement a simplified time matching based on system time
-  // In production, would integrate with NTP time
-  // This is a placeholder that returns false (requires NTP integration)
-  // TODO: Integrate with system time/NTP
+  // NOT IMPLEMENTED: requires NTP integration.
+  // Always returns false until a real time source is wired in.
   return false;
 }
 

@@ -3,6 +3,10 @@
 
 #include "global_defines.h"
 
+// NOTE: ScheduledIrrigation is NOT yet functional.
+// isScheduleTimeMatch() returns false unconditionally until NTP integration
+// is implemented. Do not treat this as a production-ready feature.
+
 // Schedule structure for one irrigation event
 struct IrrigationSchedule
 {
