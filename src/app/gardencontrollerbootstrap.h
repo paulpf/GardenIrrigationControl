@@ -3,6 +3,7 @@
 
 #include "arduinotimeprovider.h"
 #include "connectivitycoordinator.h"
+#include "diagnosticsreporter.h"
 #include "esp32waterlevelsensor.h"
 #include "gardencontrollerapp.h"
 #include "hardwareconfig.h"
@@ -35,6 +36,7 @@ private:
   MqttManager _mqttManager;
   OtaManager _otaManager;
   NtpWallClock _wallClock;
+  DiagnosticsReporter _diagnosticsReporter;
   IrrigationZone _irrigationZones[MAX_IRRIGATION_ZONES];
   ScheduledIrrigation _scheduledIrrigations[MAX_IRRIGATION_ZONES];
   Esp32WaterLevelSensor _waterLevelSensor;

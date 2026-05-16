@@ -5,6 +5,7 @@
 
 #include "arduinotimeprovider.h"
 #include "connectivitycoordinator.h"
+#include "diagnosticsreporter.h"
 #include "esp32waterlevelsensor.h"
 #include "hardwareconfig.h"
 #include "irrigation_zone.h"
@@ -32,6 +33,7 @@ public:
                       ScheduledIrrigation (&scheduledIrrigations)
                           [MAX_IRRIGATION_ZONES],
                       IWallClock &wallClock,
+                      DiagnosticsReporter &diagnosticsReporter,
                       WaterLevelManager &waterLevelManager,
                       ConnectivityCoordinator &connectivityCoordinator,
                       WifiConnectionAwaiter &wifiConnectionAwaiter,
@@ -54,6 +56,7 @@ private:
   IrrigationZone (&_irrigationZones)[MAX_IRRIGATION_ZONES];
   ScheduledIrrigation (&_scheduledIrrigations)[MAX_IRRIGATION_ZONES];
   IWallClock &_wallClock;
+  DiagnosticsReporter &_diagnosticsReporter;
   WaterLevelManager &_waterLevelManager;
   ConnectivityCoordinator &_connectivityCoordinator;
   WifiConnectionAwaiter &_wifiConnectionAwaiter;
@@ -70,6 +73,7 @@ private:
   void initializeIdentity();
   void initializeConnectivity();
   void initializeTime();
+  void initializeDiagnostics();
   void initializeSubsystems();
   void initializeRuntimeSafety();
 

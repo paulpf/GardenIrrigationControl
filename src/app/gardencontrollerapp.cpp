@@ -22,6 +22,7 @@ GardenControllerApp::GardenControllerApp(
     IrrigationZone (&irrigationZones)[MAX_IRRIGATION_ZONES],
     ScheduledIrrigation (&scheduledIrrigations)[MAX_IRRIGATION_ZONES],
     IWallClock &wallClock,
+    DiagnosticsReporter &diagnosticsReporter,
     WaterLevelManager &waterLevelManager,
     ConnectivityCoordinator &connectivityCoordinator,
     WifiConnectionAwaiter &wifiConnectionAwaiter, OtaLoopGuard &otaLoopGuard,
@@ -32,6 +33,7 @@ GardenControllerApp::GardenControllerApp(
       _irrigationZones(irrigationZones),
       _scheduledIrrigations(scheduledIrrigations),
       _wallClock(wallClock),
+      _diagnosticsReporter(diagnosticsReporter),
       _waterLevelManager(waterLevelManager),
       _connectivityCoordinator(connectivityCoordinator),
       _wifiConnectionAwaiter(wifiConnectionAwaiter),
@@ -126,6 +128,8 @@ void GardenControllerApp::waitForWifiConnection()
   if (!_wifiConnectionAwaiter.waitForConnection(WIFI_CONNECTION_TIMEOUT))
   {
     Trace::log(TraceLevel::ERROR, "WiFi connection timeout");
+    _diagnosticsReporter.record(TraceLevel::ERROR, "WiFi connection timeout",
+                                millis());
   }
 }
 
@@ -144,6 +148,7 @@ void GardenControllerApp::initializeIdentity()
 void GardenControllerApp::initializeConnectivity()
 {
   updateClientNameFromMac();
+  initializeDiagnostics();
   _wifiManager.setup(WIFI_SSID, WIFI_PWD, _clientName);
   waitForWifiConnection();
 }
@@ -151,6 +156,11 @@ void GardenControllerApp::initializeConnectivity()
 void GardenControllerApp::initializeTime()
 {
   _wallClock.setup();
+}
+
+void GardenControllerApp::initializeDiagnostics()
+{
+  _diagnosticsReporter.setup(_clientName);
 }
 
 void GardenControllerApp::initializeSubsystems()
@@ -255,6 +265,7 @@ void GardenControllerApp::handleScheduledIrrigation()
 void GardenControllerApp::handleMiddleIntervalEvents()
 {
   _mqttManager.publishSystemStatus();
+  _diagnosticsReporter.publishReport();
   handleScheduledIrrigation();
 }
 
@@ -263,6 +274,9 @@ void GardenControllerApp::handleLongIntervalTasks()
   if (!_wifiManager.loop())
   {
     Trace::log(TraceLevel::ERROR, "WiFi connection issue detected");
+    _diagnosticsReporter.record(TraceLevel::ERROR,
+                                "WiFi connection issue detected",
+                                _currentMillis);
   }
 
   _connectivityCoordinator.handleEvents();
