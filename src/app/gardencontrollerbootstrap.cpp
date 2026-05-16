@@ -2,6 +2,8 @@
 
 GardenControllerBootstrap::GardenControllerBootstrap()
     : _wallClockPublisher(_mqttManager, _wallClock),
+      _automaticIrrigationPublisher(_mqttManager,
+                                    _automaticIrrigationController),
       _diagnosticsReporter(_mqttManager),
       _waterLevelManager(_mqttManager, _waterLevelSensor),
       _connectivityCoordinator(_wifiManager, _mqttManager),
@@ -10,7 +12,8 @@ GardenControllerBootstrap::GardenControllerBootstrap()
       _app(_irrigationConfig, _systemConfig, _hardwareConfig, _wifiManager,
            _mqttManager, _otaManager, _irrigationZones, _scheduledIrrigations,
            _wallClock, _wallClockPublisher, _automaticIrrigationController,
-           _diagnosticsReporter, _waterLevelManager,
+           _automaticIrrigationPublisher, _diagnosticsReporter,
+           _waterLevelManager,
            _connectivityCoordinator, _wifiConnectionAwaiter, _otaLoopGuard,
            _loopScheduler)
 {

@@ -2,6 +2,7 @@
 #define GARDENCONTROLLERBOOTSTRAP_H
 
 #include "automaticirrigationcontroller.h"
+#include "automaticirrigationpublisher.h"
 #include "arduinotimeprovider.h"
 #include "connectivitycoordinator.h"
 #include "diagnosticsreporter.h"
@@ -40,6 +41,7 @@ private:
   NtpWallClock _wallClock;
   WallClockPublisher _wallClockPublisher;
   AutomaticIrrigationController _automaticIrrigationController;
+  AutomaticIrrigationPublisher _automaticIrrigationPublisher;
   DiagnosticsReporter _diagnosticsReporter;
   IrrigationZone _irrigationZones[MAX_IRRIGATION_ZONES];
   ScheduledIrrigation _scheduledIrrigations[MAX_IRRIGATION_ZONES];
