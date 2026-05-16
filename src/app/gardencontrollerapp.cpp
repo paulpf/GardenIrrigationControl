@@ -20,6 +20,7 @@ GardenControllerApp::GardenControllerApp(
     HardwareConfig &hardwareConfig, WifiManager &wifiManager,
     MqttManager &mqttManager, OtaManager &otaManager,
     IrrigationZone (&irrigationZones)[MAX_IRRIGATION_ZONES],
+    ScheduledIrrigation (&scheduledIrrigations)[MAX_IRRIGATION_ZONES],
     WaterLevelManager &waterLevelManager,
     ConnectivityCoordinator &connectivityCoordinator,
     WifiConnectionAwaiter &wifiConnectionAwaiter, OtaLoopGuard &otaLoopGuard,
@@ -27,12 +28,30 @@ GardenControllerApp::GardenControllerApp(
     : _irrigationConfig(irrigationConfig), _systemConfig(systemConfig),
       _hardwareConfig(hardwareConfig), _wifiManager(wifiManager),
       _mqttManager(mqttManager), _otaManager(otaManager),
-      _irrigationZones(irrigationZones), _waterLevelManager(waterLevelManager),
+      _irrigationZones(irrigationZones),
+      _scheduledIrrigations(scheduledIrrigations),
+      _waterLevelManager(waterLevelManager),
       _connectivityCoordinator(connectivityCoordinator),
       _wifiConnectionAwaiter(wifiConnectionAwaiter),
       _otaLoopGuard(otaLoopGuard), _loopScheduler(loopScheduler)
 {
   _clientName[0] = '\0';
+}
+
+void GardenControllerApp::initScheduledIrrigation()
+{
+  Trace::log(TraceLevel::INFO, "Initializing scheduled irrigation...");
+
+  for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
+  {
+    _scheduledIrrigations[i].setup(i);
+  }
+
+  if (!ENABLE_SCHEDULED_IRRIGATION)
+  {
+    Trace::log(TraceLevel::INFO,
+               "Scheduled irrigation disabled by configuration");
+  }
 }
 
 void GardenControllerApp::initIrrigationZones()
@@ -138,6 +157,7 @@ void GardenControllerApp::initializeSubsystems()
 
   setupOta();
   initIrrigationZones();
+  initScheduledIrrigation();
   resetZoneStateAfterColdStartIfNeeded();
 
   _connectivityCoordinator.ensureMqttConnected();
@@ -211,9 +231,23 @@ void GardenControllerApp::updateLoopTimingPlot()
 #endif
 }
 
+void GardenControllerApp::handleScheduledIrrigation()
+{
+  if (!ENABLE_SCHEDULED_IRRIGATION)
+  {
+    return;
+  }
+
+  for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
+  {
+    _scheduledIrrigations[i].loop(_currentMillis);
+  }
+}
+
 void GardenControllerApp::handleMiddleIntervalEvents()
 {
   _mqttManager.publishSystemStatus();
+  handleScheduledIrrigation();
 }
 
 void GardenControllerApp::handleLongIntervalTasks()

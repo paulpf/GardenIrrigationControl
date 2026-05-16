@@ -91,6 +91,9 @@ constexpr int MAX_IRRIGATION_ZONES = 9;
 #define ENABLE_OTA true        // Enable/disable OTA functionality
 constexpr int OTA_PORT = 3232; // OTA port (default: 3232)
 
+// Scheduled irrigation configuration
+constexpr bool ENABLE_SCHEDULED_IRRIGATION = false;
+
 // Serial plotting configuration
 // #define ENABLE_ZONE_PLOTTING
 // #define ENABLE_LOOP_TIME_PLOTTING // Enable loop time plotting for debugging

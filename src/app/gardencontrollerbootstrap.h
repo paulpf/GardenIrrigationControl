@@ -12,6 +12,7 @@
 #include "mqttmanager.h"
 #include "otaloopguard.h"
 #include "otamanager.h"
+#include "scheduled_irrigation.h"
 #include "systemconfig.h"
 #include "waterlevelmanager.h"
 #include "wificonnectionawaiter.h"
@@ -33,6 +34,7 @@ private:
   MqttManager _mqttManager;
   OtaManager _otaManager;
   IrrigationZone _irrigationZones[MAX_IRRIGATION_ZONES];
+  ScheduledIrrigation _scheduledIrrigations[MAX_IRRIGATION_ZONES];
   Esp32WaterLevelSensor _waterLevelSensor;
   WaterLevelManager _waterLevelManager;
   ConnectivityCoordinator _connectivityCoordinator;

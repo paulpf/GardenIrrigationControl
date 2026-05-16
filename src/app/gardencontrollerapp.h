@@ -14,6 +14,7 @@
 #include "mqttmanager.h"
 #include "otaloopguard.h"
 #include "otamanager.h"
+#include "scheduled_irrigation.h"
 #include "systemconfig.h"
 #include "waterlevelmanager.h"
 #include "wificonnectionawaiter.h"
@@ -27,6 +28,8 @@ public:
                       HardwareConfig &hardwareConfig, WifiManager &wifiManager,
                       MqttManager &mqttManager, OtaManager &otaManager,
                       IrrigationZone (&irrigationZones)[MAX_IRRIGATION_ZONES],
+                      ScheduledIrrigation (&scheduledIrrigations)
+                          [MAX_IRRIGATION_ZONES],
                       WaterLevelManager &waterLevelManager,
                       ConnectivityCoordinator &connectivityCoordinator,
                       WifiConnectionAwaiter &wifiConnectionAwaiter,
@@ -47,6 +50,7 @@ private:
   MqttManager &_mqttManager;
   OtaManager &_otaManager;
   IrrigationZone (&_irrigationZones)[MAX_IRRIGATION_ZONES];
+  ScheduledIrrigation (&_scheduledIrrigations)[MAX_IRRIGATION_ZONES];
   WaterLevelManager &_waterLevelManager;
   ConnectivityCoordinator &_connectivityCoordinator;
   WifiConnectionAwaiter &_wifiConnectionAwaiter;
@@ -66,6 +70,7 @@ private:
   void initializeRuntimeSafety();
 
   void initIrrigationZones();
+  void initScheduledIrrigation();
   void resetZoneStateAfterColdStartIfNeeded();
   void updateClientNameFromMac();
   void setupOta();
@@ -73,6 +78,7 @@ private:
   void waitForWifiConnection();
   void plotZoneStates(unsigned long currentTime);
   void handleShortIntervalTasks();
+  void handleScheduledIrrigation();
   void updateLoopTimingPlot();
   void handleMiddleIntervalEvents();
   void handleLongIntervalTasks();
