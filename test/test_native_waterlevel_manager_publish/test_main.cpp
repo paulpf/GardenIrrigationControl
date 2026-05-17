@@ -21,6 +21,7 @@ void test_bool_state_topics_publish_only_on_real_state_changes(void)
   config.adcMin = 0;
   config.adcMax = 100;
   config.capacityLiters = 100.0f;
+  config.lowWaterLockoutEnabled = true;
   config.criticalPercent = 10.0f;
   config.lockoutReleasePercent = 12.0f;
   config.readIntervalMs = 1;
