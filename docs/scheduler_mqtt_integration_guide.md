@@ -11,6 +11,34 @@ Vorschlaege enthalten. Wenn sich Firmware-Topics, Bedienlogik, Persistenz,
 Retain-Verhalten oder Tests aendern, muss diese Datei bei Bedarf mit
 aktualisiert werden.
 
+## Inhaltsverzeichnis
+
+<!-- TOC -->
+
+- [Ziel](#ziel)
+- [MQTT-Grundprinzip](#mqtt-grundprinzip)
+- [Empfohlene Basisstruktur](#empfohlene-basisstruktur)
+- [Wochentage](#wochentage)
+- [Bedienlogik](#bedienlogik)
+  - [Plan anlegen](#plan-anlegen)
+  - [Plan deaktivieren](#plan-deaktivieren)
+  - [Plan wieder aktivieren](#plan-wieder-aktivieren)
+  - [Plan loeschen](#plan-loeschen)
+- [Vorbereitung in ioBroker](#vorbereitung-in-iobroker)
+  - [Variante A: MQTT-Adapter erzeugt States automatisch](#variante-a-mqtt-adapter-erzeugt-states-automatisch)
+  - [Variante B: Eigene ioBroker-Aliase vorbereiten](#variante-b-eigene-iobroker-aliase-vorbereiten)
+  - [ioBroker-Visualisierung vorbereiten](#iobroker-visualisierung-vorbereiten)
+  - [VIS-Konfiguration in ioBroker](#vis-konfiguration-in-iobroker)
+- [Vorbereitung in Home Assistant](#vorbereitung-in-home-assistant)
+  - [Manuelle YAML-Vorbereitung](#manuelle-yaml-vorbereitung)
+  - [Home Assistant Discovery als Ziel](#home-assistant-discovery-als-ziel)
+- [Retain-Verhalten](#retain-verhalten)
+- [Validierung mit MQTT-Client](#validierung-mit-mqtt-client)
+- [Empfohlene erste Ausbaustufe](#empfohlene-erste-ausbaustufe)
+- [Quellen](#quellen)
+
+<!-- /TOC -->
+
 ## Ziel
 
 Der ESP32 soll pro Bewaesserungszone mehrere Zeitplaene per MQTT anbieten.
@@ -25,6 +53,13 @@ Ein Plan besteht aus:
 - `minute`: Startminute, `0..59`
 - `durationMinutes`: Laufzeit in Minuten
 - `daysOfWeek`: Wochentage als Bitmaske
+
+Damit ein gespeicherter und aktivierter Plan wirklich automatisch startet,
+muessen zwei Bedingungen erfuellt sein:
+
+- Das Scheduler-Feature ist in der Firmware aktiviert.
+- Der globale Automatik-Schalter ist aktiv:
+  `<device>/irrigation/automatic/enabled = true`.
 
 ## MQTT-Grundprinzip
 
@@ -44,6 +79,24 @@ Befehl:
 
 Das Geraet publisht Status-Topics. ioBroker oder Home Assistant schreiben auf
 die `/set` Topics. Danach publisht das Geraet den aktualisierten Status zurueck.
+
+Globale Automatik-Freigabe:
+
+```text
+Status: <device>/irrigation/automatic/enabled
+Befehl: <device>/irrigation/automatic/enabled/set
+```
+
+Gueltige Payloads fuer den Befehl sind:
+
+```text
+true
+false
+1
+0
+on
+off
+```
 
 ## Empfohlene Basisstruktur
 
@@ -106,6 +159,7 @@ Beispiele:
 Minimaler Ablauf:
 
 ```text
+<device>/irrigation/automatic/enabled/set = true
 <device>/irrigationZone1/schedule1/configured/set = true
 <device>/irrigationZone1/schedule1/hour/set = 6
 <device>/irrigationZone1/schedule1/minute/set = 30
@@ -116,6 +170,9 @@ Minimaler Ablauf:
 
 Das Beispiel bedeutet: Zone 1, Plan 1, Mittwoch und Freitag um 06:30 fuer
 12 Minuten.
+
+Der erste Befehl aktiviert die globale Automatik-Freigabe. Ohne diese Freigabe
+bleibt der Plan gespeichert und aktiv, startet aber keinen Bewaesserungslauf.
 
 Ein Feld-Update auf einen noch nicht konfigurierten Slot legt den Slot
 automatisch mit Default-Werten an und aktualisiert danach das Feld. Dadurch kann
@@ -179,6 +236,7 @@ Das ist fuer den Start am einfachsten.
 Empfohlene ioBroker-Objekte oder Alias-Struktur:
 
 ```text
+Garten.Bewaesserung.Automatik.enabled
 Garten.Bewaesserung.Zone1.Schedule1.configured
 Garten.Bewaesserung.Zone1.Schedule1.enabled
 Garten.Bewaesserung.Zone1.Schedule1.hour
@@ -195,6 +253,7 @@ technisch stabil.
 
 Fuer eine schoenere Visualisierung koennen Aliase angelegt werden:
 
+- `Automatik.enabled`: Boolean/Switch
 - `enabled`: Boolean/Switch
 - `hour`: Number, Min 0, Max 23, Step 1
 - `minute`: Number, Min 0, Max 59, Step 1
@@ -211,15 +270,91 @@ Wichtig:
 
 ### ioBroker-Visualisierung vorbereiten
 
-Pro Schedule-Slot bietet sich eine Zeile oder Karte an:
+Empfohlene VIS-Struktur:
+
+- Die Hauptseite bleibt schlank und zeigt pro Zone nur eine kompakte
+  Schedule-Zusammenfassung.
+- Die eigentliche Konfiguration erfolgt ueber ein gemeinsames Popup.
+- Das Popup wird fuer jede Zone wiederverwendet und bekommt nur die gewaehlte
+  Zone als Kontext.
+- Die Firmware bleibt bei stabilen Einzelwert-Topics. Anzeige-Strings fuer VIS
+  werden in ioBroker aus den vorhandenen States berechnet.
+
+Beispiel fuer die Hauptseite:
 
 ```text
-Zone 1 | Plan 1 | aktiv | 06:30 | 12 min | Mi+Fr | Loeschen
+Erdbeeren          Mi,Fr 06:30 12m | So 20:00 5m
+Himbeeren          -
+Blumenbeete        Mo-Fr 05:45 8m
 ```
 
-Fuer die erste Version reicht `daysOfWeek` als Zahl. Komfortabler waere spaeter
-eine ioBroker-Logik, die Checkboxen fuer Montag bis Sonntag in die Bitmaske
-umrechnet.
+Beispiel fuer ein gemeinsames Popup:
+
+```text
+Zone: Erdbeeren
+
+[Automatik aktiv]
+
+Plan 1  [aktiv]  [06] [:] [30]  [12 min]  [Mo] [Di] [Mi] [Do] [Fr] [Sa] [So]  [Loeschen]
+Plan 2  [aktiv]  [20] [:] [00]  [ 5 min]  [Mo] [Di] [Mi] [Do] [Fr] [Sa] [So]  [Loeschen]
+
+[+ Plan]
+```
+
+Die Checkboxen fuer Montag bis Sonntag schreiben nicht direkt eigene
+Firmware-Topics. Sie berechnen in ioBroker die `daysOfWeek`-Bitmaske und
+schreiben den Summenwert nach:
+
+```text
+<device>/irrigationZoneX/scheduleY/daysOfWeek/set
+```
+
+Fuer eine erste Version ist auch ein Select- oder Number-Widget fuer
+`daysOfWeek` ausreichend. Komfortabler ist die Checkbox-Variante im Popup.
+
+#### ioBroker-seitige Summary-States
+
+Fuer die Hauptseite sollte ioBroker pro Zone einen zusaetzlichen Anzeige-State
+erzeugen, z. B. als Alias oder eigener JavaScript-State:
+
+```text
+Garten.Bewaesserung.Zone1.scheduleSummary
+Garten.Bewaesserung.Zone2.scheduleSummary
+...
+```
+
+Dieser State ist nur Darstellung und wird aus den MQTT-Status-States berechnet.
+Er wird nicht an den ESP32 zurueckgeschrieben.
+
+Beispiele fuer den String:
+
+```text
+Mi,Fr 06:30 12m
+Mi,Fr 06:30 12m | So 20:00 5m
+-
+```
+
+Empfohlene Regeln fuer den Summary-String:
+
+- Nur `configured=true` Plaene anzeigen.
+- `enabled=false` Plaene entweder ausblenden oder mit `aus` markieren.
+- Zeit immer zweistellig darstellen, z. B. `06:05`.
+- Wochentage lesbar darstellen: `Mo`, `Di`, `Mi`, `Do`, `Fr`, `Sa`, `So`.
+- Bei vielen Plaenen den Text kurz halten, damit die Hauptseite nicht
+  ueberlaedt.
+
+Optional kann ioBroker zusaetzlich einen JSON-State pro Zone erzeugen:
+
+```json
+[
+  {"slot":1,"enabled":true,"time":"06:30","days":"Mi,Fr","duration":12},
+  {"slot":2,"enabled":true,"time":"20:00","days":"So","duration":5}
+]
+```
+
+Der JSON-State ist optional. Er ist nuetzlich, wenn spaeter statt eines
+einfachen Texts eine kleine Tabelle oder dynamische Liste in VIS gebaut werden
+soll. Fuer die Firmware ist dieser State nicht erforderlich.
 
 ### VIS-Konfiguration in ioBroker
 
@@ -229,9 +364,9 @@ installierten VIS-Version und den verfuegbaren Widget-Sets ab. Das Grundprinzip
 bleibt gleich: Anzeigen lesen Status-States, Bedienelemente schreiben auf
 `/set` States.
 
-#### Empfohlene Darstellung pro Schedule-Slot
+#### Empfohlene Darstellung pro Schedule-Slot im Popup
 
-Eine Zeile pro Schedule-Slot:
+Eine Zeile pro Schedule-Slot im gemeinsamen Popup:
 
 ```text
 [aktiv] [Stunde] [Minute] [Dauer] [Wochentage] [Loeschen]
@@ -248,6 +383,7 @@ Zone 1 / Plan 1 | aktiv: true | 06:30 | 12 min | 20 | Loeschen
 Status lesen:
 
 ```text
+mqtt.0.<device>.irrigation.automatic.enabled
 mqtt.0.<device>.irrigationZone1.schedule1.configured
 mqtt.0.<device>.irrigationZone1.schedule1.enabled
 mqtt.0.<device>.irrigationZone1.schedule1.hour
@@ -259,6 +395,7 @@ mqtt.0.<device>.irrigationZone1.schedule1.daysOfWeek
 Befehle schreiben:
 
 ```text
+mqtt.0.<device>.irrigation.automatic.enabled.set
 mqtt.0.<device>.irrigationZone1.schedule1.configured.set
 mqtt.0.<device>.irrigationZone1.schedule1.enabled.set
 mqtt.0.<device>.irrigationZone1.schedule1.hour.set
@@ -271,10 +408,24 @@ mqtt.0.<device>.irrigationZone1.schedule1.delete.set
 `<device>` ist ein Platzhalter fuer den echten Controller-Namen. Keine echten
 lokalen Werte in diese Doku schreiben.
 
+Beim gemeinsamen Popup muss die VIS-Konfiguration die Zone dynamisch auswaehlen
+oder pro Zone dieselben Widgets mit anderem Prefix verwenden. Technisch sind
+beide Varianten umsetzbar:
+
+- Einfacher Aufbau: ein Popup pro Zone kopieren und nur die Datenpunkt-Prefixe
+  austauschen.
+- Wartbarer Aufbau: ein gemeinsames Popup mit einer ioBroker-Variable
+  `selectedZone`, aus der die Widget-Datenpunkte oder ein Skript die Zieltopics
+  ableiten.
+
+Welche Variante besser ist, haengt von der vorhandenen VIS-Version und den
+verfuegbaren Widgets ab. Die Firmware-Topics bleiben in beiden Faellen gleich.
+
 #### Widget-Vorschlag
 
 | Feld | VIS-Widget-Typ | Lesen von | Schreiben nach |
 | --- | --- | --- | --- |
+| automatic enabled | Checkbox / Switch | `irrigation.automatic.enabled` | `irrigation.automatic.enabled.set` |
 | configured | Anzeige / optional Checkbox | `configured` | `configured.set` |
 | enabled | Checkbox / Switch | `enabled` | `enabled.set` |
 | hour | Number Input / Select | `hour` | `hour.set` |
@@ -296,10 +447,12 @@ Empfohlene Wertebereiche:
 
 Plan anlegen:
 
-1. Optional `configured.set=true` schreiben.
-2. `hour.set`, `minute.set`, `durationMinutes.set`, `daysOfWeek.set`
+1. Global `irrigation.automatic.enabled.set=true` schreiben, wenn automatische
+   Laeufe erlaubt sein sollen.
+2. Optional `configured.set=true` schreiben.
+3. `hour.set`, `minute.set`, `durationMinutes.set`, `daysOfWeek.set`
    schreiben.
-3. `enabled.set=true` schreiben.
+4. `enabled.set=true` schreiben.
 
 Da die Firmware Feld-Updates auf nicht konfigurierte Slots automatisch anlegt,
 kann VIS auch direkt mit `hour.set` oder einem anderen Feld starten.
@@ -365,10 +518,31 @@ Wichtig: Wenn sieben Checkboxen verwendet werden, muss die VIS-Logik beim
 Aendern einer Checkbox den neuen Summenwert nach `daysOfWeek.set` schreiben.
 Die Firmware erwartet aktuell die Bitmaske als Zahl.
 
+Empfehlung fuer das Popup:
+
+- Sieben Checkboxen anzeigen: Mo, Di, Mi, Do, Fr, Sa, So.
+- Beim Oeffnen des Popups den aktuellen `daysOfWeek`-Wert in Checkboxen
+  zerlegen.
+- Bei jeder Aenderung die Summe neu berechnen.
+- Die Summe nach `daysOfWeek.set` schreiben.
+
+Beispiel:
+
+```text
+Mo=false, Di=false, Mi=true, Do=false, Fr=true, Sa=false, So=false
+daysOfWeek = 4 + 16 = 20
+```
+
 #### Sichtbarkeit und Bedienkomfort
 
 Empfehlung:
 
+- Einen globalen Switch `Automatik` anzeigen, der
+  `irrigation.automatic.enabled.set` schreibt.
+- In der Hauptseite pro Zone nur `scheduleSummary` oder eine sehr kurze
+  Mini-Tabelle anzeigen.
+- Die Bearbeitung von Stunde, Minute, Dauer, Wochentagen, Aktivierung und
+  Loeschen in ein Popup verlagern.
 - Wenn `configured=false`, die Zeile ausgegraut darstellen.
 - Einen Button `Plan anlegen` anzeigen, der `configured.set=true` schreibt.
 - Einen Button `Loeschen` anzeigen, der `delete.set=true` schreibt.
@@ -378,16 +552,20 @@ Empfehlung:
 
 #### VIS-Testablauf
 
-1. Einen freien Schedule-Slot auswaehlen.
-2. `configured.set=true` oder direkt `hour.set` schreiben.
-3. Pruefen, ob `configured=true` zurueckkommt.
-4. Stunde, Minute, Dauer und Wochentage setzen.
-5. Pruefen, ob alle Status-States mit den gesetzten Werten zurueckkommen.
-6. `enabled.set=true` schreiben.
-7. `enabled=true` im Status pruefen.
-8. `enabled.set=false` schreiben und pruefen, dass der Plan erhalten bleibt.
-9. `delete.set=true` schreiben.
-10. Pruefen, dass `configured=false` zurueckkommt und andere Schedule-Slots
+1. `irrigation.automatic.enabled.set=true` schreiben.
+2. Pruefen, ob `irrigation.automatic.enabled=true` zurueckkommt.
+3. Einen freien Schedule-Slot auswaehlen.
+4. `configured.set=true` oder direkt `hour.set` schreiben.
+5. Pruefen, ob `configured=true` zurueckkommt.
+6. Stunde, Minute, Dauer und Wochentage setzen.
+7. Pruefen, ob alle Status-States mit den gesetzten Werten zurueckkommen.
+8. `enabled.set=true` schreiben.
+9. `enabled=true` im Status pruefen.
+10. Fuer einen echten Hardwaretest eine Startzeit kurz in die Zukunft setzen
+    und pruefen, ob die Zone zur erwarteten lokalen Zeit startet.
+11. `enabled.set=false` schreiben und pruefen, dass der Plan erhalten bleibt.
+12. `delete.set=true` schreiben.
+13. Pruefen, dass `configured=false` zurueckkommt und andere Schedule-Slots
     ihre Nummer behalten.
 
 ## Vorbereitung in Home Assistant
@@ -399,6 +577,21 @@ langfristig die angenehmere Loesung.
 ### Manuelle YAML-Vorbereitung
 
 Beispiel fuer `enabled`:
+
+```yaml
+mqtt:
+  switch:
+    - name: "Irrigation Automatic Enabled"
+      unique_id: "irrigation_automatic_enabled"
+      state_topic: "<device>/irrigation/automatic/enabled"
+      command_topic: "<device>/irrigation/automatic/enabled/set"
+      payload_on: "true"
+      payload_off: "false"
+      state_on: "true"
+      state_off: "false"
+```
+
+Beispiel fuer Schedule `enabled`:
 
 ```yaml
 mqtt:
@@ -490,11 +683,13 @@ Subscribe:
 
 ```bash
 mosquitto_sub -h <broker-host> -t '<device>/irrigationZone1/schedule1/#' -v
+mosquitto_sub -h <broker-host> -t '<device>/irrigation/automatic/#' -v
 ```
 
 Plan anlegen:
 
 ```bash
+mosquitto_pub -h <broker-host> -t '<device>/irrigation/automatic/enabled/set' -m 'true'
 mosquitto_pub -h <broker-host> -t '<device>/irrigationZone1/schedule1/configured/set' -m 'true'
 mosquitto_pub -h <broker-host> -t '<device>/irrigationZone1/schedule1/hour/set' -m '6'
 mosquitto_pub -h <broker-host> -t '<device>/irrigationZone1/schedule1/minute/set' -m '30'

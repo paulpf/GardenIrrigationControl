@@ -4,6 +4,7 @@
 #include <array>
 
 #include "automaticirrigationcontroller.h"
+#include "automaticirrigationcommandhandler.h"
 #include "automaticirrigationpublisher.h"
 #include "arduinotimeprovider.h"
 #include "connectivitycoordinator.h"
@@ -43,6 +44,8 @@ public:
                           &automaticIrrigationController,
                       AutomaticIrrigationPublisher
                           &automaticIrrigationPublisher,
+                      AutomaticIrrigationCommandHandler
+                          &automaticIrrigationCommandHandler,
                       ScheduledIrrigationPublisher
                           &scheduledIrrigationPublisher,
                       ScheduledIrrigationCommandHandler
@@ -73,6 +76,7 @@ private:
   WallClockPublisher &_wallClockPublisher;
   AutomaticIrrigationController &_automaticIrrigationController;
   AutomaticIrrigationPublisher &_automaticIrrigationPublisher;
+  AutomaticIrrigationCommandHandler &_automaticIrrigationCommandHandler;
   ScheduledIrrigationPublisher &_scheduledIrrigationPublisher;
   ScheduledIrrigationCommandHandler &_scheduledIrrigationCommandHandler;
   DiagnosticsReporter &_diagnosticsReporter;

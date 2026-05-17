@@ -96,12 +96,35 @@ Aktuell vorbereitet:
   `schedule2` wird nach Loeschen von `schedule1` nicht zu `schedule1`.
 - `GardenControllerApp::initScheduledIrrigation()` laedt konfigurierte
   Schedule-Slots aus `StorageManager`.
+- `ENABLE_SCHEDULED_IRRIGATION` ist in der Firmware aktiviert.
+- Der globale Freigabeschalter fuer automatische Scheduler-Laeufe ist per MQTT
+  steuerbar:
+  - Status: `<device>/irrigation/automatic/enabled`
+  - Befehl: `<device>/irrigation/automatic/enabled/set`
+  - gueltige Payloads: `true/false`, `1/0`, `on/off`
 
 Zuletzt validiert, ausserhalb der Sandbox:
 
 - `pio test -e native`: 143 Tests bestanden
 - `pio run -e az-delivery-devkit-v4-usb`: erfolgreich
 - `pio run -e az-delivery-devkit-v4-ota`: erfolgreich
+
+Aktuelle noch nicht manuell getestete Aenderung:
+
+- Automatische Scheduler-Laeufe koennen jetzt per MQTT-Freigabe aktiviert
+  werden.
+- Automatische Validierung fuer diese Aenderung:
+  - `pio test -e native -f test_native_automatic_irrigation_command_handler`:
+    erfolgreich, 5 Tests bestanden
+  - `pio run -e az-delivery-devkit-v4-usb`: erfolgreich
+  - `pio run -e az-delivery-devkit-v4-ota`: erfolgreich
+  - `pio test -e native`: 135 Tests erfolgreich; zwei bestehende native
+    Test-Targets starteten unter Windows nicht und endeten vor Unity-Ausgabe
+    mit `WinError 4551` bzw. Prozesscode `3221225785`:
+    `test_native_duration_formatter`,
+    `test_native_garden_controller_app_setup`
+- Kein Commit vor Benutzer-Review, Upload-/Hardwaretest und expliziter
+  Commit-Freigabe.
 
 ## Fehlende Teile fuer das vollstaendige Feature
 
@@ -197,6 +220,37 @@ Zone, Config, MQTT-Events und Safety-Gates zusammenkommen.
 Ohne Persistenz ist das Feature nicht vollstaendig. Deshalb zuerst Storage und
 Load-on-setup bauen, danach MQTT-Commands.
 
+### VIS-Darstellung bleibt ioBroker-seitig
+
+Die ESP32-Firmware soll zunaechst keine reinen Anzeige-Strings fuer VIS
+erzeugen. Die Firmware stellt stabile Einzelwert-Topics bereit; ioBroker kann
+daraus komfortable Ansichten bauen.
+
+Empfohlener Ansatz:
+
+- Hauptseite: pro Zone nur eine kompakte Zusammenfassung anzeigen.
+- Konfiguration: gemeinsames Popup fuer alle Zonen verwenden.
+- ioBroker berechnet pro Zone einen lokalen Anzeige-State, z. B.
+  `Garten.Bewaesserung.Zone1.scheduleSummary`.
+- Der Summary-State ist reine Darstellung und wird nicht an den ESP32
+  geschrieben.
+- Wochentage im Popup komfortabel mit sieben Checkboxen bedienen; ioBroker
+  berechnet daraus die `daysOfWeek`-Bitmaske und schreibt nur diesen einen Wert
+  an die Firmware.
+
+Beispiel fuer die Hauptseite:
+
+```text
+Erdbeeren    Mi,Fr 06:30 12m | So 20:00 5m
+Tomaten      -
+Rasen        Mo-Fr 05:45 8m
+```
+
+Ein Firmware-Topic wie `<device>/irrigationZone1/scheduleSummary` bleibt eine
+spaetere Option, falls auch Home Assistant oder andere Clients dieselbe
+Summary direkt vom ESP32 benoetigen. Fuer den aktuellen ioBroker/VIS-Ausbau ist
+es nicht notwendig.
+
 ## Umsetzungsplan
 
 ### Phase 1: Aktuellen uncommitted Stand pruefen und bereinigen
@@ -262,6 +316,19 @@ Load-on-setup bauen, danach MQTT-Commands.
   - publisht unconfigured Slots als Defaults
   - throttling bleibt erhalten
 - Bei Command-Aenderungen unmittelbares Publish ermoeglichen.
+
+### Phase 4a: Scheduler-Lauf aktivierbar machen
+
+- `ENABLE_SCHEDULED_IRRIGATION` in der Firmware aktivieren: umgesetzt.
+- MQTT-Command-Handler fuer den globalen Automatic-Irrigation-Schalter
+  einfuehren: umgesetzt.
+- `<device>/irrigation/automatic/enabled/set` abonnieren: umgesetzt.
+- Bei gueltigem Bool-Payload: umgesetzt.
+  - `AutomaticIrrigationController::setEnabled(...)` setzen
+  - aktuellen Status auf `<device>/irrigation/automatic/enabled` publizieren
+- Ungueltige Payloads ignorieren, ohne den Status zu veraendern: umgesetzt.
+- Native-Test fuer Command-Handler ergaenzen: umgesetzt.
+- Danach Review und Upload-/Hardwaretest anfordern.
 
 ### Phase 5: Integration und manuelle Testvorbereitung
 

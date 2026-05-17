@@ -92,7 +92,7 @@ constexpr int MAX_IRRIGATION_ZONES = 9;
 constexpr int OTA_PORT = 3232; // OTA port (default: 3232)
 
 // Scheduled irrigation configuration
-constexpr bool ENABLE_SCHEDULED_IRRIGATION = false;
+constexpr bool ENABLE_SCHEDULED_IRRIGATION = true;
 
 // Time synchronization configuration
 constexpr bool ENABLE_NTP_TIME_SYNC = true;

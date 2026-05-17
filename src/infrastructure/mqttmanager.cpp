@@ -1,4 +1,5 @@
 #include "mqttmanager.h"
+#include "automaticirrigationcommandhandler.h"
 #include "helper.h"
 #include "scheduledirrigationcommandhandler.h"
 #include "waterlevelmanager.h"
@@ -269,6 +270,13 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
     return;
   }
 
+  if (_automaticIrrigationCommandHandler != nullptr &&
+      _automaticIrrigationCommandHandler->handleCommand(incomingTopic.c_str(),
+                                                        message))
+  {
+    return;
+  }
+
   // Check if the message is for the software button of any irrigation zone
   for (int i = 0; i < _numIrrigationZones; i++)
   {
@@ -493,7 +501,18 @@ void MqttManager::subscribeIrrigationZones()
     subscribe(durationSetTopic.c_str());
   }
 
+  subscribeAutomaticIrrigationCommands();
   subscribeScheduledIrrigationCommands();
+}
+
+void MqttManager::subscribeAutomaticIrrigationCommands()
+{
+  if (_automaticIrrigationCommandHandler == nullptr)
+  {
+    return;
+  }
+
+  subscribe(_automaticIrrigationCommandHandler->getEnabledSetTopic());
 }
 
 void MqttManager::subscribeScheduledIrrigationCommands()
@@ -775,6 +794,12 @@ void MqttManager::publishOnlineStatus()
 void MqttManager::setWaterLevelManager(WaterLevelManager *waterLevelManager)
 {
   _waterLevelManager = waterLevelManager;
+}
+
+void MqttManager::setAutomaticIrrigationCommandHandler(
+    AutomaticIrrigationCommandHandler *automaticIrrigationCommandHandler)
+{
+  _automaticIrrigationCommandHandler = automaticIrrigationCommandHandler;
 }
 
 void MqttManager::setScheduledIrrigationCommandHandler(
