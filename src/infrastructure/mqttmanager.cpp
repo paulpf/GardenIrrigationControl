@@ -222,17 +222,17 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
     if (tryParseBool(message, trigger) && trigger)
     {
       const int defaultMs = _irrigationConfig.defaultDurationMs;
-      const int defaultSeconds = defaultMs / 1000;
+      const int defaultMinutes = defaultMs / 60000;
       for (int i = 0; i < _numIrrigationZones; i++)
       {
         _irrigationZones[i]->setDurationTime(defaultMs, i);
         publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
-                String(defaultSeconds).c_str());
+                String(defaultMinutes).c_str());
       }
       clearRetainedDurationSetTopics();
       Trace::log(TraceLevel::INFO,
                  "All irrigation durations reset to default: " +
-                     String(defaultSeconds) + "s");
+                     String(defaultMinutes) + "min");
       _resetDurationsPending = true;
       _resetDurationsClearAt = millis() + 1000;
     }
@@ -281,10 +281,13 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
   for (int i = 0; i < _numIrrigationZones; i++)
   {
     String swButtonTopic = _irrigationZones[i]->getMqttTopicForSwButton();
+    String swButtonSetTopic = swButtonTopic + "/set";
     if (incomingTopic == swButtonTopic ||
-        incomingTopic.endsWith("/swBtn") &&
-            incomingTopic.indexOf(_irrigationZones[i]->getMqttTopicForZone()) >=
-                0)
+        incomingTopic == swButtonSetTopic ||
+        ((incomingTopic.endsWith("/swBtn") ||
+          incomingTopic.endsWith("/swBtn/set")) &&
+         incomingTopic.indexOf(_irrigationZones[i]->getMqttTopicForZone()) >=
+             0))
     {
       Trace::log(TraceLevel::INFO,
                  "Processing software button message for zone " + String(i) +
@@ -310,13 +313,13 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
       // Ignore retained clear payloads and Home Assistant JSON-null updates.
       if (isNoopDurationPayload(message))
       {
-        int currentDurationSeconds =
-            _irrigationZones[i]->getDurationTime() / 1000;
-        publish(durationTopic.c_str(), String(currentDurationSeconds).c_str());
+        int currentDurationMinutes =
+            _irrigationZones[i]->getDurationTime() / 60000;
+        publish(durationTopic.c_str(), String(currentDurationMinutes).c_str());
         Trace::log(TraceLevel::INFO,
                    "Ignoring empty/null payload for durationTime topic for zone " +
                        String(i) + ", republished current value: " +
-                       String(currentDurationSeconds) + " seconds");
+                       String(currentDurationMinutes) + " minutes");
         break;
       }
       int durationTimeMinutes = 0;
@@ -324,16 +327,17 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
       {
         Trace::log(TraceLevel::ERROR,
                    "Invalid duration time received for zone " + String(i) +
-                       ": " + String(message) + " minutes");
+                       ": " + String(message));
         break;
       }
 
-      long durationTimeMs = (long)durationTimeMinutes * 60L * 1000L;
-      if (durationTimeMs > 0 &&
-          durationTimeMs <= (long)_irrigationConfig.maxDurationMs)
+      // Accept any positive minute value that can be represented safely in int
+      // milliseconds. Business limits are handled externally (e.g. ioBroker).
+      if (durationTimeMinutes <= INT_MAX / 60000)
       {
+        long durationTimeMs = (long)durationTimeMinutes * 60L * 1000L;
         _irrigationZones[i]->setDurationTime((int)durationTimeMs, i);
-        publish(durationTopic.c_str(), String(durationTimeMs / 1000L).c_str());
+        publish(durationTopic.c_str(), String(durationTimeMinutes).c_str());
         Trace::log(TraceLevel::INFO,
                    "Updated duration time for zone " + String(i) + ": " +
                        String(durationTimeMinutes) + " minutes (" +
@@ -344,7 +348,8 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
         // Only log error if payload is not empty and not valid
         Trace::log(TraceLevel::ERROR,
                    "Invalid duration time received for zone " + String(i) +
-                       ": " + String(durationTimeMinutes) + " minutes");
+                       ": " + String(durationTimeMinutes) +
+                       " minutes (out of range for int milliseconds)");
         // Do not reset to default on invalid/empty input, just ignore
       }
       break;
@@ -627,13 +632,13 @@ void MqttManager::publishIrrigationZoneState(int zoneIndex, bool forceAll,
     _lastPublishedButtonState[zoneIndex] = buttonState;
   }
 
-  int durationTimeSeconds = zone->getDurationTime() / 1000;
+  int durationTimeMinutes = zone->getDurationTime() / 60000;
   if (forceAll || !initialized ||
-      _lastPublishedDurationSeconds[zoneIndex] != durationTimeSeconds)
+      _lastPublishedDurationMinutes[zoneIndex] != durationTimeMinutes)
   {
     publish(zone->getMqttTopicForDurationTime().c_str(),
-            String(durationTimeSeconds).c_str());
-    _lastPublishedDurationSeconds[zoneIndex] = durationTimeSeconds;
+            String(durationTimeMinutes).c_str());
+    _lastPublishedDurationMinutes[zoneIndex] = durationTimeMinutes;
   }
 
   _lastPublishedZoneInitialized[zoneIndex] = true;
@@ -814,7 +819,7 @@ void MqttManager::triggerFactoryReset()
 
   // Reset all zones in memory and stop any active irrigation
   const int defaultMs = _irrigationConfig.defaultDurationMs;
-  const int defaultSeconds = defaultMs / 1000;
+  const int defaultMinutes = defaultMs / 60000;
   for (int i = 0; i < _numIrrigationZones; i++)
   {
     _irrigationZones[i]->synchronizeButtonStates(false);
@@ -845,7 +850,7 @@ void MqttManager::triggerFactoryReset()
       publish(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str(),
               "00:00");
       publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
-              String(defaultSeconds).c_str());
+              String(defaultMinutes).c_str());
     }
 
     if (_waterLevelManager != nullptr)

@@ -107,7 +107,7 @@ private:
   bool _lastPublishedZoneInitialized[MAX_IRRIGATION_ZONES] = {false};
   bool _lastPublishedRelayState[MAX_IRRIGATION_ZONES] = {false};
   bool _lastPublishedButtonState[MAX_IRRIGATION_ZONES] = {false};
-  int _lastPublishedDurationSeconds[MAX_IRRIGATION_ZONES] = {0};
+  int _lastPublishedDurationMinutes[MAX_IRRIGATION_ZONES] = {0};
   char _lastPublishedRemainingTime[MAX_IRRIGATION_ZONES][8] = {{0}};
   unsigned long _lastRemainingTimePublishAt = 0;
 

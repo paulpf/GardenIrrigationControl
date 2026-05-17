@@ -14,6 +14,7 @@
 
 #include "esp_system.h"
 #include "esp_task_wdt.h"
+#include <climits>
 
 GardenControllerApp::GardenControllerApp(
     IrrigationConfig &irrigationConfig, SystemConfig &systemConfig,
@@ -308,8 +309,8 @@ void GardenControllerApp::handleScheduledIrrigation()
       continue;
     }
 
-    const long durationMs = (long)dueSchedule.durationMinutes * 60L * 1000L;
-    if (durationMs <= 0 || durationMs > (long)_irrigationConfig.maxDurationMs)
+    if (dueSchedule.durationMinutes <= 0 ||
+        dueSchedule.durationMinutes > INT_MAX / 60000)
     {
       Trace::log(TraceLevel::ERROR,
                  "Ignoring invalid schedule duration for zone " + String(i) +
@@ -317,6 +318,7 @@ void GardenControllerApp::handleScheduledIrrigation()
                      " minutes");
       continue;
     }
+    const long durationMs = (long)dueSchedule.durationMinutes * 60L * 1000L;
 
     _irrigationZones[i].startForDuration((int)durationMs);
     _mqttManager.publishIrrigationZoneEvent(
