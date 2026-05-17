@@ -27,8 +27,7 @@ bool ScheduledIrrigationCommandHandler::handleCommand(const char *topic,
   }
 
   const char *boolFields[] = {"configured", "enabled", "delete"};
-  const char *intFields[] = {"hour", "minute", "durationMinutes",
-                             "daysOfWeek"};
+  const char *intFields[] = {"durationMinutes", "daysOfWeek"};
 
   for (int zoneIndex = 0; zoneIndex < MAX_IRRIGATION_ZONES; zoneIndex++)
   {
@@ -70,6 +69,12 @@ bool ScheduledIrrigationCommandHandler::handleCommand(const char *topic,
           updateIntField(zoneIndex, scheduleIndex, intFields[fieldIndex],
                          value);
         }
+        return true;
+      }
+
+      if (matchesFieldTopic(topic, zoneIndex, scheduleIndex, "startTime"))
+      {
+        updateStartTimeField(zoneIndex, scheduleIndex, payload);
         return true;
       }
     }
@@ -134,6 +139,27 @@ bool ScheduledIrrigationCommandHandler::parseIntPayload(const char *payload,
   return true;
 }
 
+bool ScheduledIrrigationCommandHandler::parseStartTimePayload(
+    const char *payload, int &hour, int &minute) const
+{
+  if (payload == nullptr || strlen(payload) != 5 || payload[2] != ':')
+  {
+    return false;
+  }
+
+  if (payload[0] < '0' || payload[0] > '9' || payload[1] < '0' ||
+      payload[1] > '9' || payload[3] < '0' || payload[3] > '9' ||
+      payload[4] < '0' || payload[4] > '9')
+  {
+    return false;
+  }
+
+  hour = (payload[0] - '0') * 10 + (payload[1] - '0');
+  minute = (payload[3] - '0') * 10 + (payload[4] - '0');
+
+  return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+}
+
 bool ScheduledIrrigationCommandHandler::updateBoolField(
     int zoneIndex, int scheduleIndex, const char *field, bool value)
 {
@@ -176,26 +202,9 @@ bool ScheduledIrrigationCommandHandler::updateIntField(
     return false;
   }
 
-  if (strcmp(field, "hour") == 0)
+  if (strcmp(field, "durationMinutes") == 0)
   {
-    if (value < 0 || value > 23)
-    {
-      return false;
-    }
-    schedule.hour = value;
-  }
-  else if (strcmp(field, "minute") == 0)
-  {
-    if (value < 0 || value > 59)
-    {
-      return false;
-    }
-    schedule.minute = value;
-  }
-  else if (strcmp(field, "durationMinutes") == 0)
-  {
-    const int maxDurationMinutes = _irrigationConfig.maxDurationMs / 60000;
-    if (value < 1 || value > maxDurationMinutes)
+    if (value < 1 || value > INT_MAX / 60000)
     {
       return false;
     }
@@ -210,6 +219,28 @@ bool ScheduledIrrigationCommandHandler::updateIntField(
     schedule.daysOfWeek = (uint8_t)value;
   }
 
+  saveAndPublish(zoneIndex, scheduleIndex, schedule);
+  return true;
+}
+
+bool ScheduledIrrigationCommandHandler::updateStartTimeField(
+    int zoneIndex, int scheduleIndex, const char *payload)
+{
+  int hour = 0;
+  int minute = 0;
+  if (!parseStartTimePayload(payload, hour, minute))
+  {
+    return false;
+  }
+
+  IrrigationSchedule schedule;
+  if (!ensureSchedule(zoneIndex, scheduleIndex, schedule))
+  {
+    return false;
+  }
+
+  schedule.hour = hour;
+  schedule.minute = minute;
   saveAndPublish(zoneIndex, scheduleIndex, schedule);
   return true;
 }

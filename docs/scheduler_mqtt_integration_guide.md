@@ -51,6 +51,7 @@ Ein Plan besteht aus:
 - `enabled`: Plan ist aktiv
 - `hour`: Startstunde, `0..23`
 - `minute`: Startminute, `0..59`
+- `startTime`: formatierte Startzeit `HH:MM`, z. B. `14:10` (read-only State)
 - `durationMinutes`: Laufzeit in Minuten
 - `daysOfWeek`: Wochentage als Bitmaske
 
@@ -113,6 +114,7 @@ Beispiel fuer Zone 1, Plan 1:
 <device>/irrigationZone1/schedule1/enabled
 <device>/irrigationZone1/schedule1/hour
 <device>/irrigationZone1/schedule1/minute
+<device>/irrigationZone1/schedule1/startTime
 <device>/irrigationZone1/schedule1/durationMinutes
 <device>/irrigationZone1/schedule1/daysOfWeek
 ```
@@ -388,6 +390,7 @@ mqtt.0.<device>.irrigationZone1.schedule1.configured
 mqtt.0.<device>.irrigationZone1.schedule1.enabled
 mqtt.0.<device>.irrigationZone1.schedule1.hour
 mqtt.0.<device>.irrigationZone1.schedule1.minute
+mqtt.0.<device>.irrigationZone1.schedule1.startTime
 mqtt.0.<device>.irrigationZone1.schedule1.durationMinutes
 mqtt.0.<device>.irrigationZone1.schedule1.daysOfWeek
 ```

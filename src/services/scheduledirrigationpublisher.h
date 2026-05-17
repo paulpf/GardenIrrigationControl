@@ -27,6 +27,7 @@ private:
   bool _hasPublished = false;
 
   String getScheduleBaseTopic(int zoneIndex, int scheduleIndex) const;
+  String formatStartTime(int hour, int minute) const;
 };
 
 #endif // SCHEDULEDIRRIGATIONPUBLISHER_H

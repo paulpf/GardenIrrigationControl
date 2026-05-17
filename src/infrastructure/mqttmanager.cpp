@@ -522,7 +522,7 @@ void MqttManager::subscribeScheduledIrrigationCommands()
     return;
   }
 
-  const char *fields[] = {"configured", "enabled", "hour", "minute",
+  const char *fields[] = {"configured", "enabled", "startTime",
                           "durationMinutes", "daysOfWeek", "delete"};
   for (int zoneIndex = 0; zoneIndex < _numIrrigationZones; zoneIndex++)
   {

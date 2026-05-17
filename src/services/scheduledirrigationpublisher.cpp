@@ -58,10 +58,8 @@ void ScheduledIrrigationPublisher::publishScheduleState(int zoneIndex,
                      configured ? "true" : "false");
   _publisher.publish((baseTopic + "/enabled").c_str(),
                      schedule.enabled ? "true" : "false");
-  _publisher.publish((baseTopic + "/hour").c_str(),
-                     String(schedule.hour).c_str());
-  _publisher.publish((baseTopic + "/minute").c_str(),
-                     String(schedule.minute).c_str());
+  _publisher.publish((baseTopic + "/startTime").c_str(),
+                     formatStartTime(schedule.hour, schedule.minute).c_str());
   _publisher.publish((baseTopic + "/daysOfWeek").c_str(),
                      String((int)schedule.daysOfWeek).c_str());
   _publisher.publish((baseTopic + "/durationMinutes").c_str(),
@@ -73,4 +71,11 @@ String ScheduledIrrigationPublisher::getScheduleBaseTopic(
 {
   return _clientName + "/irrigationZone" + String(zoneIndex + 1) +
          "/schedule" + String(scheduleIndex + 1);
+}
+
+String ScheduledIrrigationPublisher::formatStartTime(int hour, int minute) const
+{
+  char buffer[6];
+  snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
+  return String(buffer);
 }

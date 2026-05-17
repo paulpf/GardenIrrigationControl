@@ -28,8 +28,11 @@ private:
                          const char *field) const;
   bool parseBoolPayload(const char *payload, bool &value) const;
   bool parseIntPayload(const char *payload, int &value) const;
+  bool parseStartTimePayload(const char *payload, int &hour, int &minute) const;
   bool updateBoolField(int zoneIndex, int scheduleIndex, const char *field,
                        bool value);
+  bool updateStartTimeField(int zoneIndex, int scheduleIndex,
+                            const char *payload);
   bool updateIntField(int zoneIndex, int scheduleIndex, const char *field,
                       int value);
   bool ensureSchedule(int zoneIndex, int scheduleIndex,

@@ -90,7 +90,7 @@ void test_configured_true_creates_default_schedule_and_publishes_state(void)
   TEST_ASSERT_EQUAL_STRING("true", messagePublisher.entries[0].payload.c_str());
 }
 
-void test_hour_update_auto_creates_schedule_and_saves_value(void)
+void test_start_time_update_auto_creates_schedule_and_saves_value(void)
 {
   FakeMessagePublisher messagePublisher;
   ScheduledIrrigation scheduledIrrigations[MAX_IRRIGATION_ZONES];
@@ -103,13 +103,14 @@ void test_hour_update_auto_creates_schedule_and_saves_value(void)
       makeHandler(scheduledIrrigations, publisher, config);
 
   TEST_ASSERT_TRUE(handler.handleCommand(
-      "device/irrigationZone2/schedule2/hour/set", "19"));
+      "device/irrigationZone2/schedule2/startTime/set", "19:45"));
 
   TEST_ASSERT_TRUE(scheduledIrrigations[1].isScheduleConfigured(1));
   TEST_ASSERT_EQUAL_INT(1, saveScheduleCount);
   TEST_ASSERT_EQUAL_INT(1, savedZoneIndex);
   TEST_ASSERT_EQUAL_INT(1, savedScheduleIndex);
   TEST_ASSERT_EQUAL_INT(19, savedSchedule.hour);
+  TEST_ASSERT_EQUAL_INT(45, savedSchedule.minute);
 }
 
 void test_delete_true_clears_schedule_and_publishes_unconfigured_state(void)
@@ -136,7 +137,7 @@ void test_delete_true_clears_schedule_and_publishes_unconfigured_state(void)
                            messagePublisher.entries[0].payload.c_str());
 }
 
-void test_invalid_hour_payload_is_ignored_without_creating_schedule(void)
+void test_invalid_start_time_payload_is_ignored_without_creating_schedule(void)
 {
   FakeMessagePublisher messagePublisher;
   ScheduledIrrigation scheduledIrrigations[MAX_IRRIGATION_ZONES];
@@ -149,7 +150,7 @@ void test_invalid_hour_payload_is_ignored_without_creating_schedule(void)
       makeHandler(scheduledIrrigations, publisher, config);
 
   TEST_ASSERT_TRUE(handler.handleCommand(
-      "device/irrigationZone1/schedule1/hour/set", "24"));
+      "device/irrigationZone1/schedule1/startTime/set", "24:99"));
 
   TEST_ASSERT_FALSE(scheduledIrrigations[0].isScheduleConfigured(0));
   TEST_ASSERT_EQUAL_INT(0, saveScheduleCount);
@@ -175,9 +176,9 @@ int main(int argc, char **argv)
   UNITY_BEGIN();
 
   RUN_TEST(test_configured_true_creates_default_schedule_and_publishes_state);
-  RUN_TEST(test_hour_update_auto_creates_schedule_and_saves_value);
+  RUN_TEST(test_start_time_update_auto_creates_schedule_and_saves_value);
   RUN_TEST(test_delete_true_clears_schedule_and_publishes_unconfigured_state);
-  RUN_TEST(test_invalid_hour_payload_is_ignored_without_creating_schedule);
+  RUN_TEST(test_invalid_start_time_payload_is_ignored_without_creating_schedule);
   RUN_TEST(test_unrelated_topic_is_not_handled);
 
   return UNITY_END();

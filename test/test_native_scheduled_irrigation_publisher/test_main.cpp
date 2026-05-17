@@ -49,9 +49,7 @@ void test_publish_state_creates_iobroker_friendly_schedule_topics(void)
   TEST_ASSERT_EQUAL_INT(
       1, publisher.countTopic("device/irrigationZone1/schedule1/enabled"));
   TEST_ASSERT_EQUAL_INT(
-      1, publisher.countTopic("device/irrigationZone1/schedule1/hour"));
-  TEST_ASSERT_EQUAL_INT(
-      1, publisher.countTopic("device/irrigationZone1/schedule1/minute"));
+      1, publisher.countTopic("device/irrigationZone1/schedule1/startTime"));
   TEST_ASSERT_EQUAL_INT(
       1, publisher.countTopic("device/irrigationZone1/schedule1/daysOfWeek"));
   TEST_ASSERT_EQUAL_INT(1, publisher.countTopic(
@@ -73,10 +71,9 @@ void test_publish_state_reports_configured_schedule_values(void)
 
   TEST_ASSERT_EQUAL_STRING("true", publisher.entries[0].payload.c_str());
   TEST_ASSERT_EQUAL_STRING("true", publisher.entries[1].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("6", publisher.entries[2].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("30", publisher.entries[3].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("31", publisher.entries[4].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("12", publisher.entries[5].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("06:30", publisher.entries[2].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("31", publisher.entries[3].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("12", publisher.entries[4].payload.c_str());
 }
 
 void test_publish_state_reports_unconfigured_schedule_slots_as_defaults(void)
@@ -91,10 +88,9 @@ void test_publish_state_reports_unconfigured_schedule_slots_as_defaults(void)
 
   TEST_ASSERT_EQUAL_STRING("false", publisher.entries[0].payload.c_str());
   TEST_ASSERT_EQUAL_STRING("false", publisher.entries[1].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("6", publisher.entries[2].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("0", publisher.entries[3].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("62", publisher.entries[4].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("5", publisher.entries[5].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("06:00", publisher.entries[2].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("62", publisher.entries[3].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("5", publisher.entries[4].payload.c_str());
 }
 
 void test_publish_state_preserves_unconfigured_holes_between_schedule_slots(void)
@@ -110,12 +106,11 @@ void test_publish_state_preserves_unconfigured_holes_between_schedule_slots(void
   schedulePublisher.publishState(1000);
 
   TEST_ASSERT_EQUAL_STRING("false", publisher.entries[0].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("true", publisher.entries[5].payload.c_str());
   TEST_ASSERT_EQUAL_STRING("true", publisher.entries[6].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("true", publisher.entries[7].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("6", publisher.entries[8].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("30", publisher.entries[9].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("31", publisher.entries[10].payload.c_str());
-  TEST_ASSERT_EQUAL_STRING("12", publisher.entries[11].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("06:30", publisher.entries[7].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("31", publisher.entries[8].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("12", publisher.entries[9].payload.c_str());
 }
 
 void test_publish_state_is_throttled_to_avoid_mqtt_spam(void)
