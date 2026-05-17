@@ -17,6 +17,7 @@
 #include "otaloopguard.h"
 #include "otamanager.h"
 #include "scheduled_irrigation.h"
+#include "scheduledirrigationcommandhandler.h"
 #include "scheduledirrigationpublisher.h"
 #include "systemconfig.h"
 #include "waterlevelmanager.h"
@@ -47,6 +48,7 @@ private:
   IrrigationZone _irrigationZones[MAX_IRRIGATION_ZONES];
   ScheduledIrrigation _scheduledIrrigations[MAX_IRRIGATION_ZONES];
   ScheduledIrrigationPublisher _scheduledIrrigationPublisher;
+  ScheduledIrrigationCommandHandler _scheduledIrrigationCommandHandler;
   Esp32WaterLevelSensor _waterLevelSensor;
   WaterLevelManager _waterLevelManager;
   ConnectivityCoordinator _connectivityCoordinator;

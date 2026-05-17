@@ -26,6 +26,7 @@ GardenControllerApp::GardenControllerApp(
     AutomaticIrrigationController &automaticIrrigationController,
     AutomaticIrrigationPublisher &automaticIrrigationPublisher,
     ScheduledIrrigationPublisher &scheduledIrrigationPublisher,
+    ScheduledIrrigationCommandHandler &scheduledIrrigationCommandHandler,
     DiagnosticsReporter &diagnosticsReporter,
     WaterLevelManager &waterLevelManager,
     ConnectivityCoordinator &connectivityCoordinator,
@@ -41,6 +42,7 @@ GardenControllerApp::GardenControllerApp(
       _automaticIrrigationController(automaticIrrigationController),
       _automaticIrrigationPublisher(automaticIrrigationPublisher),
       _scheduledIrrigationPublisher(scheduledIrrigationPublisher),
+      _scheduledIrrigationCommandHandler(scheduledIrrigationCommandHandler),
       _diagnosticsReporter(diagnosticsReporter),
       _waterLevelManager(waterLevelManager),
       _connectivityCoordinator(connectivityCoordinator),
@@ -188,12 +190,15 @@ void GardenControllerApp::initializeDiagnostics()
   _wallClockPublisher.setup(_clientName);
   _automaticIrrigationPublisher.setup(_clientName);
   _scheduledIrrigationPublisher.setup(_clientName);
+  _scheduledIrrigationCommandHandler.setup(_clientName);
 }
 
 void GardenControllerApp::initializeSubsystems()
 {
   _waterLevelManager.setup(_clientName);
   _mqttManager.setWaterLevelManager(&_waterLevelManager);
+  _mqttManager.setScheduledIrrigationCommandHandler(
+      &_scheduledIrrigationCommandHandler);
 
   _mqttManager.configure(_irrigationConfig);
   _mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD,

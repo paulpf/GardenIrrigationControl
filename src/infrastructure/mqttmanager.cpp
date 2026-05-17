@@ -1,5 +1,6 @@
 #include "mqttmanager.h"
 #include "helper.h"
+#include "scheduledirrigationcommandhandler.h"
 #include "waterlevelmanager.h"
 #include <climits>
 #include <cstring> // Phase 3.5: for memcpy and strcmp in hot-path optimization
@@ -261,6 +262,13 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
     return;
   }
 
+  if (_scheduledIrrigationCommandHandler != nullptr &&
+      _scheduledIrrigationCommandHandler->handleCommand(incomingTopic.c_str(),
+                                                        message))
+  {
+    return;
+  }
+
   // Check if the message is for the software button of any irrigation zone
   for (int i = 0; i < _numIrrigationZones; i++)
   {
@@ -483,6 +491,36 @@ void MqttManager::subscribeIrrigationZones()
     String durationSetTopic =
         _irrigationZones[i]->getMqttTopicForDurationTime() + "/set";
     subscribe(durationSetTopic.c_str());
+  }
+
+  subscribeScheduledIrrigationCommands();
+}
+
+void MqttManager::subscribeScheduledIrrigationCommands()
+{
+  if (_scheduledIrrigationCommandHandler == nullptr)
+  {
+    return;
+  }
+
+  const char *fields[] = {"configured", "enabled", "hour", "minute",
+                          "durationMinutes", "daysOfWeek", "delete"};
+  for (int zoneIndex = 0; zoneIndex < _numIrrigationZones; zoneIndex++)
+  {
+    for (int scheduleIndex = 0; scheduleIndex < MAX_SCHEDULES_PER_ZONE;
+         scheduleIndex++)
+    {
+      for (size_t fieldIndex = 0; fieldIndex < sizeof(fields) /
+                                                   sizeof(fields[0]);
+           fieldIndex++)
+      {
+        String topic = String(_clientName) + "/irrigationZone" +
+                       String(zoneIndex + 1) + "/schedule" +
+                       String(scheduleIndex + 1) + "/" + fields[fieldIndex] +
+                       "/set";
+        subscribe(topic.c_str());
+      }
+    }
   }
 }
 
@@ -737,6 +775,12 @@ void MqttManager::publishOnlineStatus()
 void MqttManager::setWaterLevelManager(WaterLevelManager *waterLevelManager)
 {
   _waterLevelManager = waterLevelManager;
+}
+
+void MqttManager::setScheduledIrrigationCommandHandler(
+    ScheduledIrrigationCommandHandler *scheduledIrrigationCommandHandler)
+{
+  _scheduledIrrigationCommandHandler = scheduledIrrigationCommandHandler;
 }
 
 void MqttManager::triggerFactoryReset()

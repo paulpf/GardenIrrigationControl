@@ -117,6 +117,11 @@ Minimaler Ablauf:
 Das Beispiel bedeutet: Zone 1, Plan 1, Mittwoch und Freitag um 06:30 fuer
 12 Minuten.
 
+Ein Feld-Update auf einen noch nicht konfigurierten Slot legt den Slot
+automatisch mit Default-Werten an und aktualisiert danach das Feld. Dadurch kann
+ioBroker z. B. direkt `hour/set` schreiben, ohne vorher zwingend
+`configured/set=true` zu senden.
+
 ### Plan deaktivieren
 
 ```text
@@ -135,6 +140,12 @@ Der Plan bleibt gespeichert, startet aber nicht.
 
 ```text
 <device>/irrigationZone1/schedule1/delete/set = true
+```
+
+Alternativ:
+
+```text
+<device>/irrigationZone1/schedule1/configured/set = false
 ```
 
 Erwartetes Verhalten:
@@ -209,6 +220,175 @@ Zone 1 | Plan 1 | aktiv | 06:30 | 12 min | Mi+Fr | Loeschen
 Fuer die erste Version reicht `daysOfWeek` als Zahl. Komfortabler waere spaeter
 eine ioBroker-Logik, die Checkboxen fuer Montag bis Sonntag in die Bitmaske
 umrechnet.
+
+### VIS-Konfiguration in ioBroker
+
+Dieser Abschnitt beschreibt eine einfache, real umsetzbare VIS-Variante mit
+den aktuell geplanten MQTT-Topics. Die genaue Widget-Auswahl haengt von der
+installierten VIS-Version und den verfuegbaren Widget-Sets ab. Das Grundprinzip
+bleibt gleich: Anzeigen lesen Status-States, Bedienelemente schreiben auf
+`/set` States.
+
+#### Empfohlene Darstellung pro Schedule-Slot
+
+Eine Zeile pro Schedule-Slot:
+
+```text
+[aktiv] [Stunde] [Minute] [Dauer] [Wochentage] [Loeschen]
+```
+
+Beispiel:
+
+```text
+Zone 1 / Plan 1 | aktiv: true | 06:30 | 12 min | 20 | Loeschen
+```
+
+#### Datenpunkte pro Zeile
+
+Status lesen:
+
+```text
+mqtt.0.<device>.irrigationZone1.schedule1.configured
+mqtt.0.<device>.irrigationZone1.schedule1.enabled
+mqtt.0.<device>.irrigationZone1.schedule1.hour
+mqtt.0.<device>.irrigationZone1.schedule1.minute
+mqtt.0.<device>.irrigationZone1.schedule1.durationMinutes
+mqtt.0.<device>.irrigationZone1.schedule1.daysOfWeek
+```
+
+Befehle schreiben:
+
+```text
+mqtt.0.<device>.irrigationZone1.schedule1.configured.set
+mqtt.0.<device>.irrigationZone1.schedule1.enabled.set
+mqtt.0.<device>.irrigationZone1.schedule1.hour.set
+mqtt.0.<device>.irrigationZone1.schedule1.minute.set
+mqtt.0.<device>.irrigationZone1.schedule1.durationMinutes.set
+mqtt.0.<device>.irrigationZone1.schedule1.daysOfWeek.set
+mqtt.0.<device>.irrigationZone1.schedule1.delete.set
+```
+
+`<device>` ist ein Platzhalter fuer den echten Controller-Namen. Keine echten
+lokalen Werte in diese Doku schreiben.
+
+#### Widget-Vorschlag
+
+| Feld | VIS-Widget-Typ | Lesen von | Schreiben nach |
+| --- | --- | --- | --- |
+| configured | Anzeige / optional Checkbox | `configured` | `configured.set` |
+| enabled | Checkbox / Switch | `enabled` | `enabled.set` |
+| hour | Number Input / Select | `hour` | `hour.set` |
+| minute | Number Input / Select | `minute` | `minute.set` |
+| durationMinutes | Number Input / Slider | `durationMinutes` | `durationMinutes.set` |
+| daysOfWeek | Number Input / Select | `daysOfWeek` | `daysOfWeek.set` |
+| delete | Button | optional `configured` | `delete.set` |
+
+Empfohlene Wertebereiche:
+
+| Feld | Min | Max | Schritt |
+| --- | ---: | ---: | ---: |
+| hour | 0 | 23 | 1 |
+| minute | 0 | 59 | 1 |
+| durationMinutes | 1 | 60 | 1 |
+| daysOfWeek | 1 | 127 | 1 |
+
+#### Bedienlogik in VIS
+
+Plan anlegen:
+
+1. Optional `configured.set=true` schreiben.
+2. `hour.set`, `minute.set`, `durationMinutes.set`, `daysOfWeek.set`
+   schreiben.
+3. `enabled.set=true` schreiben.
+
+Da die Firmware Feld-Updates auf nicht konfigurierte Slots automatisch anlegt,
+kann VIS auch direkt mit `hour.set` oder einem anderen Feld starten.
+
+Plan deaktivieren:
+
+```text
+enabled.set=false
+```
+
+Plan wieder aktivieren:
+
+```text
+enabled.set=true
+```
+
+Plan loeschen:
+
+```text
+delete.set=true
+```
+
+oder:
+
+```text
+configured.set=false
+```
+
+#### Wochentage in VIS
+
+Ein einfacher erster Ansatz ist ein Select- oder Number-Widget fuer
+`daysOfWeek`.
+
+Nuetzliche Werte:
+
+| Anzeige | Wert |
+| --- | ---: |
+| Montag bis Freitag | 31 |
+| Wochenende | 96 |
+| Jeden Tag | 127 |
+| Mittwoch und Freitag | 20 |
+
+Fuer eine komfortablere VIS koennen spaeter sieben Checkboxen verwendet werden.
+Diese muessen die Bitmaske berechnen:
+
+```text
+Montag     = 1
+Dienstag   = 2
+Mittwoch   = 4
+Donnerstag = 8
+Freitag    = 16
+Samstag    = 32
+Sonntag    = 64
+```
+
+Beispiel:
+
+```text
+Mittwoch + Freitag = 4 + 16 = 20
+```
+
+Wichtig: Wenn sieben Checkboxen verwendet werden, muss die VIS-Logik beim
+Aendern einer Checkbox den neuen Summenwert nach `daysOfWeek.set` schreiben.
+Die Firmware erwartet aktuell die Bitmaske als Zahl.
+
+#### Sichtbarkeit und Bedienkomfort
+
+Empfehlung:
+
+- Wenn `configured=false`, die Zeile ausgegraut darstellen.
+- Einen Button `Plan anlegen` anzeigen, der `configured.set=true` schreibt.
+- Einen Button `Loeschen` anzeigen, der `delete.set=true` schreibt.
+- `enabled` nur als Aktiv/Inaktiv-Schalter verwenden, nicht als Loeschfunktion.
+- Nach dem Schreiben eines Werts immer den Status-State beobachten, nicht den
+  `/set` State als Wahrheit verwenden.
+
+#### VIS-Testablauf
+
+1. Einen freien Schedule-Slot auswaehlen.
+2. `configured.set=true` oder direkt `hour.set` schreiben.
+3. Pruefen, ob `configured=true` zurueckkommt.
+4. Stunde, Minute, Dauer und Wochentage setzen.
+5. Pruefen, ob alle Status-States mit den gesetzten Werten zurueckkommen.
+6. `enabled.set=true` schreiben.
+7. `enabled=true` im Status pruefen.
+8. `enabled.set=false` schreiben und pruefen, dass der Plan erhalten bleibt.
+9. `delete.set=true` schreiben.
+10. Pruefen, dass `configured=false` zurueckkommt und andere Schedule-Slots
+    ihre Nummer behalten.
 
 ## Vorbereitung in Home Assistant
 

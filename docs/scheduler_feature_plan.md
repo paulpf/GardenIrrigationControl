@@ -112,8 +112,8 @@ Zuletzt validiert, ausserhalb der Sandbox:
    - Geloeschte Schedules werden als nicht konfiguriert markiert.
 
 2. MQTT-/ioBroker-Konfiguration
-   - Schedule-Werte muessen pro Zone und Schedule-Slot per MQTT setzbar sein.
-   - Schedules muessen per MQTT hinzugefuegt und geloescht werden koennen.
+   - Schedule-Werte sind pro Zone und Schedule-Slot per MQTT setzbar.
+   - Schedules koennen per MQTT hinzugefuegt und geloescht werden.
    - Ungueltige Payloads duerfen bestehende Werte nicht veraendern.
    - Nach Aenderung soll der aktuelle State publiziert werden.
 
@@ -151,12 +151,12 @@ Semantik:
 
 - `configured/set=true` legt einen Plan im Slot an, falls er noch nicht
   existiert, und speichert Default-Werte.
+- `configured/set=false` loescht den Plan im Slot wie `delete/set=true`.
 - `delete/set=true` loescht den Plan im Slot, entfernt ihn aus der Persistenz
   und publisht den Slot als nicht konfiguriert.
 - `enabled/set=false` deaktiviert den Plan nur; er bleibt gespeichert.
-- Feld-Updates auf nicht konfigurierte Slots sollen entweder abgelehnt werden
-  oder den Slot automatisch anlegen. Bevorzugt: automatisch anlegen, weil das
-  in ioBroker einfacher zu bedienen ist.
+- Feld-Updates auf nicht konfigurierte Slots legen den Slot automatisch mit
+  Default-Werten an und aktualisieren danach das angefragte Feld.
 
 `daysOfWeek` bleibt zunaechst eine Bitmaske:
 
@@ -235,11 +235,10 @@ Load-on-setup bauen, danach MQTT-Commands.
 
 ### Phase 3: MQTT Command Handling
 
-- Entscheidung: Entweder schmal in `MqttManager` integrieren oder einen neuen
-  `ScheduledIrrigationCommandHandler` einfuehren.
-- Bevorzugt: kleiner Handler, damit `MqttManager` nicht weiter waechst.
-- `/set` Topics subscriben.
-- Payloads validieren:
+- `ScheduledIrrigationCommandHandler` eingefuehrt, damit `MqttManager` nicht
+  weiter mit Schedule-Details waechst.
+- `/set` Topics werden beim MQTT-Reconnect subscribt.
+- Payloads werden validiert:
   - `configured`: bool
   - `delete`: bool, nur `true` loest Loeschung aus
   - `enabled`: bool (`true/false`, `1/0`, `on/off`)

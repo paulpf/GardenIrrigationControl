@@ -15,6 +15,7 @@ public:
 
   void setup(const char *clientName);
   void publishState(unsigned long currentMillis);
+  void publishScheduleState(int zoneIndex, int scheduleIndex);
 
 private:
   static constexpr unsigned long PUBLISH_INTERVAL_MS = 60000;
@@ -25,7 +26,6 @@ private:
   unsigned long _lastPublishMillis = 0;
   bool _hasPublished = false;
 
-  void publishSchedule(int zoneIndex, int scheduleIndex);
   String getScheduleBaseTopic(int zoneIndex, int scheduleIndex) const;
 };
 

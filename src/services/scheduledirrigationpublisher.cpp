@@ -30,7 +30,7 @@ void ScheduledIrrigationPublisher::publishState(unsigned long currentMillis)
     for (int scheduleIndex = 0; scheduleIndex < MAX_SCHEDULES_PER_ZONE;
          scheduleIndex++)
     {
-      publishSchedule(zoneIndex, scheduleIndex);
+      publishScheduleState(zoneIndex, scheduleIndex);
     }
   }
 
@@ -38,9 +38,14 @@ void ScheduledIrrigationPublisher::publishState(unsigned long currentMillis)
   _hasPublished = true;
 }
 
-void ScheduledIrrigationPublisher::publishSchedule(int zoneIndex,
-                                                   int scheduleIndex)
+void ScheduledIrrigationPublisher::publishScheduleState(int zoneIndex,
+                                                        int scheduleIndex)
 {
+  if (!_publisher.isConnected() || _clientName.length() == 0)
+  {
+    return;
+  }
+
   const bool configured =
       _scheduledIrrigations[zoneIndex].isScheduleConfigured(scheduleIndex);
   IrrigationSchedule schedule =

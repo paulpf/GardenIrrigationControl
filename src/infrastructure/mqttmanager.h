@@ -11,6 +11,7 @@
 #include <PubSubClient.h>
 
 class WaterLevelManager;
+class ScheduledIrrigationCommandHandler;
 
 class MqttManager : public IMessagePublisher, public IMqttConnectionControl
 {
@@ -43,6 +44,8 @@ public:
   void triggerFactoryReset();
   void publishOnlineStatus();
   void setWaterLevelManager(WaterLevelManager *waterLevelManager);
+  void setScheduledIrrigationCommandHandler(
+      ScheduledIrrigationCommandHandler *scheduledIrrigationCommandHandler);
 
   // Make this public and static so it can be used as a callback
   static void staticMqttCallback(char *topic, byte *payload,
@@ -56,6 +59,7 @@ private:
   void reconnect();
   void publishRetained(const char *topic, const char *payload);
   void clearRetainedDurationSetTopics();
+  void subscribeScheduledIrrigationCommands();
   void publishIrrigationZoneState(int zoneIndex, bool forceAll,
                                   bool includeRemainingTime);
 
@@ -138,6 +142,8 @@ private:
   }
 
   WaterLevelManager *_waterLevelManager = nullptr;
+  ScheduledIrrigationCommandHandler *_scheduledIrrigationCommandHandler =
+      nullptr;
 
   // Auto-clear timer for resetDurations topic
   bool _resetDurationsPending = false;
