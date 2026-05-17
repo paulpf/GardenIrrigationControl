@@ -8,6 +8,7 @@ IrrigationZone::IrrigationZone()
 {
   Trace::log(TraceLevel::DEBUG, "IrrigationZone constructor called.");
   _durationTime = _defaultDurationMs;
+  _activeDurationTime = _durationTime;
 }
 
 void IrrigationZone::configure(const IrrigationConfig &config)
@@ -15,6 +16,7 @@ void IrrigationZone::configure(const IrrigationConfig &config)
   _defaultDurationMs = config.defaultDurationMs;
   _buttonDebounceMs = config.buttonDebounceMs;
   _durationTime = _defaultDurationMs;
+  _activeDurationTime = _durationTime;
 }
 
 void IrrigationZone::setGlobalStartInhibit(bool inhibit)
@@ -58,6 +60,7 @@ void IrrigationZone::loadSettingsFromStorage(int zoneIndex)
   _zoneIndex = zoneIndex;
   // Load duration time from storage, using configured default as fallback
   _durationTime = StorageManager::getInstance().loadDurationTime(zoneIndex, _defaultDurationMs);
+  _activeDurationTime = _durationTime;
   Trace::log(TraceLevel::DEBUG,
              "Loaded settings for zone " + String(zoneIndex) +
                  " with duration time: " + String(_durationTime));
@@ -150,8 +153,8 @@ int IrrigationZone::getRemainingTime()
     return 0; // Timer is not active, return 0
   }
   unsigned long elapsed = millis() - _startTime;
-  return (elapsed < (unsigned long)_durationTime)
-             ? (int)(_durationTime - elapsed)
+  return (elapsed < (unsigned long)_activeDurationTime)
+             ? (int)(_activeDurationTime - elapsed)
              : 0;
 }
 
@@ -200,13 +203,31 @@ void IrrigationZone::getRemainingTimeAsString(char *buffer, size_t bufsize)
 
 void IrrigationZone::startTimer()
 {
+  startTimerWithDuration(_durationTime);
+}
+
+void IrrigationZone::startTimerWithDuration(int durationTime)
+{
   bool wasActive = _timerIsActive;
   _timerIsActive = true;
   _startTime = millis();
+  _activeDurationTime = durationTime;
   if (!wasActive)
   {
     markEvent(EVENT_TIMER_CHANGED);
   }
+}
+
+void IrrigationZone::startForDuration(int durationTime)
+{
+  if (durationTime <= 0)
+  {
+    return;
+  }
+
+  synchronizeButtonStates(true);
+  switchRelay(true);
+  startTimerWithDuration(durationTime);
 }
 
 void IrrigationZone::resetTimer()
@@ -229,6 +250,7 @@ void IrrigationZone::setDurationTime(int durationTime, int zoneIndex)
     markEvent(EVENT_DURATION_CHANGED);
     if (_timerIsActive)
     {
+      _activeDurationTime = durationTime;
       markEvent(EVENT_TIMER_CHANGED);
     }
   }

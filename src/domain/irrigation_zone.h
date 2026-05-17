@@ -56,6 +56,7 @@ public:
     return _relaisState;
   } // Get the relay state
   void startTimer(); // Set the relay start time
+  void startForDuration(int durationTime);
   unsigned long getStartTime()
   {
     return _startTime;
@@ -109,8 +110,10 @@ private:
   bool _timerIsActive = false;
   unsigned long _startTime;
   int _durationTime;
+  int _activeDurationTime;
   unsigned long _defaultDurationMs;
   unsigned long _buttonDebounceMs;
+  void startTimerWithDuration(int durationTime);
 
   // ================ Storage ================
   int _zoneIndex; // To track which zone index this is for storage

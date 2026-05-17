@@ -7,12 +7,15 @@
 
 #include "../../src/domain/irrigation_zone.cpp"
 
+static int savedDurationTimeCount = 0;
+
 void StorageManager::begin()
 {
 }
 
 void StorageManager::saveDurationTime(int, int)
 {
+  savedDurationTimeCount++;
 }
 
 int StorageManager::loadDurationTime(int, int defaultDurationMs)
@@ -67,6 +70,7 @@ void setUp(void)
 {
   arduinoFakeReset();
   IrrigationZone::setGlobalStartInhibit(false);
+  savedDurationTimeCount = 0;
 }
 
 void tearDown(void)
@@ -159,6 +163,32 @@ void test_button_loop_turns_relay_output_on_and_timer_expiry_turns_it_off()
   TEST_ASSERT_EQUAL_INT(HIGH, arduinoFakeGetDigitalWriteState(ZONE1_RELAY_PIN));
 }
 
+void test_start_for_duration_starts_zone_without_persisting_duration()
+{
+  IrrigationZone zone;
+  zone.setup(ZONE1_BUTTON_PIN, ZONE1_RELAY_PIN, "device/irrigationZone1");
+  zone.loadSettingsFromStorage(0);
+  arduinoFakeDigitalWriteHistoryStorage().clear();
+
+  arduinoFakeSetMillis(1000);
+  zone.startForDuration(120000);
+
+  TEST_ASSERT_TRUE(zone.getBtnState());
+  TEST_ASSERT_TRUE(zone.getRelayState());
+  TEST_ASSERT_EQUAL_INT(DEFAULT_DURATION_TIME, zone.getDurationTime());
+  TEST_ASSERT_EQUAL_INT(120000, zone.getRemainingTime());
+  TEST_ASSERT_EQUAL_INT(1000, zone.getStartTime());
+  TEST_ASSERT_EQUAL_INT(0, savedDurationTimeCount);
+  TEST_ASSERT_EQUAL_INT(LOW, arduinoFakeGetDigitalWriteState(ZONE1_RELAY_PIN));
+
+  arduinoFakeSetMillis(121001);
+  zone.loop();
+
+  TEST_ASSERT_FALSE(zone.getRelayState());
+  TEST_ASSERT_EQUAL_INT(DEFAULT_DURATION_TIME, zone.getDurationTime());
+  TEST_ASSERT_EQUAL_INT(HIGH, arduinoFakeGetDigitalWriteState(ZONE1_RELAY_PIN));
+}
+
 int main(int /*argc*/, char ** /*argv*/)
 {
   UNITY_BEGIN();
@@ -167,6 +197,7 @@ int main(int /*argc*/, char ** /*argv*/)
   RUN_TEST(test_switch_relay_outputs_low_when_active_and_high_when_inactive);
   RUN_TEST(test_configured_relay_pins_all_start_inactive_high);
   RUN_TEST(test_button_loop_turns_relay_output_on_and_timer_expiry_turns_it_off);
+  RUN_TEST(test_start_for_duration_starts_zone_without_persisting_duration);
 
   return UNITY_END();
 }

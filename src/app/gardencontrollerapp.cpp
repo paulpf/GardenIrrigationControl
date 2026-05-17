@@ -281,7 +281,30 @@ void GardenControllerApp::handleScheduledIrrigation()
 
   for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
   {
-    _scheduledIrrigations[i].loop(_currentMillis);
+    IrrigationSchedule dueSchedule;
+    if (!_scheduledIrrigations[i].consumeDueSchedule(_currentMillis,
+                                                     dueSchedule))
+    {
+      continue;
+    }
+
+    const long durationMs = (long)dueSchedule.durationMinutes * 60L * 1000L;
+    if (durationMs <= 0 || durationMs > (long)_irrigationConfig.maxDurationMs)
+    {
+      Trace::log(TraceLevel::ERROR,
+                 "Ignoring invalid schedule duration for zone " + String(i) +
+                     ": " + String(dueSchedule.durationMinutes) +
+                     " minutes");
+      continue;
+    }
+
+    _irrigationZones[i].startForDuration((int)durationMs);
+    _mqttManager.publishIrrigationZoneEvent(
+        i, _irrigationZones[i].consumeEvents());
+    Trace::log(TraceLevel::INFO,
+               "Scheduled irrigation started for zone " + String(i) +
+                   " for " + String(dueSchedule.durationMinutes) +
+                   " minutes");
   }
 }
 

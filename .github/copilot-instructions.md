@@ -27,6 +27,10 @@ The codebase is intentionally split by responsibility:
 - Avoid unrelated refactors while fixing a bug or adding a narrow feature.
 - Keep comments short and useful. Do not restate obvious code.
 - Use ASCII unless the file already clearly uses another encoding.
+- Do not modify external libraries, generated vendor files, or native test support
+  stubs under `test/support` unless the user explicitly asks for it.
+- Do not commit changes before the user has manually tested them and explicitly
+  approved the commit.
 
 ## Safety-Critical Behavior
 
@@ -74,8 +78,17 @@ Use an ESP32 build to validate firmware integration:
 pio run -e az-delivery-devkit-v4-usb
 ```
 
+Always run the OTA environment build as well when validating firmware changes:
+
+```bash
+pio run -e az-delivery-devkit-v4-ota
+```
+
 When modifying test support files under `test/support`, keep them minimal and aligned with
 the subset of Arduino/ESP32 APIs actually needed by native tests.
+
+If a test fails or crashes after a change, stop and report the failure before
+expanding the change scope.
 
 ## Secrets
 
