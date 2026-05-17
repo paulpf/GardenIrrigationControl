@@ -4,6 +4,8 @@
 #include "global_defines.h"
 #include <Preferences.h>
 
+struct IrrigationSchedule;
+
 class StorageManager
 {
 public:
@@ -28,6 +30,14 @@ public:
   void saveRelayState(int zoneIndex, bool state);
   bool loadRelayState(int zoneIndex);
 
+  // Methods for scheduled irrigation settings
+  void saveSchedule(int zoneIndex, int scheduleIndex,
+                    const IrrigationSchedule &schedule);
+  bool loadSchedule(int zoneIndex, int scheduleIndex,
+                    IrrigationSchedule &schedule);
+  void clearSchedule(int zoneIndex, int scheduleIndex);
+  bool isScheduleConfigured(int zoneIndex, int scheduleIndex);
+
   // Method to clear all saved settings (useful for testing or factory reset)
   void clearAllSettings();
 
@@ -43,6 +53,9 @@ private:
 
   // Key generation helper
   String getKey(const char *prefix, int zoneIndex);
+  String getScheduleKey(const char *field, int zoneIndex, int scheduleIndex);
+  bool isValidScheduleIndex(int zoneIndex, int scheduleIndex) const;
+  bool isValidSchedule(const IrrigationSchedule &schedule) const;
 };
 
 #endif // STORAGE_MANAGER_H

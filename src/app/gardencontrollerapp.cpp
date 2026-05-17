@@ -57,6 +57,16 @@ void GardenControllerApp::initScheduledIrrigation()
   for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
   {
     _scheduledIrrigations[i].setup(i, &_wallClock);
+    for (int scheduleIndex = 0; scheduleIndex < MAX_SCHEDULES_PER_ZONE;
+         scheduleIndex++)
+    {
+      IrrigationSchedule schedule;
+      if (StorageManager::getInstance().loadSchedule(i, scheduleIndex,
+                                                     schedule))
+      {
+        _scheduledIrrigations[i].updateSchedule(scheduleIndex, schedule);
+      }
+    }
   }
 
   if (!ENABLE_SCHEDULED_IRRIGATION)

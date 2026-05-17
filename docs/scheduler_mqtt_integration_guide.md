@@ -144,6 +144,8 @@ Erwartetes Verhalten:
   markiert.
 - `configured` wird auf `false` publiziert.
 - Die restlichen Felder werden als Defaults oder leerer Slot publiziert.
+- Andere Schedule-Slots behalten ihre Nummer. Wenn `schedule1` geloescht wird,
+  bleibt `schedule2` weiterhin `schedule2`.
 
 ## Vorbereitung in ioBroker
 

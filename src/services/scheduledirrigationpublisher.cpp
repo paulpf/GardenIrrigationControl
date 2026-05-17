@@ -41,8 +41,8 @@ void ScheduledIrrigationPublisher::publishState(unsigned long currentMillis)
 void ScheduledIrrigationPublisher::publishSchedule(int zoneIndex,
                                                    int scheduleIndex)
 {
-  const int scheduleCount = _scheduledIrrigations[zoneIndex].getScheduleCount();
-  const bool configured = scheduleIndex < scheduleCount;
+  const bool configured =
+      _scheduledIrrigations[zoneIndex].isScheduleConfigured(scheduleIndex);
   IrrigationSchedule schedule =
       configured ? _scheduledIrrigations[zoneIndex].getSchedule(scheduleIndex)
                  : IrrigationSchedule();

@@ -40,6 +40,7 @@ public:
   void updateSchedule(int scheduleIndex, const IrrigationSchedule &schedule);
   IrrigationSchedule getSchedule(int scheduleIndex) const;
   int getScheduleCount() const;
+  bool isScheduleConfigured(int scheduleIndex) const;
 
   // Enable/disable specific schedule
   void enableSchedule(int scheduleIndex);
@@ -60,6 +61,7 @@ private:
   int _zoneIndex;
   IWallClock *_wallClock;
   IrrigationSchedule _schedules[MAX_SCHEDULES_PER_ZONE];
+  bool _scheduleConfigured[MAX_SCHEDULES_PER_ZONE];
   int _scheduleCount;
   uint64_t _lastTriggerKey; // Prevent duplicate triggers in same minute
   bool _hasLastTriggerKey;

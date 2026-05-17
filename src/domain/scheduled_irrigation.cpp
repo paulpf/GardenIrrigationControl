@@ -5,6 +5,10 @@ ScheduledIrrigation::ScheduledIrrigation()
     : _zoneIndex(-1), _wallClock(nullptr), _scheduleCount(0),
       _lastTriggerKey(0), _hasLastTriggerKey(false)
 {
+  for (int i = 0; i < MAX_SCHEDULES_PER_ZONE; i++)
+  {
+    _scheduleConfigured[i] = false;
+  }
 }
 
 void ScheduledIrrigation::setup(int zoneIndex)
@@ -19,6 +23,11 @@ void ScheduledIrrigation::setup(int zoneIndex, IWallClock *wallClock)
   _scheduleCount = 0;
   _lastTriggerKey = 0;
   _hasLastTriggerKey = false;
+  for (int i = 0; i < MAX_SCHEDULES_PER_ZONE; i++)
+  {
+    _schedules[i] = IrrigationSchedule();
+    _scheduleConfigured[i] = false;
+  }
   Trace::log(TraceLevel::INFO,
              "ScheduledIrrigation initialized for zone " + String(zoneIndex));
 }
@@ -60,9 +69,10 @@ bool ScheduledIrrigation::consumeDueSchedule(
     return false;
   }
 
-  for (int i = 0; i < _scheduleCount; i++)
+  for (int i = 0; i < MAX_SCHEDULES_PER_ZONE; i++)
   {
-    if (_schedules[i].enabled && isScheduleTimeMatch(_schedules[i], now))
+    if (_scheduleConfigured[i] && _schedules[i].enabled &&
+        isScheduleTimeMatch(_schedules[i], now))
     {
       _lastTriggerKey = triggerKey;
       _hasLastTriggerKey = true;
@@ -76,30 +86,33 @@ bool ScheduledIrrigation::consumeDueSchedule(
 
 void ScheduledIrrigation::addSchedule(const IrrigationSchedule &schedule)
 {
-  if (_scheduleCount < MAX_SCHEDULES_PER_ZONE)
+  for (int i = 0; i < MAX_SCHEDULES_PER_ZONE; i++)
   {
-    _schedules[_scheduleCount] = schedule;
+    if (_scheduleConfigured[i])
+    {
+      continue;
+    }
+
+    _schedules[i] = schedule;
+    _scheduleConfigured[i] = true;
     _scheduleCount++;
     Trace::log(TraceLevel::INFO,
                "Schedule added for zone " + String(_zoneIndex));
+    return;
   }
-  else
-  {
-    Trace::log(TraceLevel::ERROR,
-               "Cannot add schedule - max schedules reached for zone " +
-                   String(_zoneIndex));
-  }
+
+  Trace::log(TraceLevel::ERROR,
+             "Cannot add schedule - max schedules reached for zone " +
+                 String(_zoneIndex));
 }
 
 void ScheduledIrrigation::removeSchedule(int scheduleIndex)
 {
-  if (scheduleIndex >= 0 && scheduleIndex < _scheduleCount)
+  if (scheduleIndex >= 0 && scheduleIndex < MAX_SCHEDULES_PER_ZONE &&
+      _scheduleConfigured[scheduleIndex])
   {
-    // Shift schedules down
-    for (int i = scheduleIndex; i < _scheduleCount - 1; i++)
-    {
-      _schedules[i] = _schedules[i + 1];
-    }
+    _schedules[scheduleIndex] = IrrigationSchedule();
+    _scheduleConfigured[scheduleIndex] = false;
     _scheduleCount--;
     Trace::log(TraceLevel::INFO,
                "Schedule removed from zone " + String(_zoneIndex));
@@ -109,8 +122,13 @@ void ScheduledIrrigation::removeSchedule(int scheduleIndex)
 void ScheduledIrrigation::updateSchedule(int scheduleIndex,
                                          const IrrigationSchedule &schedule)
 {
-  if (scheduleIndex >= 0 && scheduleIndex < _scheduleCount)
+  if (scheduleIndex >= 0 && scheduleIndex < MAX_SCHEDULES_PER_ZONE)
   {
+    if (!_scheduleConfigured[scheduleIndex])
+    {
+      _scheduleConfigured[scheduleIndex] = true;
+      _scheduleCount++;
+    }
     _schedules[scheduleIndex] = schedule;
     Trace::log(TraceLevel::INFO,
                "Schedule updated for zone " + String(_zoneIndex));
@@ -119,7 +137,8 @@ void ScheduledIrrigation::updateSchedule(int scheduleIndex,
 
 IrrigationSchedule ScheduledIrrigation::getSchedule(int scheduleIndex) const
 {
-  if (scheduleIndex >= 0 && scheduleIndex < _scheduleCount)
+  if (scheduleIndex >= 0 && scheduleIndex < MAX_SCHEDULES_PER_ZONE &&
+      _scheduleConfigured[scheduleIndex])
   {
     return _schedules[scheduleIndex];
   }
@@ -131,9 +150,15 @@ int ScheduledIrrigation::getScheduleCount() const
   return _scheduleCount;
 }
 
+bool ScheduledIrrigation::isScheduleConfigured(int scheduleIndex) const
+{
+  return scheduleIndex >= 0 && scheduleIndex < MAX_SCHEDULES_PER_ZONE &&
+         _scheduleConfigured[scheduleIndex];
+}
+
 void ScheduledIrrigation::enableSchedule(int scheduleIndex)
 {
-  if (scheduleIndex >= 0 && scheduleIndex < _scheduleCount)
+  if (isScheduleConfigured(scheduleIndex))
   {
     _schedules[scheduleIndex].enabled = true;
   }
@@ -141,7 +166,7 @@ void ScheduledIrrigation::enableSchedule(int scheduleIndex)
 
 void ScheduledIrrigation::disableSchedule(int scheduleIndex)
 {
-  if (scheduleIndex >= 0 && scheduleIndex < _scheduleCount)
+  if (isScheduleConfigured(scheduleIndex))
   {
     _schedules[scheduleIndex].enabled = false;
   }
@@ -149,7 +174,7 @@ void ScheduledIrrigation::disableSchedule(int scheduleIndex)
 
 bool ScheduledIrrigation::isScheduleEnabled(int scheduleIndex) const
 {
-  if (scheduleIndex >= 0 && scheduleIndex < _scheduleCount)
+  if (isScheduleConfigured(scheduleIndex))
   {
     return _schedules[scheduleIndex].enabled;
   }
@@ -164,9 +189,10 @@ bool ScheduledIrrigation::shouldRunNow(unsigned long currentTime) const
 
 bool ScheduledIrrigation::shouldRunNow() const
 {
-  for (int i = 0; i < _scheduleCount; i++)
+  for (int i = 0; i < MAX_SCHEDULES_PER_ZONE; i++)
   {
-    if (_schedules[i].enabled && isScheduleTimeMatch(_schedules[i]))
+    if (_scheduleConfigured[i] && _schedules[i].enabled &&
+        isScheduleTimeMatch(_schedules[i]))
     {
       return true;
     }

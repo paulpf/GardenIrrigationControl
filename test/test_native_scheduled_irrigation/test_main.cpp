@@ -129,6 +129,39 @@ void test_consume_due_schedule_returns_schedule_once_per_wall_clock_minute(void)
   TEST_ASSERT_FALSE(scheduler.consumeDueSchedule(2000, dueSchedule));
 }
 
+void test_remove_schedule_leaves_later_schedule_in_its_slot(void)
+{
+  ScheduledIrrigation scheduler;
+  scheduler.setup(0);
+  scheduler.updateSchedule(0, makeSchedule(6, 30, 0));
+  scheduler.updateSchedule(1, makeSchedule(7, 45, 0));
+
+  scheduler.removeSchedule(0);
+
+  TEST_ASSERT_FALSE(scheduler.isScheduleConfigured(0));
+  TEST_ASSERT_TRUE(scheduler.isScheduleConfigured(1));
+  TEST_ASSERT_EQUAL_INT(1, scheduler.getScheduleCount());
+
+  IrrigationSchedule schedule = scheduler.getSchedule(1);
+  TEST_ASSERT_EQUAL_INT(7, schedule.hour);
+  TEST_ASSERT_EQUAL_INT(45, schedule.minute);
+}
+
+void test_due_schedule_can_trigger_from_non_compacted_slot(void)
+{
+  FakeWallClock clock;
+  clock.current = {2026, 5, 18, 7, 45, 0, 0}; // Monday
+
+  ScheduledIrrigation scheduler;
+  scheduler.setup(0, &clock);
+  scheduler.updateSchedule(1, makeSchedule(7, 45, 0));
+
+  IrrigationSchedule dueSchedule;
+  TEST_ASSERT_TRUE(scheduler.consumeDueSchedule(1000, dueSchedule));
+  TEST_ASSERT_EQUAL_INT(7, dueSchedule.hour);
+  TEST_ASSERT_EQUAL_INT(45, dueSchedule.minute);
+}
+
 void test_legacy_should_run_now_signature_uses_wall_clock(void)
 {
   FakeWallClock clock;
@@ -160,6 +193,8 @@ int main(int argc, char **argv)
   RUN_TEST(test_should_not_run_without_valid_time);
   RUN_TEST(test_disabled_schedule_does_not_run);
   RUN_TEST(test_consume_due_schedule_returns_schedule_once_per_wall_clock_minute);
+  RUN_TEST(test_remove_schedule_leaves_later_schedule_in_its_slot);
+  RUN_TEST(test_due_schedule_can_trigger_from_non_compacted_slot);
   RUN_TEST(test_legacy_should_run_now_signature_uses_wall_clock);
   RUN_TEST(test_scheduler_without_wall_clock_never_runs);
 

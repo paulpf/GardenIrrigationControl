@@ -97,6 +97,27 @@ void test_publish_state_reports_unconfigured_schedule_slots_as_defaults(void)
   TEST_ASSERT_EQUAL_STRING("5", publisher.entries[5].payload.c_str());
 }
 
+void test_publish_state_preserves_unconfigured_holes_between_schedule_slots(void)
+{
+  FakeMessagePublisher publisher;
+  ScheduledIrrigation scheduledIrrigations[MAX_IRRIGATION_ZONES];
+  scheduledIrrigations[0].setup(0);
+  scheduledIrrigations[0].updateSchedule(1, makeSchedule());
+  ScheduledIrrigationPublisher schedulePublisher(publisher,
+                                                 scheduledIrrigations);
+
+  schedulePublisher.setup("device");
+  schedulePublisher.publishState(1000);
+
+  TEST_ASSERT_EQUAL_STRING("false", publisher.entries[0].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("true", publisher.entries[6].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("true", publisher.entries[7].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("6", publisher.entries[8].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("30", publisher.entries[9].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("31", publisher.entries[10].payload.c_str());
+  TEST_ASSERT_EQUAL_STRING("12", publisher.entries[11].payload.c_str());
+}
+
 void test_publish_state_is_throttled_to_avoid_mqtt_spam(void)
 {
   FakeMessagePublisher publisher;
@@ -135,6 +156,7 @@ int main(int argc, char **argv)
   RUN_TEST(test_publish_state_creates_iobroker_friendly_schedule_topics);
   RUN_TEST(test_publish_state_reports_configured_schedule_values);
   RUN_TEST(test_publish_state_reports_unconfigured_schedule_slots_as_defaults);
+  RUN_TEST(test_publish_state_preserves_unconfigured_holes_between_schedule_slots);
   RUN_TEST(test_publish_state_is_throttled_to_avoid_mqtt_spam);
   RUN_TEST(test_publish_state_is_suppressed_when_mqtt_disconnected);
 

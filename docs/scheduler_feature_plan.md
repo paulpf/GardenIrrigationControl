@@ -67,7 +67,8 @@ Bereits vorhanden:
   - `durationMinutes`
   - `daysOfWeek` als Bitmaske, bit0=Montag bis bit6=Sonntag
 - `ScheduledIrrigation`
-  - verwaltet bis zu `MAX_SCHEDULES_PER_ZONE` Plaene pro Zone
+  - verwaltet bis zu `MAX_SCHEDULES_PER_ZONE` feste Plan-Slots pro Zone
+  - unterscheidet konfigurierte und nicht konfigurierte Slots
   - prueft Zeit und Wochentag ueber `IWallClock`
   - verhindert Doppeltrigger innerhalb derselben Wanduhren-Minute
   - `consumeDueSchedule()` liefert den faelligen Schedule
@@ -78,8 +79,10 @@ Bereits vorhanden:
   automatische Scheduler-Laeufe.
 - `ScheduledIrrigationPublisher` publisht Schedule-State fuer ioBroker-artige
   Topics.
+- `StorageManager` hat Schedule-Methoden fuer Speichern, Laden, Loeschen und
+  configured-Abfrage.
 
-Aktuell uncommitted vorbereitet:
+Aktuell vorbereitet:
 
 - `GardenControllerApp::handleScheduledIrrigation()` wertet faellige Schedules
   aus und startet die passende Zone.
@@ -89,6 +92,10 @@ Aktuell uncommitted vorbereitet:
 - Test in `test/test_native_irrigation_zone_relay_output/test_main.cpp`, dass
   `startForDuration()` die Zone startet und nicht persistiert.
 - `.github/copilot-instructions.md` wurde um die Arbeitsregeln ergaenzt.
+- Nicht konfigurierte Schedule-Slots bleiben als Locher erhalten; ein Plan in
+  `schedule2` wird nach Loeschen von `schedule1` nicht zu `schedule1`.
+- `GardenControllerApp::initScheduledIrrigation()` laedt konfigurierte
+  Schedule-Slots aus `StorageManager`.
 
 Zuletzt validiert, ausserhalb der Sandbox:
 
@@ -99,10 +106,10 @@ Zuletzt validiert, ausserhalb der Sandbox:
 ## Fehlende Teile fuer das vollstaendige Feature
 
 1. Persistenz der Schedule-Konfiguration
-   - Schedules muessen in NVS/Preferences gespeichert werden.
-   - Nach Neustart muessen sie in `initScheduledIrrigation()` geladen werden.
-   - Geloeschte Schedules muessen in NVS/Preferences entfernt oder eindeutig
-     als nicht konfiguriert markiert werden.
+   - Schedules werden in NVS/Preferences gespeichert.
+   - Nach Neustart werden konfigurierte Slots in `initScheduledIrrigation()`
+     geladen.
+   - Geloeschte Schedules werden als nicht konfiguriert markiert.
 
 2. MQTT-/ioBroker-Konfiguration
    - Schedule-Werte muessen pro Zone und Schedule-Slot per MQTT setzbar sein.
@@ -208,7 +215,7 @@ Load-on-setup bauen, danach MQTT-Commands.
 
 ### Phase 2: Schedule-Persistenz
 
-- `StorageManager` um Schedule-Methoden erweitern:
+- `StorageManager` um Schedule-Methoden erweitern: erledigt
   - `saveSchedule(int zoneIndex, int scheduleIndex, const IrrigationSchedule &schedule)`
   - `loadSchedule(int zoneIndex, int scheduleIndex, IrrigationSchedule &schedule)`
   - `clearSchedule(int zoneIndex, int scheduleIndex)`
@@ -221,10 +228,10 @@ Load-on-setup bauen, danach MQTT-Commands.
   - durationMinutes
   - daysOfWeek
 - `GardenControllerApp::initScheduledIrrigation()` laedt alle gespeicherten
-  Schedules pro Zone.
+  Schedules pro Zone: erledigt
 - Geloeschte oder nicht konfigurierte Slots werden nicht in
-  `ScheduledIrrigation` aufgenommen.
-- Native-Tests fuer Storage-Logik ergaenzen, ohne `test/support` zu aendern.
+  `ScheduledIrrigation` aufgenommen: erledigt
+- Native-Tests fuer feste Slot-Semantik und Publisher-Locher sind ergaenzt.
 
 ### Phase 3: MQTT Command Handling
 
