@@ -182,6 +182,14 @@ void MqttManager::initPublish()
         _irrigationZones[i]->getMqttTopicForDurationTime() + "/set";
     publishRetained(durationSetTopic.c_str(),
                     String(durationMinutes).c_str());
+
+    for (int s = 0; s < MAX_SCHEDULES_PER_ZONE; s++)
+    {
+      String scheduleSetTopic = String(_clientName) + "/irrigationZone" +
+                                String(i + 1) + "/schedule" + String(s + 1) +
+                                "/set";
+      publishRetained(scheduleSetTopic.c_str(), "");
+    }
   }
 }
 
@@ -221,6 +229,18 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
   String incomingTopic = String(topic);
   Trace::log(TraceLevel::INFO, "MQTT message arrived [" + incomingTopic +
                                    "] payload: " + String(message));
+
+  if (incomingTopic == GetRestartTopic())
+  {
+    bool trigger = false;
+    if (tryParseBool(message, trigger) && trigger)
+    {
+      Trace::log(TraceLevel::INFO, "Restart triggered via MQTT");
+      delay(100);
+      ESP.restart();
+    }
+    return;
+  }
 
   if (incomingTopic == GetFactoryResetTopic())
   {
@@ -509,6 +529,7 @@ void MqttManager::subscribeIrrigationZones()
   subscribe(GetLowWaterLockoutEnabledSetTopic().c_str());
   subscribe(GetResetDurationsTopic().c_str());
   subscribe(GetFactoryResetTopic().c_str());
+  subscribe(GetRestartTopic().c_str());
 
   // Subscribe to all irrigation zones
   for (int i = 0; i < _numIrrigationZones; i++)
@@ -540,23 +561,16 @@ void MqttManager::subscribeScheduledIrrigationCommands()
     return;
   }
 
-  const char *fields[] = {"configured", "enabled", "startTime",
-                          "durationMinutes", "daysOfWeek", "delete"};
   for (int zoneIndex = 0; zoneIndex < _numIrrigationZones; zoneIndex++)
   {
     for (int scheduleIndex = 0; scheduleIndex < MAX_SCHEDULES_PER_ZONE;
          scheduleIndex++)
     {
-      for (size_t fieldIndex = 0; fieldIndex < sizeof(fields) /
-                                                   sizeof(fields[0]);
-           fieldIndex++)
-      {
-        String topic = String(_clientName) + "/irrigationZone" +
-                       String(zoneIndex + 1) + "/schedule" +
-                       String(scheduleIndex + 1) + "/" + fields[fieldIndex] +
-                       "/set";
-        subscribe(topic.c_str());
-      }
+      String base = String(_clientName) + "/irrigationZone" +
+                    String(zoneIndex + 1) + "/schedule" +
+                    String(scheduleIndex + 1);
+      subscribe((base + "/set").c_str());
+      subscribe((base + "/delete/set").c_str());
     }
   }
 }

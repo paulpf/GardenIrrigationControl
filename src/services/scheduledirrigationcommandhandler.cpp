@@ -26,61 +26,87 @@ bool ScheduledIrrigationCommandHandler::handleCommand(const char *topic,
     return false;
   }
 
-  const char *boolFields[] = {"configured", "enabled", "delete"};
-  const char *intFields[] = {"durationMinutes", "daysOfWeek"};
-
   for (int zoneIndex = 0; zoneIndex < MAX_IRRIGATION_ZONES; zoneIndex++)
   {
     for (int scheduleIndex = 0; scheduleIndex < MAX_SCHEDULES_PER_ZONE;
          scheduleIndex++)
     {
-      for (size_t fieldIndex = 0; fieldIndex < sizeof(boolFields) /
-                                                   sizeof(boolFields[0]);
-           fieldIndex++)
+      if (matchesJsonSetTopic(topic, zoneIndex, scheduleIndex))
       {
-        if (!matchesFieldTopic(topic, zoneIndex, scheduleIndex,
-                               boolFields[fieldIndex]))
-        {
-          continue;
-        }
+        handleJsonCommand(zoneIndex, scheduleIndex, payload);
+        return true;
+      }
 
+      if (matchesFieldTopic(topic, zoneIndex, scheduleIndex, "delete"))
+      {
         bool value = false;
-        if (parseBoolPayload(payload, value))
+        if (parseBoolPayload(payload, value) && value)
         {
-          updateBoolField(zoneIndex, scheduleIndex, boolFields[fieldIndex],
-                          value);
+          clearAndPublish(zoneIndex, scheduleIndex);
         }
-        return true;
-      }
-
-      for (size_t fieldIndex = 0; fieldIndex < sizeof(intFields) /
-                                                   sizeof(intFields[0]);
-           fieldIndex++)
-      {
-        if (!matchesFieldTopic(topic, zoneIndex, scheduleIndex,
-                               intFields[fieldIndex]))
-        {
-          continue;
-        }
-
-        int value = 0;
-        if (parseIntPayload(payload, value))
-        {
-          updateIntField(zoneIndex, scheduleIndex, intFields[fieldIndex],
-                         value);
-        }
-        return true;
-      }
-
-      if (matchesFieldTopic(topic, zoneIndex, scheduleIndex, "startTime"))
-      {
-        updateStartTimeField(zoneIndex, scheduleIndex, payload);
         return true;
       }
     }
   }
 
   return false;
+}
+
+bool ScheduledIrrigationCommandHandler::matchesJsonSetTopic(
+    const char *topic, int zoneIndex, int scheduleIndex) const
+{
+  char expected[128];
+  snprintf(expected, sizeof(expected), "%s/irrigationZone%d/schedule%d/set",
+           _clientName.c_str(), zoneIndex + 1, scheduleIndex + 1);
+  return strcmp(topic, expected) == 0;
+}
+
+bool ScheduledIrrigationCommandHandler::handleJsonCommand(
+    int zoneIndex, int scheduleIndex, const char *payload)
+{
+  if (payload == nullptr || payload[0] == '\0')
+  {
+    return true;
+  }
+
+  JsonDocument doc;
+  if (deserializeJson(doc, payload) != DeserializationError::Ok)
+  {
+    Trace::log(TraceLevel::ERROR,
+               "Invalid JSON for schedule command: " + String(payload));
+    return false;
+  }
+
+  if (doc["configured"] == false)
+  {
+    clearAndPublish(zoneIndex, scheduleIndex);
+    return true;
+  }
+
+  IrrigationSchedule schedule;
+  ensureSchedule(zoneIndex, scheduleIndex, schedule, true);
+
+  if (doc.containsKey("enabled"))
+    schedule.enabled = doc["enabled"].as<bool>();
+
+  if (doc.containsKey("startTime"))
+  {
+    int hour = 0, minute = 0;
+    if (parseStartTimePayload(doc["startTime"].as<const char *>(), hour, minute))
+    {
+      schedule.hour = hour;
+      schedule.minute = minute;
+    }
+  }
+
+  if (doc.containsKey("durationMinutes"))
+    schedule.durationMinutes = doc["durationMinutes"].as<int>();
+
+  if (doc.containsKey("daysOfWeek"))
+    schedule.daysOfWeek = (uint8_t)doc["daysOfWeek"].as<int>();
+
+  saveAndPublish(zoneIndex, scheduleIndex, schedule);
+  return true;
 }
 
 bool ScheduledIrrigationCommandHandler::matchesFieldTopic(
@@ -289,6 +315,7 @@ void ScheduledIrrigationCommandHandler::saveAndPublish(
   StorageManager::getInstance().saveSchedule(zoneIndex, scheduleIndex,
                                              schedule);
   _publisher.publishScheduleState(zoneIndex, scheduleIndex);
+  _publisher.publishZoneSummary(zoneIndex);
 }
 
 void ScheduledIrrigationCommandHandler::clearAndPublish(int zoneIndex,
@@ -297,6 +324,7 @@ void ScheduledIrrigationCommandHandler::clearAndPublish(int zoneIndex,
   _scheduledIrrigations[zoneIndex].removeSchedule(scheduleIndex);
   StorageManager::getInstance().clearSchedule(zoneIndex, scheduleIndex);
   _publisher.publishScheduleState(zoneIndex, scheduleIndex);
+  _publisher.publishZoneSummary(zoneIndex);
 }
 
 void ScheduledIrrigationCommandHandler::resetAll()

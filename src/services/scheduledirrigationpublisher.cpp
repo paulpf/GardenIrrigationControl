@@ -1,4 +1,5 @@
 #include "scheduledirrigationpublisher.h"
+#include <ArduinoJson.h>
 
 ScheduledIrrigationPublisher::ScheduledIrrigationPublisher(
     IMessagePublisher &publisher,
@@ -32,6 +33,10 @@ void ScheduledIrrigationPublisher::publishState(unsigned long currentMillis)
     {
       publishScheduleState(zoneIndex, scheduleIndex);
     }
+    if (!_hasPublished)
+    {
+      publishZoneSummary(zoneIndex);
+    }
   }
 
   _lastPublishMillis = currentMillis;
@@ -61,16 +66,10 @@ void ScheduledIrrigationPublisher::publishScheduleState(int zoneIndex,
   String durationMinutes = String(schedule.durationMinutes);
 
   _publisher.publish((baseTopic + "/configured").c_str(), configuredVal);
-  _publisher.publish((baseTopic + "/configured/set").c_str(), configuredVal);
   _publisher.publish((baseTopic + "/enabled").c_str(), enabledVal);
-  _publisher.publish((baseTopic + "/enabled/set").c_str(), enabledVal);
   _publisher.publish((baseTopic + "/startTime").c_str(), startTime.c_str());
-  _publisher.publish((baseTopic + "/startTime/set").c_str(), startTime.c_str());
   _publisher.publish((baseTopic + "/daysOfWeek").c_str(), daysOfWeek.c_str());
-  _publisher.publish((baseTopic + "/daysOfWeek/set").c_str(), daysOfWeek.c_str());
   _publisher.publish((baseTopic + "/durationMinutes").c_str(),
-                     durationMinutes.c_str());
-  _publisher.publish((baseTopic + "/durationMinutes/set").c_str(),
                      durationMinutes.c_str());
 }
 
@@ -81,9 +80,62 @@ String ScheduledIrrigationPublisher::getScheduleBaseTopic(
          "/schedule" + String(scheduleIndex + 1);
 }
 
+String ScheduledIrrigationPublisher::getZoneSummaryTopic(int zoneIndex) const
+{
+  return _clientName + "/irrigationZone" + String(zoneIndex + 1) +
+         "/scheduleSummary";
+}
+
 String ScheduledIrrigationPublisher::formatStartTime(int hour, int minute) const
 {
   char buffer[6];
   snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
   return String(buffer);
+}
+
+String ScheduledIrrigationPublisher::formatDaysText(uint8_t daysOfWeek) const
+{
+  static const char *labels[] = {"Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"};
+  String result;
+  for (int i = 0; i < 7; i++)
+  {
+    if (daysOfWeek & (1 << i))
+    {
+      if (result.length() > 0) result += ',';
+      result += labels[i];
+    }
+  }
+  return result.length() > 0 ? result : String("-");
+}
+
+void ScheduledIrrigationPublisher::publishZoneSummary(int zoneIndex)
+{
+  if (!_publisher.isConnected() || _clientName.length() == 0)
+  {
+    return;
+  }
+
+  JsonDocument doc;
+  JsonArray arr = doc.to<JsonArray>();
+
+  for (int s = 0; s < MAX_SCHEDULES_PER_ZONE; s++)
+  {
+    if (!_scheduledIrrigations[zoneIndex].isScheduleConfigured(s))
+    {
+      continue;
+    }
+    IrrigationSchedule schedule = _scheduledIrrigations[zoneIndex].getSchedule(s);
+    JsonObject entry = arr.add<JsonObject>();
+    entry["slot"]            = s + 1;
+    entry["configured"]      = true;
+    entry["enabled"]         = schedule.enabled;
+    entry["startTime"]       = formatStartTime(schedule.hour, schedule.minute);
+    entry["durationMinutes"] = schedule.durationMinutes;
+    entry["daysOfWeek"]      = schedule.daysOfWeek;
+    entry["daysText"]        = formatDaysText(schedule.daysOfWeek);
+  }
+
+  char buffer[768];
+  serializeJson(doc, buffer, sizeof(buffer));
+  _publisher.publishRetained(getZoneSummaryTopic(zoneIndex).c_str(), buffer);
 }

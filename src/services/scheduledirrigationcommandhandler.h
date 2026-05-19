@@ -6,6 +6,7 @@
 #include "irrigationconfig.h"
 #include "scheduled_irrigation.h"
 #include "scheduledirrigationpublisher.h"
+#include <ArduinoJson.h>
 
 class ScheduledIrrigationCommandHandler
 {
@@ -25,6 +26,10 @@ private:
   IrrigationConfig &_irrigationConfig;
   String _clientName;
 
+  bool matchesJsonSetTopic(const char *topic, int zoneIndex,
+                           int scheduleIndex) const;
+  bool handleJsonCommand(int zoneIndex, int scheduleIndex,
+                         const char *payload);
   bool matchesFieldTopic(const char *topic, int zoneIndex, int scheduleIndex,
                          const char *field) const;
   bool parseBoolPayload(const char *payload, bool &value) const;

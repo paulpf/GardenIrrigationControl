@@ -16,6 +16,7 @@ public:
   void setup(const char *clientName);
   void publishState(unsigned long currentMillis);
   void publishScheduleState(int zoneIndex, int scheduleIndex);
+  void publishZoneSummary(int zoneIndex);
 
 private:
   static constexpr unsigned long PUBLISH_INTERVAL_MS = 60000;
@@ -27,7 +28,9 @@ private:
   bool _hasPublished = false;
 
   String getScheduleBaseTopic(int zoneIndex, int scheduleIndex) const;
+  String getZoneSummaryTopic(int zoneIndex) const;
   String formatStartTime(int hour, int minute) const;
+  String formatDaysText(uint8_t daysOfWeek) const;
 };
 
 #endif // SCHEDULEDIRRIGATIONPUBLISHER_H

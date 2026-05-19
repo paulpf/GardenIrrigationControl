@@ -25,6 +25,7 @@ public:
   void loop();
   void initPublish();
   void publish(const char *topic, const char *payload) override;
+  void publishRetained(const char *topic, const char *payload) override;
   void subscribe(const char *topic);
   void addIrrigationZone(IrrigationZone *zone);
   void subscribeIrrigationZones();
@@ -60,7 +61,6 @@ private:
   // Instance callback that will be called by the static callback
   void instanceMqttCallback(char *topic, byte *payload, unsigned int length);
   void reconnect();
-  void publishRetained(const char *topic, const char *payload);
   void subscribeAutomaticIrrigationCommands();
   void subscribeScheduledIrrigationCommands();
   void publishIrrigationZoneState(int zoneIndex, bool forceAll,
@@ -75,6 +75,10 @@ private:
   String GetFactoryResetStatusTopic() const
   {
     return _clientName + String("/system/factoryResetStatus");
+  }
+  String GetRestartTopic() const
+  {
+    return _clientName + String("/system/restart");
   }
   const char *getLwtTopic() const;
   const char *getLwtOnlinePayload() const;
