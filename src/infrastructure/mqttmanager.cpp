@@ -183,13 +183,6 @@ void MqttManager::initPublish()
     publishRetained(durationSetTopic.c_str(),
                     String(durationMinutes).c_str());
 
-    for (int s = 0; s < MAX_SCHEDULES_PER_ZONE; s++)
-    {
-      String scheduleSetTopic = String(_clientName) + "/irrigationZone" +
-                                String(i + 1) + "/schedule" + String(s + 1) +
-                                "/set";
-      publishRetained(scheduleSetTopic.c_str(), "");
-    }
   }
 }
 
