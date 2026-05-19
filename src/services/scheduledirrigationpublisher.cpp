@@ -43,6 +43,24 @@ void ScheduledIrrigationPublisher::publishState(unsigned long currentMillis)
   _hasPublished = true;
 }
 
+void ScheduledIrrigationPublisher::publishAllNow()
+{
+  if (!_publisher.isConnected() || _clientName.length() == 0)
+  {
+    return;
+  }
+
+  for (int z = 0; z < MAX_IRRIGATION_ZONES; z++)
+  {
+    for (int s = 0; s < MAX_SCHEDULES_PER_ZONE; s++)
+      publishScheduleStateJson(z, s);
+    publishZoneSummary(z);
+  }
+
+  _lastPublishMillis = millis();
+  _hasPublished = true;
+}
+
 void ScheduledIrrigationPublisher::publishScheduleState(int zoneIndex,
                                                         int scheduleIndex)
 {

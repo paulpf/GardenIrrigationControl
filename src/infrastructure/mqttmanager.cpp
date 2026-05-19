@@ -2,6 +2,7 @@
 #include "automaticirrigationcommandhandler.h"
 #include "helper.h"
 #include "scheduledirrigationcommandhandler.h"
+#include "scheduledirrigationpublisher.h"
 #include "storage_manager.h"
 #include "waterlevelmanager.h"
 #include <climits>
@@ -70,9 +71,10 @@ MqttManager *MqttManager::_instance = nullptr;
 
 MqttManager::MqttManager()
 {
-  // Store the instance pointer
   _instance = this;
   _pubSubClient.setClient(_wifiClient);
+  // scheduleSummary for 4 schedules can reach ~470 bytes; 512 gives headroom.
+  _pubSubClient.setBufferSize(512);
 }
 
 const char *MqttManager::sanitizeMqttServer(const char *mqttServer)
@@ -184,6 +186,29 @@ void MqttManager::initPublish()
                     String(durationMinutes).c_str());
 
   }
+
+  // Publish an empty JSON object on schedule /set topics so the ioBroker MQTT
+  // adapter creates the matching states with string type. An empty payload
+  // would be misdetected as a number (Number("") === 0). The "{}" payload is
+  // treated as a no-op by handleJsonCommand.
+  for (int zoneIndex = 0; zoneIndex < _numIrrigationZones; zoneIndex++)
+  {
+    for (int scheduleIndex = 0; scheduleIndex < MAX_SCHEDULES_PER_ZONE;
+         scheduleIndex++)
+    {
+      String scheduleSetTopic = String(_clientName) + "/irrigationZone" +
+                                String(zoneIndex + 1) + "/schedule" +
+                                String(scheduleIndex + 1) + "/set";
+      publishRetained(scheduleSetTopic.c_str(), "{}");
+    }
+  }
+
+  // Publish current schedule states immediately so the broker is fully
+  // initialized on connect without waiting for the next middle-loop tick.
+  if (_scheduledIrrigationPublisher != nullptr)
+  {
+    _scheduledIrrigationPublisher->publishAllNow();
+  }
 }
 
 // Static callback that will be called by PubSubClient
@@ -229,7 +254,8 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
     if (tryParseBool(message, trigger) && trigger)
     {
       Trace::log(TraceLevel::INFO, "Restart triggered via MQTT");
-      delay(100);
+      _pubSubClient.publish(GetRestartTopic().c_str(), "false", true);
+      delay(200);
       ESP.restart();
     }
     return;
@@ -831,6 +857,12 @@ void MqttManager::setScheduledIrrigationCommandHandler(
     ScheduledIrrigationCommandHandler *scheduledIrrigationCommandHandler)
 {
   _scheduledIrrigationCommandHandler = scheduledIrrigationCommandHandler;
+}
+
+void MqttManager::setScheduledIrrigationPublisher(
+    ScheduledIrrigationPublisher *scheduledIrrigationPublisher)
+{
+  _scheduledIrrigationPublisher = scheduledIrrigationPublisher;
 }
 
 void MqttManager::triggerFactoryReset()

@@ -77,6 +77,15 @@ bool ScheduledIrrigationCommandHandler::handleJsonCommand(
     return false;
   }
 
+  // Ignore commands without any recognized field (e.g. the "{}" bootstrap
+  // payload published to create the ioBroker state).
+  if (doc["configured"].isNull() && doc["enabled"].isNull() &&
+      doc["startTime"].isNull() && doc["durationMinutes"].isNull() &&
+      doc["daysOfWeek"].isNull())
+  {
+    return true;
+  }
+
   if (doc["configured"] == false)
   {
     clearAndPublish(zoneIndex, scheduleIndex);
@@ -86,10 +95,10 @@ bool ScheduledIrrigationCommandHandler::handleJsonCommand(
   IrrigationSchedule schedule;
   ensureSchedule(zoneIndex, scheduleIndex, schedule, true);
 
-  if (doc.containsKey("enabled"))
+  if (!doc["enabled"].isNull())
     schedule.enabled = doc["enabled"].as<bool>();
 
-  if (doc.containsKey("startTime"))
+  if (!doc["startTime"].isNull())
   {
     int hour = 0, minute = 0;
     if (parseStartTimePayload(doc["startTime"].as<const char *>(), hour, minute))
@@ -99,10 +108,10 @@ bool ScheduledIrrigationCommandHandler::handleJsonCommand(
     }
   }
 
-  if (doc.containsKey("durationMinutes"))
+  if (!doc["durationMinutes"].isNull())
     schedule.durationMinutes = doc["durationMinutes"].as<int>();
 
-  if (doc.containsKey("daysOfWeek"))
+  if (!doc["daysOfWeek"].isNull())
     schedule.daysOfWeek = (uint8_t)doc["daysOfWeek"].as<int>();
 
   saveAndPublish(zoneIndex, scheduleIndex, schedule);

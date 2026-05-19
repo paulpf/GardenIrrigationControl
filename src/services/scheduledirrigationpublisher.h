@@ -15,6 +15,7 @@ public:
 
   void setup(const char *clientName);
   void publishState(unsigned long currentMillis);
+  void publishAllNow();
   void publishScheduleState(int zoneIndex, int scheduleIndex);
   void publishZoneSummary(int zoneIndex);
 

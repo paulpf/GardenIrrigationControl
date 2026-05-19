@@ -209,6 +209,8 @@ void GardenControllerApp::initializeSubsystems()
       &_automaticIrrigationCommandHandler);
   _mqttManager.setScheduledIrrigationCommandHandler(
       &_scheduledIrrigationCommandHandler);
+  _mqttManager.setScheduledIrrigationPublisher(
+      &_scheduledIrrigationPublisher);
 
   _mqttManager.configure(_irrigationConfig);
   _mqttManager.setup(MQTT_SERVER_IP, MQTT_SERVER_PORT, MQTT_USER, MQTT_PWD,

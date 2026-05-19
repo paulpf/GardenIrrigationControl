@@ -13,6 +13,7 @@
 class WaterLevelManager;
 class AutomaticIrrigationCommandHandler;
 class ScheduledIrrigationCommandHandler;
+class ScheduledIrrigationPublisher;
 
 class MqttManager : public IMessagePublisher, public IMqttConnectionControl
 {
@@ -50,6 +51,8 @@ public:
       AutomaticIrrigationCommandHandler *automaticIrrigationCommandHandler);
   void setScheduledIrrigationCommandHandler(
       ScheduledIrrigationCommandHandler *scheduledIrrigationCommandHandler);
+  void setScheduledIrrigationPublisher(
+      ScheduledIrrigationPublisher *scheduledIrrigationPublisher);
 
   // Make this public and static so it can be used as a callback
   static void staticMqttCallback(char *topic, byte *payload,
@@ -161,6 +164,7 @@ private:
       nullptr;
   ScheduledIrrigationCommandHandler *_scheduledIrrigationCommandHandler =
       nullptr;
+  ScheduledIrrigationPublisher *_scheduledIrrigationPublisher = nullptr;
 
   // Auto-clear timer for resetDurations topic
   bool _resetDurationsPending = false;
