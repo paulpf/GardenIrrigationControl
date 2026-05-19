@@ -71,6 +71,8 @@ void ScheduledIrrigationPublisher::publishScheduleState(int zoneIndex,
   _publisher.publish((baseTopic + "/daysOfWeek").c_str(), daysOfWeek.c_str());
   _publisher.publish((baseTopic + "/durationMinutes").c_str(),
                      durationMinutes.c_str());
+
+  publishScheduleStateJson(zoneIndex, scheduleIndex);
 }
 
 String ScheduledIrrigationPublisher::getScheduleBaseTopic(
@@ -78,6 +80,43 @@ String ScheduledIrrigationPublisher::getScheduleBaseTopic(
 {
   return _clientName + "/irrigationZone" + String(zoneIndex + 1) +
          "/schedule" + String(scheduleIndex + 1);
+}
+
+String ScheduledIrrigationPublisher::getScheduleStateTopic(
+    int zoneIndex, int scheduleIndex) const
+{
+  return getScheduleBaseTopic(zoneIndex, scheduleIndex) + "/state";
+}
+
+void ScheduledIrrigationPublisher::publishScheduleStateJson(int zoneIndex,
+                                                            int scheduleIndex)
+{
+  if (!_publisher.isConnected() || _clientName.length() == 0)
+  {
+    return;
+  }
+
+  const bool configured =
+      _scheduledIrrigations[zoneIndex].isScheduleConfigured(scheduleIndex);
+
+  JsonDocument doc;
+  doc["configured"] = configured;
+
+  if (configured)
+  {
+    IrrigationSchedule schedule =
+        _scheduledIrrigations[zoneIndex].getSchedule(scheduleIndex);
+    doc["enabled"]         = schedule.enabled;
+    doc["startTime"]       = formatStartTime(schedule.hour, schedule.minute);
+    doc["durationMinutes"] = schedule.durationMinutes;
+    doc["daysOfWeek"]      = (int)schedule.daysOfWeek;
+    doc["daysText"]        = formatDaysText(schedule.daysOfWeek);
+  }
+
+  char buffer[256];
+  serializeJson(doc, buffer, sizeof(buffer));
+  _publisher.publishRetained(getScheduleStateTopic(zoneIndex, scheduleIndex).c_str(),
+                             buffer);
 }
 
 String ScheduledIrrigationPublisher::getZoneSummaryTopic(int zoneIndex) const
