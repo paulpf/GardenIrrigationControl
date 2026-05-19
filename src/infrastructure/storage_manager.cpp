@@ -36,28 +36,24 @@ int StorageManager::loadDurationTime(int zoneIndex, int defaultDurationMs)
   return durationTime;
 }
 
-void StorageManager::saveButtonState(int zoneIndex, bool state)
+void StorageManager::saveAutomaticIrrigationEnabled(bool enabled)
 {
-  String key = getKey("btn", zoneIndex);
-  _preferences.putBool(key.c_str(), state);
+  _preferences.putBool("autoEnabled", enabled);
 }
 
-bool StorageManager::loadButtonState(int zoneIndex)
+bool StorageManager::loadAutomaticIrrigationEnabled(bool defaultValue)
 {
-  String key = getKey("btn", zoneIndex);
-  return _preferences.getBool(key.c_str(), false);
+  return _preferences.getBool("autoEnabled", defaultValue);
 }
 
-void StorageManager::saveRelayState(int zoneIndex, bool state)
+void StorageManager::saveLowWaterLockoutEnabled(bool enabled)
 {
-  String key = getKey("relay", zoneIndex);
-  _preferences.putBool(key.c_str(), state);
+  _preferences.putBool("lwLockoutEn", enabled);
 }
 
-bool StorageManager::loadRelayState(int zoneIndex)
+bool StorageManager::loadLowWaterLockoutEnabled(bool defaultValue)
 {
-  String key = getKey("relay", zoneIndex);
-  return _preferences.getBool(key.c_str(), false);
+  return _preferences.getBool("lwLockoutEn", defaultValue);
 }
 
 void StorageManager::saveSchedule(int zoneIndex, int scheduleIndex,
@@ -190,9 +186,9 @@ void StorageManager::factoryReset(int defaultDurationMs)
   for (int i = 0; i < MAX_IRRIGATION_ZONES; i++)
   {
     saveDurationTime(i, defaultDurationMs);
-    saveButtonState(i, false);
-    saveRelayState(i, false);
   }
+  saveAutomaticIrrigationEnabled(false);
+  saveLowWaterLockoutEnabled(WATER_LEVEL_LOW_WATER_LOCKOUT_ENABLED);
 
   delay(100); // Ensure EEPROM writes complete
   Trace::log(TraceLevel::INFO, "Factory reset complete");

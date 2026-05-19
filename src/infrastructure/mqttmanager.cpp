@@ -2,6 +2,7 @@
 #include "automaticirrigationcommandhandler.h"
 #include "helper.h"
 #include "scheduledirrigationcommandhandler.h"
+#include "storage_manager.h"
 #include "waterlevelmanager.h"
 #include <climits>
 #include <cstring> // Phase 3.5: for memcpy and strcmp in hot-path optimization
@@ -247,6 +248,7 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
     if (tryParseBool(message, requestedState))
     {
       _waterLevelManager->setLowWaterLockoutEnabled(requestedState);
+      StorageManager::getInstance().saveLowWaterLockoutEnabled(requestedState);
       publish(GetLowWaterLockoutEnabledTopic().c_str(),
               requestedState ? "true" : "false");
 

@@ -1,5 +1,6 @@
 #include "automaticirrigationcommandhandler.h"
 
+#include "storage_manager.h"
 #include "trace.h"
 #include <cstring>
 
@@ -38,6 +39,7 @@ bool AutomaticIrrigationCommandHandler::handleCommand(const char *topic,
   }
 
   _controller.setEnabled(enabled);
+  StorageManager::getInstance().saveAutomaticIrrigationEnabled(enabled);
   _publisher.publishState();
   Trace::log(TraceLevel::INFO,
              "Updated automatic irrigation enabled to " +

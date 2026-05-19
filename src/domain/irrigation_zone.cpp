@@ -110,9 +110,6 @@ void IrrigationZone::synchronizeButtonStates(bool newState)
   {
     markEvent(EVENT_BUTTON_CHANGED);
   }
-  // We could save button state here, but it's usually transient
-  // Uncomment below if you want to persist button states
-  // StorageManager::getInstance().saveButtonState(_zoneIndex, newState);
 }
 
 void IrrigationZone::setupRelay(int relayGpioChannel)

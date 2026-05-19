@@ -55,14 +55,29 @@ For irrigation duration:
 
 - `.../durationTime` is the published state topic.
 - `.../durationTime/set` is the command topic.
-- Duration payloads are seconds.
+- Duration payloads are **minutes** (integer).
 - Persisted duration values are milliseconds.
 
 ## Persistence
 
-- Zone duration is persisted through `StorageManager`.
+All values are stored via `StorageManager` (singleton) in the NVS namespace `garden_ctrl`.
+
+| NVS key | Type | Content |
+|---|---|---|
+| `duration{n}` | int | Zone irrigation duration in **milliseconds** (n = 0–8) |
+| `autoEnabled` | bool | Automatic irrigation enabled |
+| `lwLockoutEn` | bool | Low-water lockout enabled |
+| `s{z}_{s}_cfg` | bool | Schedule slot configured (z = zone 0–8, s = slot 0–3) |
+| `s{z}_{s}_en` | bool | Schedule enabled |
+| `s{z}_{s}_hr` | int | Schedule start hour (0–23) |
+| `s{z}_{s}_min` | int | Schedule start minute (0–59) |
+| `s{z}_{s}_dur` | int | Schedule duration in **minutes** (1–60) |
+| `s{z}_{s}_dow` | int | Days-of-week bitmask (bit0=Mon … bit6=Sun, 1–127) |
+
+Rules:
 - Do not reset stored values on invalid external input.
-- Factory reset behavior should explicitly restore defaults.
+- Factory reset must explicitly restore all defaults (see `StorageManager::factoryReset`).
+- Relay and button states are intentionally **not** persisted; relays are forced off on cold start.
 
 ## Testing
 

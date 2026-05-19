@@ -83,8 +83,11 @@ void GardenControllerApp::initScheduledIrrigation()
 
 void GardenControllerApp::initAutomaticIrrigation()
 {
-  _automaticIrrigationController.setup(false);
-  Trace::log(TraceLevel::INFO, "Automatic irrigation disabled by default");
+  const bool enabled =
+      StorageManager::getInstance().loadAutomaticIrrigationEnabled(false);
+  _automaticIrrigationController.setup(enabled);
+  Trace::log(TraceLevel::INFO, "Automatic irrigation restored to " +
+                                   String(enabled ? "enabled" : "disabled"));
 }
 
 void GardenControllerApp::initIrrigationZones()
@@ -121,8 +124,6 @@ void GardenControllerApp::resetZoneStateAfterColdStartIfNeeded()
     _irrigationZones[i].switchRelay(false);
     _irrigationZones[i].resetTimer();
 
-    StorageManager::getInstance().saveButtonState(i, false);
-    StorageManager::getInstance().saveRelayState(i, false);
   }
 }
 
@@ -200,6 +201,9 @@ void GardenControllerApp::initializeDiagnostics()
 void GardenControllerApp::initializeSubsystems()
 {
   _waterLevelManager.setup(_clientName);
+  _waterLevelManager.setLowWaterLockoutEnabled(
+      StorageManager::getInstance().loadLowWaterLockoutEnabled(
+          WATER_LEVEL_LOW_WATER_LOCKOUT_ENABLED));
   _mqttManager.setWaterLevelManager(&_waterLevelManager);
   _mqttManager.setAutomaticIrrigationCommandHandler(
       &_automaticIrrigationCommandHandler);

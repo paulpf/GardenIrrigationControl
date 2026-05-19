@@ -21,14 +21,11 @@ public:
   void saveDurationTime(int zoneIndex, int durationTime);
   int loadDurationTime(int zoneIndex, int defaultDurationMs = DEFAULT_DURATION_TIME);
 
-  // Methods for button states - may not be needed as they're typically volatile
-  void saveButtonState(int zoneIndex, bool state);
-  bool loadButtonState(int zoneIndex);
-
-  // Relay state is also mostly volatile, but might be useful for recovering
-  // state after power loss
-  void saveRelayState(int zoneIndex, bool state);
-  bool loadRelayState(int zoneIndex);
+  // Global runtime settings
+  void saveAutomaticIrrigationEnabled(bool enabled);
+  bool loadAutomaticIrrigationEnabled(bool defaultValue = false);
+  void saveLowWaterLockoutEnabled(bool enabled);
+  bool loadLowWaterLockoutEnabled(bool defaultValue = WATER_LEVEL_LOW_WATER_LOCKOUT_ENABLED);
 
   // Methods for scheduled irrigation settings
   void saveSchedule(int zoneIndex, int scheduleIndex,
