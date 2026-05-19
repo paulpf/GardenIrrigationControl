@@ -17,6 +17,7 @@ public:
 
   void setup(const char *clientName);
   bool handleCommand(const char *topic, const char *payload);
+  void resetAll();
 
 private:
   ScheduledIrrigation (&_scheduledIrrigations)[MAX_IRRIGATION_ZONES];
@@ -36,7 +37,8 @@ private:
   bool updateIntField(int zoneIndex, int scheduleIndex, const char *field,
                       int value);
   bool ensureSchedule(int zoneIndex, int scheduleIndex,
-                      IrrigationSchedule &schedule);
+                      IrrigationSchedule &schedule,
+                      bool createIfMissing = false);
   void saveAndPublish(int zoneIndex, int scheduleIndex,
                       const IrrigationSchedule &schedule);
   void clearAndPublish(int zoneIndex, int scheduleIndex);

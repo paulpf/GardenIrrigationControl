@@ -172,14 +172,26 @@ bool ScheduledIrrigationCommandHandler::updateBoolField(
     return true;
   }
 
-  if (strcmp(field, "configured") == 0 && !value)
+  if (strcmp(field, "configured") == 0)
   {
-    clearAndPublish(zoneIndex, scheduleIndex);
+    if (!value)
+    {
+      clearAndPublish(zoneIndex, scheduleIndex);
+      return true;
+    }
+
+    IrrigationSchedule schedule;
+    if (!ensureSchedule(zoneIndex, scheduleIndex, schedule, true))
+    {
+      return false;
+    }
+
+    saveAndPublish(zoneIndex, scheduleIndex, schedule);
     return true;
   }
 
   IrrigationSchedule schedule;
-  if (!ensureSchedule(zoneIndex, scheduleIndex, schedule))
+  if (!ensureSchedule(zoneIndex, scheduleIndex, schedule, false))
   {
     return false;
   }
@@ -197,7 +209,7 @@ bool ScheduledIrrigationCommandHandler::updateIntField(
     int zoneIndex, int scheduleIndex, const char *field, int value)
 {
   IrrigationSchedule schedule;
-  if (!ensureSchedule(zoneIndex, scheduleIndex, schedule))
+  if (!ensureSchedule(zoneIndex, scheduleIndex, schedule, false))
   {
     return false;
   }
@@ -234,7 +246,7 @@ bool ScheduledIrrigationCommandHandler::updateStartTimeField(
   }
 
   IrrigationSchedule schedule;
-  if (!ensureSchedule(zoneIndex, scheduleIndex, schedule))
+  if (!ensureSchedule(zoneIndex, scheduleIndex, schedule, false))
   {
     return false;
   }
@@ -246,7 +258,8 @@ bool ScheduledIrrigationCommandHandler::updateStartTimeField(
 }
 
 bool ScheduledIrrigationCommandHandler::ensureSchedule(
-    int zoneIndex, int scheduleIndex, IrrigationSchedule &schedule)
+  int zoneIndex, int scheduleIndex, IrrigationSchedule &schedule,
+  bool createIfMissing)
 {
   if (zoneIndex < 0 || zoneIndex >= MAX_IRRIGATION_ZONES ||
       scheduleIndex < 0 || scheduleIndex >= MAX_SCHEDULES_PER_ZONE)
@@ -257,12 +270,15 @@ bool ScheduledIrrigationCommandHandler::ensureSchedule(
   if (_scheduledIrrigations[zoneIndex].isScheduleConfigured(scheduleIndex))
   {
     schedule = _scheduledIrrigations[zoneIndex].getSchedule(scheduleIndex);
-  }
-  else
-  {
-    schedule = IrrigationSchedule();
+    return true;
   }
 
+  if (!createIfMissing)
+  {
+    return false;
+  }
+
+  schedule = IrrigationSchedule();
   return true;
 }
 
@@ -281,4 +297,16 @@ void ScheduledIrrigationCommandHandler::clearAndPublish(int zoneIndex,
   _scheduledIrrigations[zoneIndex].removeSchedule(scheduleIndex);
   StorageManager::getInstance().clearSchedule(zoneIndex, scheduleIndex);
   _publisher.publishScheduleState(zoneIndex, scheduleIndex);
+}
+
+void ScheduledIrrigationCommandHandler::resetAll()
+{
+  for (int z = 0; z < MAX_IRRIGATION_ZONES; z++)
+  {
+    for (int s = 0; s < MAX_SCHEDULES_PER_ZONE; s++)
+    {
+      _scheduledIrrigations[z].removeSchedule(s);
+      _publisher.publishScheduleState(z, s);
+    }
+  }
 }

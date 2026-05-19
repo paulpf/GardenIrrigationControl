@@ -16,6 +16,7 @@ public:
   void setup(const char *clientName);
   bool handleCommand(const char *topic, const char *payload);
   const char *getEnabledSetTopic() const;
+  bool isEnabled() const;
 
 private:
   AutomaticIrrigationController &_controller;

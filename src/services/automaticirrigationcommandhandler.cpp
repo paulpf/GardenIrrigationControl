@@ -52,6 +52,11 @@ const char *AutomaticIrrigationCommandHandler::getEnabledSetTopic() const
   return _enabledSetTopic.c_str();
 }
 
+bool AutomaticIrrigationCommandHandler::isEnabled() const
+{
+  return _controller.isEnabled();
+}
+
 bool AutomaticIrrigationCommandHandler::parseBoolPayload(const char *payload,
                                                          bool &value) const
 {

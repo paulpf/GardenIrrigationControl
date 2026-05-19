@@ -84,7 +84,7 @@ void GardenControllerApp::initScheduledIrrigation()
 void GardenControllerApp::initAutomaticIrrigation()
 {
   const bool enabled =
-      StorageManager::getInstance().loadAutomaticIrrigationEnabled(false);
+      StorageManager::getInstance().loadAutomaticIrrigationEnabled(AUTOMATIC_IRRIGATION_ENABLED_DEFAULT);
   _automaticIrrigationController.setup(enabled);
   Trace::log(TraceLevel::INFO, "Automatic irrigation restored to " +
                                    String(enabled ? "enabled" : "disabled"));

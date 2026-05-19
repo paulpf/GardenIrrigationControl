@@ -10,13 +10,17 @@ struct IrrigationSchedule
   bool enabled;        // Is this schedule active?
   int hour;            // 0-23 local time
   int minute;          // 0-59
-  int durationMinutes; // How long to run (1-60 minutes)
+  int durationMinutes; // How long to run (minutes)
   uint8_t daysOfWeek;  // Bitmask: bit0=Mon, bit1=Tue, ... bit6=Sun
 
   IrrigationSchedule()
-      : enabled(false), hour(6), minute(0), durationMinutes(5), daysOfWeek(0x3E)
+      : enabled(false),
+        hour(DEFAULT_SCHEDULE_HOUR),
+        minute(DEFAULT_SCHEDULE_MINUTE),
+        durationMinutes(DEFAULT_SCHEDULE_DURATION_MINUTES),
+        daysOfWeek(DEFAULT_SCHEDULE_DAYS_OF_WEEK)
   {
-  } // Default: Mon-Fri 6:00 AM, 5 min
+  }
 };
 
 // Maximum schedules per zone

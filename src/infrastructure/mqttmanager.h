@@ -61,7 +61,6 @@ private:
   void instanceMqttCallback(char *topic, byte *payload, unsigned int length);
   void reconnect();
   void publishRetained(const char *topic, const char *payload);
-  void clearRetainedDurationSetTopics();
   void subscribeAutomaticIrrigationCommands();
   void subscribeScheduledIrrigationCommands();
   void publishIrrigationZoneState(int zoneIndex, bool forceAll,
@@ -131,6 +130,14 @@ private:
   String GetHeartbeatTopic() const
   {
     return _clientName + String("/system/heartbeat");
+  }
+  String GetAutomaticIrrigationEnabledTopic() const
+  {
+    return _clientName + String("/irrigation/automatic/enabled");
+  }
+  String GetAutomaticIrrigationEnabledSetTopic() const
+  {
+    return _clientName + String("/irrigation/automatic/enabled/set");
   }
   String GetLowWaterLockoutEnabledTopic() const
   {

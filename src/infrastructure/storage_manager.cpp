@@ -187,7 +187,7 @@ void StorageManager::factoryReset(int defaultDurationMs)
   {
     saveDurationTime(i, defaultDurationMs);
   }
-  saveAutomaticIrrigationEnabled(false);
+  saveAutomaticIrrigationEnabled(AUTOMATIC_IRRIGATION_ENABLED_DEFAULT);
   saveLowWaterLockoutEnabled(WATER_LEVEL_LOW_WATER_LOCKOUT_ENABLED);
 
   delay(100); // Ensure EEPROM writes complete

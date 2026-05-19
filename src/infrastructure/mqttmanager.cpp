@@ -158,15 +158,30 @@ void MqttManager::setup(const char *mqttServer, int mqttPort,
 
 void MqttManager::initPublish()
 {
+  if (_automaticIrrigationCommandHandler != nullptr)
+  {
+    const char *val =
+        _automaticIrrigationCommandHandler->isEnabled() ? "true" : "false";
+    publish(GetAutomaticIrrigationEnabledTopic().c_str(), val);
+    publishRetained(GetAutomaticIrrigationEnabledSetTopic().c_str(), val);
+  }
+
   if (_waterLevelManager != nullptr)
   {
-    publish(GetLowWaterLockoutEnabledTopic().c_str(),
-            _waterLevelManager->isLowWaterLockoutEnabled() ? "true" : "false");
+    const char *val =
+        _waterLevelManager->isLowWaterLockoutEnabled() ? "true" : "false";
+    publish(GetLowWaterLockoutEnabledTopic().c_str(), val);
+    publishRetained(GetLowWaterLockoutEnabledSetTopic().c_str(), val);
   }
 
   for (int i = 0; i < _numIrrigationZones; i++)
   {
     publishIrrigationZoneState(i, true, true);
+    int durationMinutes = _irrigationZones[i]->getDurationTime() / 60000;
+    String durationSetTopic =
+        _irrigationZones[i]->getMqttTopicForDurationTime() + "/set";
+    publishRetained(durationSetTopic.c_str(),
+                    String(durationMinutes).c_str());
   }
 }
 
@@ -227,10 +242,12 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
       for (int i = 0; i < _numIrrigationZones; i++)
       {
         _irrigationZones[i]->setDurationTime(defaultMs, i);
-        publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
-                String(defaultMinutes).c_str());
+        String durationTopic =
+            _irrigationZones[i]->getMqttTopicForDurationTime();
+        publish(durationTopic.c_str(), String(defaultMinutes).c_str());
+        publishRetained((durationTopic + "/set").c_str(),
+                        String(defaultMinutes).c_str());
       }
-      clearRetainedDurationSetTopics();
       Trace::log(TraceLevel::INFO,
                  "All irrigation durations reset to default: " +
                      String(defaultMinutes) + "min");
@@ -249,8 +266,9 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
     {
       _waterLevelManager->setLowWaterLockoutEnabled(requestedState);
       StorageManager::getInstance().saveLowWaterLockoutEnabled(requestedState);
-      publish(GetLowWaterLockoutEnabledTopic().c_str(),
-              requestedState ? "true" : "false");
+      const char *val = requestedState ? "true" : "false";
+      publish(GetLowWaterLockoutEnabledTopic().c_str(), val);
+      publishRetained(GetLowWaterLockoutEnabledSetTopic().c_str(), val);
 
       Trace::log(TraceLevel::INFO,
                  "Updated lowWaterLockoutEnabled to " +
@@ -276,6 +294,9 @@ void MqttManager::instanceMqttCallback(char *topic, byte *payload,
       _automaticIrrigationCommandHandler->handleCommand(incomingTopic.c_str(),
                                                         message))
   {
+    const char *val =
+        _automaticIrrigationCommandHandler->isEnabled() ? "true" : "false";
+    publishRetained(GetAutomaticIrrigationEnabledSetTopic().c_str(), val);
     return;
   }
 
@@ -476,16 +497,6 @@ void MqttManager::publishRetained(const char *topic, const char *payload)
   {
     Trace::log(TraceLevel::ERROR,
                "Cannot publish retained MQTT message - not connected");
-  }
-}
-
-void MqttManager::clearRetainedDurationSetTopics()
-{
-  for (int i = 0; i < _numIrrigationZones; i++)
-  {
-    String durationSetTopic =
-        _irrigationZones[i]->getMqttTopicForDurationTime() + "/set";
-    publishRetained(durationSetTopic.c_str(), "");
   }
 }
 
@@ -837,28 +848,51 @@ void MqttManager::triggerFactoryReset()
         WATER_LEVEL_LOW_WATER_LOCKOUT_ENABLED);
   }
 
-  // Persist all defaults to NVS
+  // Reset automatic irrigation to default
+  if (_automaticIrrigationCommandHandler != nullptr)
+  {
+    const char *defaultVal = AUTOMATIC_IRRIGATION_ENABLED_DEFAULT ? "true" : "false";
+    _automaticIrrigationCommandHandler->handleCommand(
+        GetAutomaticIrrigationEnabledSetTopic().c_str(), defaultVal);
+  }
+
+  // Clear all schedules in RAM and publish cleared state
+  if (_scheduledIrrigationCommandHandler != nullptr)
+  {
+    _scheduledIrrigationCommandHandler->resetAll();
+  }
+
+  // Persist all defaults to NVS (clears schedules in NVS via clearAllSettings)
   StorageManager::getInstance().factoryReset(defaultMs);
 
   // Publish reset state to all topics
   if (_sessionManager.isConnected())
   {
-    clearRetainedDurationSetTopics();
-
     for (int i = 0; i < _numIrrigationZones; i++)
     {
       publish(_irrigationZones[i]->getMqttTopicForRelay().c_str(), "false");
       publish(_irrigationZones[i]->getMqttTopicForSwButton().c_str(), "false");
       publish(_irrigationZones[i]->getMqttTopicForRemainingTime().c_str(),
               "00:00");
-      publish(_irrigationZones[i]->getMqttTopicForDurationTime().c_str(),
-              String(defaultMinutes).c_str());
+      String durationTopic =
+          _irrigationZones[i]->getMqttTopicForDurationTime();
+      publish(durationTopic.c_str(), String(defaultMinutes).c_str());
+      publishRetained((durationTopic + "/set").c_str(),
+                      String(defaultMinutes).c_str());
     }
 
     if (_waterLevelManager != nullptr)
     {
-      publish(GetLowWaterLockoutEnabledTopic().c_str(),
-              WATER_LEVEL_LOW_WATER_LOCKOUT_ENABLED ? "true" : "false");
+      const char *lwVal = WATER_LEVEL_LOW_WATER_LOCKOUT_ENABLED ? "true" : "false";
+      publish(GetLowWaterLockoutEnabledTopic().c_str(), lwVal);
+      publishRetained(GetLowWaterLockoutEnabledSetTopic().c_str(), lwVal);
+    }
+
+    if (_automaticIrrigationCommandHandler != nullptr)
+    {
+      const char *autoVal = AUTOMATIC_IRRIGATION_ENABLED_DEFAULT ? "true" : "false";
+      publish(GetAutomaticIrrigationEnabledTopic().c_str(), autoVal);
+      publishRetained(GetAutomaticIrrigationEnabledSetTopic().c_str(), autoVal);
     }
 
     publish(GetFactoryResetStatusTopic().c_str(), "complete");

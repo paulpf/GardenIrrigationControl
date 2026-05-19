@@ -54,16 +54,24 @@ void ScheduledIrrigationPublisher::publishScheduleState(int zoneIndex,
 
   String baseTopic = getScheduleBaseTopic(zoneIndex, scheduleIndex);
 
-  _publisher.publish((baseTopic + "/configured").c_str(),
-                     configured ? "true" : "false");
-  _publisher.publish((baseTopic + "/enabled").c_str(),
-                     schedule.enabled ? "true" : "false");
-  _publisher.publish((baseTopic + "/startTime").c_str(),
-                     formatStartTime(schedule.hour, schedule.minute).c_str());
-  _publisher.publish((baseTopic + "/daysOfWeek").c_str(),
-                     String((int)schedule.daysOfWeek).c_str());
+  const char *configuredVal = configured ? "true" : "false";
+  const char *enabledVal = schedule.enabled ? "true" : "false";
+  String startTime = formatStartTime(schedule.hour, schedule.minute);
+  String daysOfWeek = String((int)schedule.daysOfWeek);
+  String durationMinutes = String(schedule.durationMinutes);
+
+  _publisher.publish((baseTopic + "/configured").c_str(), configuredVal);
+  _publisher.publish((baseTopic + "/configured/set").c_str(), configuredVal);
+  _publisher.publish((baseTopic + "/enabled").c_str(), enabledVal);
+  _publisher.publish((baseTopic + "/enabled/set").c_str(), enabledVal);
+  _publisher.publish((baseTopic + "/startTime").c_str(), startTime.c_str());
+  _publisher.publish((baseTopic + "/startTime/set").c_str(), startTime.c_str());
+  _publisher.publish((baseTopic + "/daysOfWeek").c_str(), daysOfWeek.c_str());
+  _publisher.publish((baseTopic + "/daysOfWeek/set").c_str(), daysOfWeek.c_str());
   _publisher.publish((baseTopic + "/durationMinutes").c_str(),
-                     String(schedule.durationMinutes).c_str());
+                     durationMinutes.c_str());
+  _publisher.publish((baseTopic + "/durationMinutes/set").c_str(),
+                     durationMinutes.c_str());
 }
 
 String ScheduledIrrigationPublisher::getScheduleBaseTopic(

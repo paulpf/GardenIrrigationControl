@@ -23,7 +23,7 @@ public:
 
   // Global runtime settings
   void saveAutomaticIrrigationEnabled(bool enabled);
-  bool loadAutomaticIrrigationEnabled(bool defaultValue = false);
+  bool loadAutomaticIrrigationEnabled(bool defaultValue = AUTOMATIC_IRRIGATION_ENABLED_DEFAULT);
   void saveLowWaterLockoutEnabled(bool enabled);
   bool loadLowWaterLockoutEnabled(bool defaultValue = WATER_LEVEL_LOW_WATER_LOCKOUT_ENABLED);
 
