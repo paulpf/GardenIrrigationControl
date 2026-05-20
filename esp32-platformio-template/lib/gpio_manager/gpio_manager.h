@@ -5,9 +5,8 @@
 class GPIOManager {
  public:
   enum class PinFunction : uint8_t {
-    LED = 0,
-    RELAY1 = 1,
-    BUTTON1 = 2,
+    OUTPUT_0 = 0, // e.g. onboard LED or any digital output
+    INPUT_0  = 1, // e.g. a push button or any digital input
     COUNT
   };
 

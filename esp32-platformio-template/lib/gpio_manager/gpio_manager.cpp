@@ -8,9 +8,8 @@ constexpr uint8_t INVALID_PIN = UCHAR_MAX;
 
 const GPIOManager::PinMapEntry
     GPIOManager::pinMap[static_cast<uint8_t>(PinFunction::COUNT)] = {
-        {PinFunction::LED, 2},      // Onboard LED (typical ESP32 DevKit)
-        {PinFunction::RELAY1, 16}, // Example relay (LOW=active, HIGH=inactive)
-        {PinFunction::BUTTON1, 4},  // Example button
+        {PinFunction::OUTPUT_0, 2}, // GPIO 2 = onboard LED on most ESP32 DevKit boards
+        {PinFunction::INPUT_0,  0}, // replace with your actual input pin
 };
 
 uint8_t GPIOManager::resolvePin(PinFunction pin) {
