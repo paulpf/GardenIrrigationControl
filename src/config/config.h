@@ -66,7 +66,7 @@ constexpr float WATER_LEVEL_CRITICAL_OVERFLOW_BUFFER_LITERS = 300.0f;
 constexpr float WATER_LEVEL_CRITICAL_OVERFLOW_RELEASE_LITERS = 250.0f;
 
 // Irrigation timing defaults
-constexpr int DEFAULT_DURATION_TIME = 0;             // Zone duration on first boot / factory reset (unset)
+constexpr int DEFAULT_DURATION_TIME = 5 * 60 * 1000; // Zone duration on first boot / factory reset (5 minutes)
 constexpr int MAX_DURATION_TIME = 120 * 60 * 1000;  // Maximum zone duration (2 hours)
 
 // Schedule defaults — matches ioBroker Garten_SchedulerConfig.js CONFIG
